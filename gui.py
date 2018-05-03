@@ -193,10 +193,11 @@ class Main(object):
       _yearTo = tk.Entry(_yearFrame, width=5, textvariable=self.filters['year_to'])
       _yearTo.bind('<KeyRelease>', self._filtersUpdate)
       _yearTo.grid(row=1, column=3, sticky=tk.W)
-      def _resetYearFrame():
+      def _resetYearFrame(update=True):
         self.filters['year_from'].set('')
         self.filters['year_to'].set('')
-        self._filtersUpdate()
+        if update:
+          self._filtersUpdate()
       tk.Button(_yearFrame, text='Reset', command=_resetYearFrame).grid(row=2, column=0, columnspan=4, sticky=tk.E)
       _yearFrame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for rating filters
@@ -210,10 +211,11 @@ class Main(object):
       _ratingTo = tk.Entry(_ratingFrame, width=5, textvariable=self.filters['rating_to'])
       _ratingTo.bind('<KeyRelease>', self._filtersUpdate)
       _ratingTo.grid(row=1, column=3, sticky=tk.W)
-      def _resetRatingFrame():
+      def _resetRatingFrame(update=True):
         self.filters['rating_from'].set('')
         self.filters['rating_to'].set('')
-        self._filtersUpdate()
+        if update:
+          self._filtersUpdate()
       tk.Button(_ratingFrame, text='Reset', command=_resetRatingFrame).grid(row=2, column=0, columnspan=4, sticky=tk.E)
       _ratingFrame.grid(row=2, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for genre filters
@@ -232,13 +234,14 @@ class Main(object):
       tk.Radiobutton(_radioWrap, text='wszystkie', variable=self.filters['genre']['mode'], value=1, command=self._filtersUpdate).pack(anchor=tk.W)
       tk.Radiobutton(_radioWrap, text='dokładnie', variable=self.filters['genre']['mode'], value=2, command=self._filtersUpdate).pack(anchor=tk.W)
       _radioWrap.grid(row=1, column=0, sticky=tk.S+tk.W)
-      def _resetGenreFrame():
+      def _resetGenreFrame(update=True):
         self.filters['genre']['mode'].set(0)
         self.filters['genre']['list'] = []
         self.genreBox.selection_clear(0, tk.END)
-        self._filtersUpdate()
+        if update:
+          self._filtersUpdate()
       tk.Button(_genreFrame, text='Reset', command=_resetGenreFrame).grid(row=2, column=1, sticky=tk.S+tk.E)
-      _genreFrame.grid(row=1, column=1, rowspan=2, padx=5, pady=5, sticky=tk.N+tk.W)
+      _genreFrame.grid(row=1, column=1, rowspan=3, padx=5, pady=5, sticky=tk.N+tk.W)
       self.setGenreChoices()
       #frame for country filters
       _countryFrame = tk.Frame(frame)
@@ -251,13 +254,22 @@ class Main(object):
       _countryBox.configure(yscrollcommand=_countryScroll.set)
       _countryBox.pack(side=tk.LEFT)
       _countryWrap.grid(row=0, column=1, sticky=tk.N+tk.E)
-      def _resetCountryFrame():
+      def _resetCountryFrame(update=True):
         self.filters['country'] = ''
         self.countryBox.selection_clear(0, tk.END)
-        self._filtersUpdate()
+        if update:
+          self._filtersUpdate()
       tk.Button(_countryFrame, text='Reset', command=_resetCountryFrame).grid(row=2, column=1, sticky=tk.S+tk.E)
-      _countryFrame.grid(row=1, column=2, rowspan=2, padx=5, pady=5, sticky=tk.N+tk.W)
+      _countryFrame.grid(row=1, column=2, rowspan=3, padx=5, pady=5, sticky=tk.N+tk.W)
       self.setCountryChoices()
+      #reset all filters
+      def _resetAllFrames():
+        _resetYearFrame(False)
+        _resetRatingFrame(False)
+        _resetGenreFrame(False)
+        _resetCountryFrame(False)
+        self._filtersUpdate()
+      tk.Button(frame, text='Resetuj wszystkie', command=_resetAllFrames).grid(row=3, column=0, padx=5, pady=5, sticky=tk.S+tk.W)
       #instantiate the outer frame
       frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
     def _constructControlPanel(self):
