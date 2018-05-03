@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import tkinter as tk
@@ -107,7 +108,6 @@ class Login(object):
     self.passwordEntry.delete(0, tk.END)  #always clear the password field
     #attempt to log in
     session = scraper.login(username, password)
-    #session = 'HUJNIK' if username=='huj' else None
     if session is None:
       #inform the user
       self._setStateBad()
@@ -141,7 +141,9 @@ class Main(object):
       'rating_from':tk.StringVar(),
       'rating_to':  tk.StringVar(),
       'genre':      {'mode': tk.IntVar(), 'list': []},
-      'country':    ''
+      'country':    '',
+      'seen_from':  {'year': tk.IntVar(), 'month': tk.IntVar(), 'day': tk.IntVar()},
+      'seen_to':    {'year': tk.IntVar(), 'month': tk.IntVar(), 'day': tk.IntVar()}
     }
     self.sorting = None
     #see if there already is a database, or create a new one
@@ -158,7 +160,7 @@ class Main(object):
     self._changeSorting('timeSeen')
     self._changeSorting('timeSeen') #twice - latest first
     self._filtersUpdate()
-    #center window AFTER creating everythin (including plot)
+    #center window AFTER creating everything (including plot)
     self.centerWindow()
     tk.mainloop()
 
@@ -234,9 +236,45 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_ratingFrame, text='Reset', command=_resetRatingFrame).grid(row=2, column=0, columnspan=4, sticky=tk.E)
       _ratingFrame.grid(row=2, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
+      #frame for timeSeen filters
+      _timeSeenFrame = tk.Frame(frame)
+      tk.Label(_timeSeenFrame, text='Data obejrzenia:').grid(row=0, column=0, columnspan=4, sticky=tk.N+tk.W)
+      tk.Label(_timeSeenFrame, text='Od:').grid(row=1, column=0, sticky=tk.N+tk.W)
+      tk.Label(_timeSeenFrame, text='Do:').grid(row=2, column=0, sticky=tk.N+tk.W)
+      self.timeSeenFromYear = tk.Spinbox(_timeSeenFrame, width=7, textvariable=self.filters['seen_from']['year'], command=self._filtersUpdate)
+      self.timeSeenFromYear.bind('<KeyRelease>', self._filtersUpdate)
+      self.timeSeenFromYear.grid(row=1, column=1, sticky=tk.N+tk.W)
+      _timeSeenFromMonth = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_from']['month'], command=self._filtersUpdate, values=[i+1 for i in range(12)])
+      _timeSeenFromMonth.bind('<KeyRelease>', self._filtersUpdate)
+      _timeSeenFromMonth.grid(row=1, column=2, sticky=tk.N+tk.W)
+      _timeSeenFromDay = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_from']['day'], command=self._filtersUpdate, values=[i+1 for i in range(31)])
+      _timeSeenFromDay.bind('<KeyRelease>', self._filtersUpdate)
+      _timeSeenFromDay.grid(row=1, column=3, sticky=tk.N+tk.W)
+      self.timeSeenToYear = tk.Spinbox(_timeSeenFrame, width=7, textvariable=self.filters['seen_to']['year'], command=self._filtersUpdate)
+      self.timeSeenToYear.bind('<KeyRelease>', self._filtersUpdate)
+      self.timeSeenToYear.grid(row=2, column=1, sticky=tk.N+tk.W)
+      _timeSeenToMonth = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_to']['month'], command=self._filtersUpdate, values=[i+1 for i in range(12)])
+      _timeSeenToMonth.bind('<KeyRelease>', self._filtersUpdate)
+      _timeSeenToMonth.grid(row=2, column=2, sticky=tk.N+tk.W)
+      _timeSeenToDay = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_to']['day'], command=self._filtersUpdate, values=[i+1 for i in range(31)])
+      _timeSeenToDay.bind('<KeyRelease>', self._filtersUpdate)
+      _timeSeenToDay.grid(row=2, column=3, sticky=tk.N+tk.W)
+      def _resetTimeSeenFrame(update=True):
+        self.filters['seen_from']['year'].set(self.yearsSeen[0])
+        self.filters['seen_from']['month'].set(1)
+        self.filters['seen_from']['day'].set(1)
+        today = datetime.datetime.now()
+        self.filters['seen_to']['year'].set(today.year)
+        self.filters['seen_to']['month'].set(today.month)
+        self.filters['seen_to']['day'].set(today.day)
+        if update:
+          self._filtersUpdate()
+      tk.Button(_timeSeenFrame, text='Reset', command=_resetTimeSeenFrame).grid(row=3, column=0, columnspan=4, sticky=tk.N+tk.E)
+      _timeSeenFrame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
+      self.setYearChoices()
       #frame for genre filters
       _genreFrame = tk.Frame(frame)
-      tk.Label(_genreFrame, text='Gatunek:').grid(row=0, column=0, sticky=tk.N+tk.W)
+      tk.Label(_genreFrame, text='Gatunek:').grid(row=0, column=0, columnspan=2, sticky=tk.N+tk.W)
       _genreWrap = tk.Frame(_genreFrame)
       self.genreBox = _genreBox = tk.Listbox(_genreWrap, height=10, selectmode=tk.EXTENDED)
       _genreBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate)) #ugly but necessary - need to wait till GUI updates selection
@@ -244,20 +282,20 @@ class Main(object):
       _genreScroll.pack(side=tk.RIGHT, fill=tk.Y)
       _genreBox.configure(yscrollcommand=_genreScroll.set)
       _genreBox.pack(side=tk.LEFT)
-      _genreWrap.grid(row=0, column=1, rowspan=2, sticky=tk.N+tk.E)
+      _genreWrap.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.N+tk.E)
       _radioWrap = tk.Frame(_genreFrame)
       tk.Radiobutton(_radioWrap, text='przynajmniej', variable=self.filters['genre']['mode'], value=0, command=self._filtersUpdate).pack(anchor=tk.W)
       tk.Radiobutton(_radioWrap, text='wszystkie', variable=self.filters['genre']['mode'], value=1, command=self._filtersUpdate).pack(anchor=tk.W)
       tk.Radiobutton(_radioWrap, text='dokładnie', variable=self.filters['genre']['mode'], value=2, command=self._filtersUpdate).pack(anchor=tk.W)
-      _radioWrap.grid(row=1, column=0, sticky=tk.S+tk.W)
+      _radioWrap.grid(row=2, column=0, sticky=tk.S+tk.W)
       def _resetGenreFrame(update=True):
         self.filters['genre']['mode'].set(0)
         self.filters['genre']['list'] = []
         self.genreBox.selection_clear(0, tk.END)
         if update:
           self._filtersUpdate()
-      tk.Button(_genreFrame, text='Reset', command=_resetGenreFrame).grid(row=2, column=1, sticky=tk.S+tk.E)
-      _genreFrame.grid(row=1, column=1, rowspan=3, padx=5, pady=5, sticky=tk.N+tk.W)
+      tk.Button(_genreFrame, text='Reset', command=_resetGenreFrame).grid(row=2, column=1, sticky=tk.N+tk.E)
+      _genreFrame.grid(row=1, column=1, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
       self.setGenreChoices()
       #frame for country filters
       _countryFrame = tk.Frame(frame)
@@ -269,23 +307,24 @@ class Main(object):
       _countryScroll.pack(side=tk.RIGHT, fill=tk.Y)
       _countryBox.configure(yscrollcommand=_countryScroll.set)
       _countryBox.pack(side=tk.LEFT)
-      _countryWrap.grid(row=0, column=1, sticky=tk.N+tk.E)
+      _countryWrap.grid(row=1, column=0, sticky=tk.N+tk.E)
       def _resetCountryFrame(update=True):
         self.filters['country'] = ''
         self.countryBox.selection_clear(0, tk.END)
         if update:
           self._filtersUpdate()
-      tk.Button(_countryFrame, text='Reset', command=_resetCountryFrame).grid(row=2, column=1, sticky=tk.S+tk.E)
-      _countryFrame.grid(row=1, column=2, rowspan=3, padx=5, pady=5, sticky=tk.N+tk.W)
+      tk.Button(_countryFrame, text='Reset', command=_resetCountryFrame).grid(row=2, column=0, sticky=tk.N+tk.E)
+      _countryFrame.grid(row=1, column=2, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
       self.setCountryChoices()
       #reset all filters
       def _resetAllFrames():
         _resetYearFrame(False)
         _resetRatingFrame(False)
+        _resetTimeSeenFrame(False)
         _resetGenreFrame(False)
         _resetCountryFrame(False)
         self._filtersUpdate()
-      tk.Button(frame, text='Resetuj wszystkie', command=_resetAllFrames).grid(row=3, column=0, padx=5, pady=5, sticky=tk.S+tk.W)
+      tk.Button(frame, text='Resetuj filtry', command=_resetAllFrames).grid(row=4, column=0, padx=5, pady=5, sticky=tk.S+tk.W)
       #instantiate the outer frame
       frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
     def _constructControlPanel(self):
@@ -318,6 +357,14 @@ class Main(object):
     if len(self.countries)>0:
       for country in self.countries:
         self.countryBox.insert(tk.END, country)
+  def setYearChoices(self):
+    self.yearsSeen = self.database.getYearsSeen()
+    self.timeSeenFromYear.configure(values=self.yearsSeen)
+    self.timeSeenToYear.configure(values=self.yearsSeen)
+    today = datetime.datetime.now()
+    self.filters['seen_to']['year'].set(today.year)
+    self.filters['seen_to']['month'].set(today.month)
+    self.filters['seen_to']['day'].set(today.day)
 
   #INTERNALS
   def _changeSorting(self, column):
@@ -395,6 +442,7 @@ class Main(object):
       self.database.softUpdate(self.session)
     self.setGenreChoices()  #list of genres migh have changed
     self.setCountryChoices()
+    self.setYearChoices()
     self._filtersUpdate() #triggers a full refresh
   def _reloadData(self, newDatabase=False):
     self.session = self.loginHandler.requestLogin(message='Zaloguj się by zaimportować oceny' if newDatabase else '')
@@ -405,6 +453,7 @@ class Main(object):
     self.database.hardUpdate(self.session)
     self.setGenreChoices()  #list of genres migh have changed
     self.setCountryChoices()
+    self.setYearChoices()
     self._filtersUpdate() #triggers a full refresh
   def _quit(self):
     #saves data and exits

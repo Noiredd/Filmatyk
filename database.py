@@ -127,6 +127,11 @@ class Database(object):
       for x in movie[what]:
         all_what.add(x)
     return sorted(list(all_what))
+  def getYearsSeen(self):
+    all_years = set()
+    for movie in self.movies:
+      all_years.add(movie['timeSeen'].year)
+    return sorted(list(all_years))
 
   #INTERNALS
   def _save(self):

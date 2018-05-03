@@ -1,3 +1,5 @@
+from datetime import date
+
 def construct(filters:dict):
   #instantiate callable objects for each item in the dict
   #assemble them into a function
@@ -9,7 +11,9 @@ def construct(filters:dict):
     'rating_from':RatingFromFilter,
     'rating_to':  RatingToFilter,
     'genre':      GenreFilter,
-    'country':    CountryFilter
+    'country':    CountryFilter,
+    'seen_from':  SeenFromFilter,
+    'seen_to':    SeenToFilter
   }
   def _filterFunction(movie):
     status = True
@@ -114,3 +118,21 @@ class CountryFilter(BaseFilter):
     self.param = parameter if parameter!='' else None
   def filteringLogic(self, item):
     return True if self.param in item['countries'] else False
+
+class SeenFromFilter(BaseFilter):
+  def validateParameter(self, parameter):
+    y = parameter['year'].get()
+    m = parameter['month'].get()
+    d = parameter['day'].get()
+    self.param = date(y,m,d)
+  def filteringLogic(self, item):
+    return True if item['timeSeen'] >= self.param else False
+
+class SeenToFilter(BaseFilter):
+  def validateParameter(self, parameter):
+    y = parameter['year'].get()
+    m = parameter['month'].get()
+    d = parameter['day'].get()
+    self.param = date(y,m,d)
+  def filteringLogic(self, item):
+    return True if item['timeSeen'] <= self.param else False
