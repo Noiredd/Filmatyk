@@ -130,7 +130,8 @@ class Main(object):
       'year_to':    tk.StringVar(),
       'rating_from':tk.StringVar(),
       'rating_to':  tk.StringVar(),
-      'genre':      {'mode': tk.IntVar(), 'list': []}
+      'genre':      {'mode': tk.IntVar(), 'list': []},
+      'country':    ''
     }
     self.sorting = None
     #see if there already is a database, or create a new one
@@ -242,6 +243,21 @@ class Main(object):
       #frame for country filters
       _countryFrame = tk.Frame(frame)
       tk.Label(_countryFrame, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.N+tk.W)
+      _countryWrap = tk.Frame(_countryFrame)
+      self.countryBox =_countryBox = tk.Listbox(_countryWrap, height=10, selectmode=tk.SINGLE)
+      _countryBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate))
+      _countryScroll = ttk.Scrollbar(_countryWrap, command=_countryBox.yview)
+      _countryScroll.pack(side=tk.RIGHT, fill=tk.Y)
+      _countryBox.configure(yscrollcommand=_countryScroll.set)
+      _countryBox.pack(side=tk.LEFT)
+      _countryWrap.grid(row=0, column=1, sticky=tk.N+tk.E)
+      def _resetCountryFrame():
+        self.filters['country'] = ''
+        self.countryBox.selection_clear(0, tk.END)
+        self._filtersUpdate()
+      tk.Button(_countryFrame, text='Reset', command=_resetCountryFrame).grid(row=2, column=1, sticky=tk.S+tk.E)
+      _countryFrame.grid(row=1, column=2, rowspan=2, padx=5, pady=5, sticky=tk.N+tk.W)
+      self.setCountryChoices()
       #instantiate the outer frame
       frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
     def _constructControlPanel(self):
@@ -268,6 +284,12 @@ class Main(object):
     if len(self.genres)>0:
       for genre in self.genres:
         self.genreBox.insert(tk.END, genre)
+  def setCountryChoices(self):
+    self.countries = self.database.getListOfAll('countries')
+    self.countryBox.delete(0, tk.END)
+    if len(self.countries)>0:
+      for country in self.countries:
+        self.countryBox.insert(tk.END, country)
 
   #INTERNALS
   def _changeSorting(self, column):
@@ -303,6 +325,12 @@ class Main(object):
   def _filtersUpdate(self, event=None):
     #year filters update automatically, but genres have to be collected manually
     self.filters['genre']['list'] = [self.genres[i] for i in self.genreBox.curselection()]
+    #similar with countries, but for now we only allow selecting one
+    selected_country = self.countryBox.curselection()
+    if len(selected_country)>0:
+      self.filters['country'] = self.countries[selected_country[0]]
+    else:
+      self.filters['country'] = ''
     self.database.filterMovies(self.filters)
     self._sortingUpdate()
   def _sortingUpdate(self, event=None):
@@ -338,6 +366,7 @@ class Main(object):
     if self.session is not None:
       self.database.softUpdate(self.session)
     self.setGenreChoices()  #list of genres migh have changed
+    self.setCountryChoices()
     self._filtersUpdate() #triggers a full refresh
   def _reloadData(self, newDatabase=False):
     self.session = self.loginHandler.requestLogin(message='Zaloguj się by zaimportować oceny' if newDatabase else '')
@@ -347,6 +376,7 @@ class Main(object):
       self.database = db.Database(self.session.username)
     self.database.hardUpdate(self.session)
     self.setGenreChoices()  #list of genres migh have changed
+    self.setCountryChoices()
     self._filtersUpdate() #triggers a full refresh
   def _quit(self):
     #saves data and exits

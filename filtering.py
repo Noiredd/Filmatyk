@@ -8,7 +8,8 @@ def construct(filters:dict):
     'year_to':    YearToFilter,
     'rating_from':RatingFromFilter,
     'rating_to':  RatingToFilter,
-    'genre':      GenreFilter
+    'genre':      GenreFilter,
+    'country':    CountryFilter
   }
   def _filterFunction(movie):
     status = True
@@ -107,3 +108,9 @@ class GenreFilter(BaseFilter):
     return True if self.filterAll(item) and len(self.genres)==len(item['genres']) else False
   def filteringLogic(self, item):
     return self.filter(item)
+
+class CountryFilter(BaseFilter):
+  def validateParameter(self, parameter):
+    self.param = parameter if parameter!='' else None
+  def filteringLogic(self, item):
+    return True if self.param in item['countries'] else False
