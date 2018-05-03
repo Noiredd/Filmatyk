@@ -237,7 +237,7 @@ class Main(object):
     y = hs/2 - h/2
     self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
   def setGenreChoices(self):
-    self.genres = self.database.getGenres()
+    self.genres = self.database.getListOfAll('genres')
     self.genreBox.delete(0, tk.END)
     if len(self.genres)>0:
       for genre in self.genres:

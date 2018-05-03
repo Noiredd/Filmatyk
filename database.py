@@ -121,12 +121,12 @@ class Database(object):
       rating = int(movie['rating'])
       histogram[rating] += 1
     return display, histogram
-  def getGenres(self):
-    all_genres = set()
+  def getListOfAll(self, what):
+    all_what = set()
     for movie in self.movies:
-      for genre in movie['genres']:
-        all_genres.add(genre)
-    return sorted(list(all_genres))
+      for x in movie[what]:
+        all_what.add(x)
+    return sorted(list(all_what))
 
   #INTERNALS
   def _save(self):
