@@ -143,7 +143,8 @@ class Main(object):
       'genre':      {'mode': tk.IntVar(), 'list': []},
       'country':    '',
       'seen_from':  {'year': tk.IntVar(), 'month': tk.IntVar(), 'day': tk.IntVar()},
-      'seen_to':    {'year': tk.IntVar(), 'month': tk.IntVar(), 'day': tk.IntVar()}
+      'seen_to':    {'year': tk.IntVar(), 'month': tk.IntVar(), 'day': tk.IntVar()},
+      'director':   ''
     }
     self.sorting = None
     #see if there already is a database, or create a new one
@@ -276,7 +277,7 @@ class Main(object):
       _genreFrame = tk.Frame(frame)
       tk.Label(_genreFrame, text='Gatunek:').grid(row=0, column=0, columnspan=2, sticky=tk.N+tk.W)
       _genreWrap = tk.Frame(_genreFrame)
-      self.genreBox = _genreBox = tk.Listbox(_genreWrap, height=10, selectmode=tk.EXTENDED)
+      self.genreBox = _genreBox = tk.Listbox(_genreWrap, height=10, selectmode=tk.EXTENDED, exportselection=0)  #multiple listboxes with exportselection mutually block each other
       _genreBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate)) #ugly but necessary - need to wait till GUI updates selection
       _genreScroll = ttk.Scrollbar(_genreWrap, command=_genreBox.yview)
       _genreScroll.pack(side=tk.RIGHT, fill=tk.Y)
@@ -301,7 +302,7 @@ class Main(object):
       _countryFrame = tk.Frame(frame)
       tk.Label(_countryFrame, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.N+tk.W)
       _countryWrap = tk.Frame(_countryFrame)
-      self.countryBox =_countryBox = tk.Listbox(_countryWrap, height=10, selectmode=tk.SINGLE)
+      self.countryBox =_countryBox = tk.Listbox(_countryWrap, height=10, selectmode=tk.SINGLE, exportselection=0)
       _countryBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate))
       _countryScroll = ttk.Scrollbar(_countryWrap, command=_countryBox.yview)
       _countryScroll.pack(side=tk.RIGHT, fill=tk.Y)
@@ -316,6 +317,25 @@ class Main(object):
       tk.Button(_countryFrame, text='Reset', command=_resetCountryFrame).grid(row=2, column=0, sticky=tk.N+tk.E)
       _countryFrame.grid(row=1, column=2, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
       self.setCountryChoices()
+      #frame for director filters
+      _directorFrame = tk.Frame(frame)
+      tk.Label(_directorFrame, text='Reżyser:').grid(row=0, column=0, sticky=tk.N+tk.W)
+      _directorWrap = tk.Frame(_directorFrame)
+      self.directorBox = _directorBox = tk.Listbox(_directorWrap, height=10, selectmode=tk.SINGLE, exportselection=0)
+      _directorBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate))
+      _directorScroll = ttk.Scrollbar(_directorWrap, command=_directorBox.yview)
+      _directorScroll.pack(side=tk.RIGHT, fill=tk.Y)
+      _directorBox.configure(yscrollcommand=_directorScroll.set)
+      _directorBox.pack(side=tk.LEFT)
+      _directorWrap.grid(row=1, column=0, sticky=tk.N+tk.W)
+      def _resetDirectorFrame(update=True):
+        self.filters['director'] = ''
+        self.directorBox.selection_clear(0, tk.END)
+        if update:
+          self._filtersUpdate()
+      tk.Button(_directorFrame, text='Reset', command=_resetDirectorFrame).grid(row=2, column=0, sticky=tk.N+tk.E)
+      _directorFrame.grid(row=1, column=3, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
+      self.setDirectorChoices()
       #reset all filters
       def _resetAllFrames():
         _resetYearFrame(False)
@@ -323,6 +343,7 @@ class Main(object):
         _resetTimeSeenFrame(False)
         _resetGenreFrame(False)
         _resetCountryFrame(False)
+        _resetDirectorFrame(False)
         self._filtersUpdate()
       tk.Button(frame, text='Resetuj filtry', command=_resetAllFrames).grid(row=4, column=0, padx=5, pady=5, sticky=tk.S+tk.W)
       #instantiate the outer frame
@@ -357,6 +378,12 @@ class Main(object):
     if len(self.countries)>0:
       for country in self.countries:
         self.countryBox.insert(tk.END, country)
+  def setDirectorChoices(self):
+    self.directors = self.database.getListOfAll('directors')
+    self.directorBox.delete(0, tk.END)
+    if len(self.directors)>0:
+      for director in self.directors:
+        self.directorBox.insert(tk.END, director)
   def setYearChoices(self):
     self.yearsSeen = self.database.getYearsSeen()
     self.timeSeenFromYear.configure(values=self.yearsSeen)
@@ -400,12 +427,17 @@ class Main(object):
   def _filtersUpdate(self, event=None):
     #year filters update automatically, but genres have to be collected manually
     self.filters['genre']['list'] = [self.genres[i] for i in self.genreBox.curselection()]
-    #similar with countries, but for now we only allow selecting one
+    #similar with countries and directors, but for now we only allow selecting one
     selected_country = self.countryBox.curselection()
     if len(selected_country)>0:
       self.filters['country'] = self.countries[selected_country[0]]
     else:
       self.filters['country'] = ''
+    selected_director = self.directorBox.curselection()
+    if len(selected_director)>0:
+      self.filters['director'] = self.directors[selected_director[0]]
+    else:
+      self.filters['director'] = ''
     self.database.filterMovies(self.filters)
     self._sortingUpdate()
   def _sortingUpdate(self, event=None):
@@ -440,9 +472,11 @@ class Main(object):
       self.session = self.loginHandler.requestLogin()
     if self.session is not None:
       self.database.softUpdate(self.session)
-    self.setGenreChoices()  #list of genres migh have changed
-    self.setCountryChoices()
+    #refresh data used in the GUI
     self.setYearChoices()
+    self.setGenreChoices()
+    self.setCountryChoices()
+    self.setDirectorChoices()
     self._filtersUpdate() #triggers a full refresh
   def _reloadData(self, newDatabase=False):
     self.session = self.loginHandler.requestLogin(message='Zaloguj się by zaimportować oceny' if newDatabase else '')
@@ -451,9 +485,11 @@ class Main(object):
     if newDatabase:
       self.database = db.Database(self.session.username)
     self.database.hardUpdate(self.session)
-    self.setGenreChoices()  #list of genres migh have changed
-    self.setCountryChoices()
+    #refresh data used in the GUI
     self.setYearChoices()
+    self.setGenreChoices()
+    self.setCountryChoices()
+    self.setDirectorChoices()
     self._filtersUpdate() #triggers a full refresh
   def _quit(self):
     #saves data and exits

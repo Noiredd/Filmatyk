@@ -13,7 +13,8 @@ def construct(filters:dict):
     'genre':      GenreFilter,
     'country':    CountryFilter,
     'seen_from':  SeenFromFilter,
-    'seen_to':    SeenToFilter
+    'seen_to':    SeenToFilter,
+    'director':   DirectorFilter
   }
   def _filterFunction(movie):
     status = True
@@ -136,3 +137,9 @@ class SeenToFilter(BaseFilter):
     self.param = date(y,m,d)
   def filteringLogic(self, item):
     return True if item['timeSeen'] <= self.param else False
+
+class DirectorFilter(BaseFilter):
+  def validateParameter(self, parameter):
+    self.param = parameter if parameter!='' else None
+  def filteringLogic(self, item):
+    return True if self.param in item['directors'] else False
