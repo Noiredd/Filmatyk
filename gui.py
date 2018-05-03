@@ -170,7 +170,7 @@ class Main(object):
     def _constructTreeView(self):
       wrap = tk.Frame(self.root)
       self.tree = tree = ttk.Treeview(wrap,
-                                      height=30,
+                                      height=32,
                                       selectmode='none',
                                       columns=[c[0] for c in self.config])
       tree.column(column='#0', width=0, stretch=False)
@@ -198,9 +198,9 @@ class Main(object):
       self.summ = tk.Label(self.root, text='')
       self.summ.grid(row=0, column=1, sticky=tk.N+tk.W)
       self.plot = tk.Label(self.root, text='--------------------------------------')
-      self.plot.grid(row=1, column=1, sticky=tk.N+tk.W)
+      self.plot.grid(row=1, column=1, sticky=tk.N)
       #outer frame holding all filters
-      frame = tk.Frame(self.root)
+      frame = tk.LabelFrame(self.root, text='Filtry')
       #frame for year filters
       _yearFrame = tk.Frame(frame)
       tk.Label(_yearFrame, text='Rok produkcji:').grid(row=0, column=0, columnspan=4, sticky=tk.N+tk.W)
@@ -345,7 +345,7 @@ class Main(object):
         _resetCountryFrame(False)
         _resetDirectorFrame(False)
         self._filtersUpdate()
-      tk.Button(frame, text='Resetuj filtry', command=_resetAllFrames).grid(row=4, column=0, padx=5, pady=5, sticky=tk.S+tk.W)
+      tk.Button(frame, text='Resetuj wszystkie', command=_resetAllFrames).grid(row=3, column=3, padx=5, pady=5, sticky=tk.S+tk.E)
       #instantiate the outer frame
       frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
     def _constructControlPanel(self):
