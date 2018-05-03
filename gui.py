@@ -127,6 +127,8 @@ class Main(object):
     self.filters = {
       'year_from':  tk.StringVar(),
       'year_to':    tk.StringVar(),
+      'rating_from':tk.StringVar(),
+      'rating_to':  tk.StringVar(),
       'genre':      {'mode': tk.IntVar(), 'list': []}
     }
     self.sorting = None
@@ -192,6 +194,23 @@ class Main(object):
         self._filtersUpdate()
       tk.Button(_yearFrame, text='Reset', command=_resetYearFrame).grid(row=2, column=0, columnspan=4, sticky=tk.E)
       _yearFrame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
+      #frame for rating filters
+      _ratingFrame = tk.Frame(frame)
+      tk.Label(_ratingFrame, text='Moja ocena:').grid(row=0, column=0, columnspan=4, sticky=tk.N+tk.W)
+      tk.Label(_ratingFrame, text='Od:').grid(row=1, column=0, sticky=tk.W)
+      tk.Label(_ratingFrame, text='Do:').grid(row=1, column=2, sticky=tk.W)
+      _ratingFrom = tk.Entry(_ratingFrame, width=5, textvariable=self.filters['rating_from'])
+      _ratingFrom.bind('<KeyRelease>', self._filtersUpdate)
+      _ratingFrom.grid(row=1, column=1, sticky=tk.W)
+      _ratingTo = tk.Entry(_ratingFrame, width=5, textvariable=self.filters['rating_to'])
+      _ratingTo.bind('<KeyRelease>', self._filtersUpdate)
+      _ratingTo.grid(row=1, column=3, sticky=tk.W)
+      def _resetRatingFrame():
+        self.filters['rating_from'].set('')
+        self.filters['rating_to'].set('')
+        self._filtersUpdate()
+      tk.Button(_ratingFrame, text='Reset', command=_resetRatingFrame).grid(row=2, column=0, columnspan=4, sticky=tk.E)
+      _ratingFrame.grid(row=2, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for genre filters
       _genreFrame = tk.Frame(frame)
       tk.Label(_genreFrame, text='Gatunek:').grid(row=0, column=0, sticky=tk.N+tk.W)
@@ -214,7 +233,7 @@ class Main(object):
         self.genreBox.selection_clear(0, tk.END)
         self._filtersUpdate()
       tk.Button(_genreFrame, text='Reset', command=_resetGenreFrame).grid(row=2, column=1, sticky=tk.S+tk.E)
-      _genreFrame.grid(row=1, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
+      _genreFrame.grid(row=1, column=1, rowspan=2, padx=5, pady=5, sticky=tk.N+tk.W)
       self.setGenreChoices()
       #instantiate the outer frame
       frame.grid(row=1, column=1, padx=5, pady=5, sticky=tk.N+tk.W)

@@ -6,6 +6,8 @@ def construct(filters:dict):
   filter_map = {
     'year_from':  YearFromFilter,
     'year_to':    YearToFilter,
+    'rating_from':RatingFromFilter,
+    'rating_to':  RatingToFilter,
     'genre':      GenreFilter
   }
   def _filterFunction(movie):
@@ -58,6 +60,18 @@ class YearToFilter(BaseFilter):
     self.param = int(parameter.get())
   def filteringLogic(self, movie):
     return True if int(movie['year']) <= self.param else False
+
+class RatingFromFilter(BaseFilter):
+  def validateParameter(self, parameter):
+    self.param = int(parameter.get())
+  def filteringLogic(self, movie):
+    return True if int(movie['rating']) >= self.param else False
+
+class RatingToFilter(BaseFilter):
+  def validateParameter(self, parameter):
+    self.param = int(parameter.get())
+  def filteringLogic(self, movie):
+    return True if int(movie['rating']) <= self.param else False
 
 class GenreFilter(BaseFilter):
   def validateParameter(self, parameter):
