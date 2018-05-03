@@ -118,6 +118,7 @@ class Login(object):
 
 
 class Main(object):
+  summary_format = 'Wyświetlono {0!s} z {1!s} filmów'
   def __init__(self):
     self.root = root = tk.Tk()
     #prepare the components
@@ -171,11 +172,14 @@ class Main(object):
       yScroll = ttk.Scrollbar(wrap, command=tree.yview)
       tree.configure(yscrollcommand=yScroll.set)
       yScroll.pack(side=tk.LEFT, fill=tk.Y)
-      wrap.grid(row=0, column=0, rowspan=3, padx=5, pady=5, sticky=tk.N)
+      wrap.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.N)
     def _constructFilterFrame(self):
-      #placeholder for the histogram
+      #placeholder for the histogram and summary
+      self.summ = tk.Label(self.root, text='')
+      self.summ.grid(row=0, column=1, sticky=tk.N+tk.W)
       self.plot = tk.Label(self.root, text='--------------------------------------')
-      self.plot.grid(row=0, column=1, sticky=tk.N)
+      self.plot.grid(row=1, column=1, sticky=tk.N+tk.W)
+      #outer frame holding all filters
       frame = tk.Frame(self.root)
       #frame for year filters
       _yearFrame = tk.Frame(frame)
@@ -235,14 +239,17 @@ class Main(object):
       tk.Button(_genreFrame, text='Reset', command=_resetGenreFrame).grid(row=2, column=1, sticky=tk.S+tk.E)
       _genreFrame.grid(row=1, column=1, rowspan=2, padx=5, pady=5, sticky=tk.N+tk.W)
       self.setGenreChoices()
+      #frame for country filters
+      _countryFrame = tk.Frame(frame)
+      tk.Label(_countryFrame, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.N+tk.W)
       #instantiate the outer frame
-      frame.grid(row=1, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
+      frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
     def _constructControlPanel(self):
       frame = tk.Frame(self.root)
-      tk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.W)
-      tk.Button(frame, text='Przeładuj', command=self._reloadData).grid(row=0, column=1, sticky=tk.W)
-      frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.S+tk.W)
-      tk.Button(self.root, text='Wyjście', command=self._quit).grid(row=2, column=1, padx=5, pady=5, sticky=tk.S+tk.E)
+      tk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.S+tk.W)
+      tk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.S+tk.W)
+      frame.grid(row=3, column=1, padx=5, pady=5, sticky=tk.S+tk.W)
+      tk.Button(self.root, text='Wyjście', command=self._quit).grid(row=3, column=1, padx=5, pady=5, sticky=tk.S+tk.E)
     _constructTreeView(self)
     _constructFilterFrame(self)
     _constructControlPanel(self)
@@ -318,8 +325,13 @@ class Main(object):
     movies, histogram = self.database.returnMovies()
     for movie in movies:
       self.tree.insert(parent='', index=0, text='', values=movie)
+    #update the histogram
     self.histogram = drawHistogram(histogram)
     self.plot.config(image=self.histogram)
+    #update the summary
+    shown = len(self.database.filtered)
+    total = len(self.database.movies)
+    self.summ['text'] = self.summary_format.format(shown, total)
   def _updateData(self):
     if self.session is None:
       self.session = self.loginHandler.requestLogin()
