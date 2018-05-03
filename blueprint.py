@@ -74,5 +74,5 @@ Blueprint['timeSeen'] = {
   'presentation': {'name':'Data obejrzenia', 'width':100, 'format':None},
   'html_parsing': None }
 Blueprint['comment'] = {
-  'presentation': {'name':'Komentarz', 'width':750, 'format':__comment},
+  'presentation': {'name':'Komentarz', 'width':1000, 'format':__comment},
   'html_parsing': None }

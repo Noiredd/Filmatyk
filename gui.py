@@ -15,9 +15,17 @@ def readConfigFile():
     #write default config:
     with open(config_path, 'w') as cf:
       cf.write('title\n')
+      cf.write('#otitle\n')
       cf.write('year\n')
       cf.write('genres\n')
+      cf.write('#duration\n')
+      cf.write('#countries\n')
+      cf.write('directors\n')
+      cf.write('#cast\n')
+      cf.write('#fwRating\n')
+      cf.write('timeSeen\n')
       cf.write('rating\n')
+      cf.write('#favourite\n')
       cf.write('comment\n')
   with open(config_path, 'r') as cf:
     config = []
@@ -119,6 +127,8 @@ class Login(object):
 
 class Main(object):
   summary_format = 'Wyświetlono {0!s} z {1!s} filmów'
+  max_width = 1000
+
   def __init__(self):
     self.root = root = tk.Tk()
     #prepare the components
@@ -155,24 +165,30 @@ class Main(object):
   #CONSTRUCTION
   def constructMainWindow(self):
     def _constructTreeView(self):
-      #TreeView needs to be wrapped in a Frame in order to use it with Scrollbars
-      #this is because scrollbars are tricky to get working using grid(), much
-      #easier to configure with pack() - and mixing two geometry managers is bad.
       wrap = tk.Frame(self.root)
       self.tree = tree = ttk.Treeview(wrap,
                                       height=30,
                                       selectmode='none',
                                       columns=[c[0] for c in self.config])
       tree.column(column='#0', width=0, stretch=False)
+      total_width = 0
       for item in self.config:
-        tree.column(column=item[0], width=item[1]['width'], stretch=False)
+        total_width += item[1]['width']
+        if total_width > self.max_width:
+          remaining = item[1]['width'] - (total_width - self.max_width)
+          tree.column(column=item[0], width=remaining, minwidth=item[1]['width'], stretch=True)
+        else:
+          tree.column(column=item[0], width=item[1]['width'], stretch=False)
         tree.heading(column=item[0], text=item[1]['name'], anchor=tk.W)
       tree.bind('<1>', self._sortingUpdate)
-      tree.pack(side=tk.LEFT)
+      tree.grid(row=0, column=0)
       #scrollbars
       yScroll = ttk.Scrollbar(wrap, command=tree.yview)
-      tree.configure(yscrollcommand=yScroll.set)
-      yScroll.pack(side=tk.LEFT, fill=tk.Y)
+      yScroll.grid(row=0, column=1, sticky=tk.NS)
+      xScroll = ttk.Scrollbar(wrap, command=tree.xview, orient=tk.HORIZONTAL)
+      if total_width > self.max_width:
+        xScroll.grid(row=1, column=0, sticky=tk.EW)
+      tree.configure(yscrollcommand=yScroll.set, xscrollcommand=xScroll.set)
       wrap.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.N)
     def _constructFilterFrame(self):
       #placeholder for the histogram and summary
