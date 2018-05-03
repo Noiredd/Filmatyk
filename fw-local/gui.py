@@ -11,7 +11,7 @@ import scraper
 
 
 def readConfigFile():
-  config_path = 'config.txt'
+  config_path = '../config.txt'
   if not os.path.isfile(config_path):
     #write default config:
     with open(config_path, 'w') as cf:

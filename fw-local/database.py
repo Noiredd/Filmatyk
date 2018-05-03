@@ -6,7 +6,7 @@ import filtering
 #TODO: we could read the number of movies from the main profile page
 #TODO: we could add a progress bar to let the user know what's going on
 
-DATABASE = 'database.pkl'
+DATABASE = '../database.pkl'
 
 def checkDataExists():
   return True if os.path.isfile(DATABASE) else False
