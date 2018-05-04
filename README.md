@@ -13,18 +13,22 @@ Razem z Twoimi ocenami, fw-local pobiera także podstawowe informacje o obejrzan
 ### Jak uruchomić fw-local?
 Na ten moment program nie ma instalatora, więc pierwsze uruchomienie może być mało wygodne.
 
-0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/1.0-alpha.2.zip) i wypakuj, gdzie Ci wygodnie.
+0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/1.0-alpha.3.zip) i wypakuj, gdzie Ci wygodnie.
 
 1. Pierwszym krokiem będzie prawdopodobnie instalacja Python3 ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
 na chwilę obecną najnowszym wydaniem jest Python 3.6.5.
-fw-local nie uruchomi się w środowisku Python 2.x!   
+fw-local nie uruchomi się w środowisku Python 2.x!\*  
 **Ważne:** na początku instalacji zaznacz `Add Python3 to PATH`!  
 Jeśli już posiadasz Pythona, możesz przejść do instalacji wymaganych modułów.
 
-2. Instalacja modułów. Jeśli to nie Twoje pierwsze starcie z Pythonem, to zainstaluj `requests_html` i `matplotlib`.
+2. Instalacja modułów. Jeśli to nie Twoje pierwsze starcie z Pythonem, to zainstaluj `pillow`, `requests_html` i `matplotlib`.
 W przeciwnym razie po prostu odpal `setup.bat`, skrypt powinien wszystko zrobić za Ciebie.
 
 3. Samo uruchomienie programu, jest już proste - zwyczajnie odpalasz `fw-local.bat`. Powinno ukazać Ci się okno jak w screenie wyżej (tylko puste).
+
+\* - Uwaga dla posiadaczy Pythona 3 i 2.x *naraz* - w zależności od Twojej konfiguracji, skrypty instalacyjne/uruchamiające mogą znaleźć
+różne wersje Pythona. Jeśli po uruchomieniu któregoś z nich widzisz tylko szybko znikające okienko konsoli, prawdopodobnie pierwsza
+odnajdywana jest wersja 2.x (możesz to potwierdzić otwierając własne okno konsoli i wpisując `python`).
 
 ### Co potrafi fw-local?
 Po pierwsze musisz zaimportować swoje oceny z filmwebu. fw-local poprosi Cię o to przy pierwszym uruchomieniu.

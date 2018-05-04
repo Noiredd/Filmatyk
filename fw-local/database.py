@@ -37,7 +37,7 @@ class Database(object):
     #collect ids of movies we already know
     known_ids = [movie['id'] for movie in self.movies]
     #run scraper until we load a page containing some movie we already have
-    movies = []
+    new_movies = []
     fetched = scraper.processNext()
     found = False
     while scraper.isThereMore():
@@ -50,15 +50,15 @@ class Database(object):
       #we load from the website in batches ('fetched'), so that we only look at
       #a single batch of movies at once, not all the movies we've loaded
       #we need to update the list by the fresh batch
-      movies += fetched
+      new_movies += fetched
       if found: break
     #now, if we've found a movie that we already knew, we have to merge the
     #gathered list with the known ones
     #most likely there will be some overlap between movies and self.movies; in
     #this case we will overwrite with the fresh values
     old_movies = self.movies
-    self.movies = movies
-    new_ids = [movie['id'] for movie in movies]
+    self.movies = new_movies
+    new_ids = [movie['id'] for movie in new_movies]
     for movie in old_movies:
       if movie['id'] not in new_ids:
         self.movies.append(movie)
@@ -80,7 +80,7 @@ class Database(object):
       movies += scraper.processNext()
     #only forget the existing one if we have the full thing
     self.movies = movies
-    print("READ", scraper.pageIndex, "PAGES")
+    print("READ", scraper.pageIndex-1, "PAGES")
     self._save()
   def filterMovies(self, filters:dict={}):
     #convert the dict of variables into a callable criteria-checking function

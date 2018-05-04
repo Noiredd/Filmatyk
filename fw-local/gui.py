@@ -21,7 +21,7 @@ def readConfigFile():
       cf.write('genres\n')
       cf.write('#duration\n')
       cf.write('#countries\n')
-      cf.write('directors\n')
+      cf.write('#directors\n')
       cf.write('#cast\n')
       cf.write('#fwRating\n')
       cf.write('timeSeen\n')
@@ -127,7 +127,7 @@ class Login(object):
 
 class Main(object):
   summary_format = 'Wyświetlono {0!s} z {1!s} filmów'
-  max_width = 1000
+  max_width = 800
 
   def __init__(self):
     self.root = root = tk.Tk()
@@ -147,16 +147,18 @@ class Main(object):
       'director':   ''
     }
     self.sorting = None
+    #prepare the window
+    root.title('FW local')
+    root.resizable(0,0)
+    self.constructMainWindow()
     #see if there already is a database, or create a new one
     if db.checkDataExists():
       self.database = db.restoreFromFile()
     else:
       self._reloadData(newDatabase = True)
     self.database.setConfig(self.config)
-    #construct the window
-    root.title('FW local')
-    root.resizable(0,0)
-    self.constructMainWindow()
+    #fill the controls with data from the database
+    self._fillFilterData()
     #all set - refresh and pass control to user
     self._changeSorting('timeSeen')
     self._changeSorting('timeSeen') #twice - latest first
@@ -203,7 +205,7 @@ class Main(object):
       frame = tk.LabelFrame(self.root, text='Filtry')
       #frame for year filters
       _yearFrame = tk.Frame(frame)
-      tk.Label(_yearFrame, text='Rok produkcji:').grid(row=0, column=0, columnspan=4, sticky=tk.N+tk.W)
+      tk.Label(_yearFrame, text='Rok produkcji:').grid(row=0, column=0, columnspan=5, sticky=tk.N+tk.W)
       tk.Label(_yearFrame, text='Od:').grid(row=1, column=0, sticky=tk.W)
       tk.Label(_yearFrame, text='Do:').grid(row=1, column=2, sticky=tk.W)
       _yearFrom = tk.Entry(_yearFrame, width=5, textvariable=self.filters['year_from'])
@@ -217,11 +219,11 @@ class Main(object):
         self.filters['year_to'].set('')
         if update:
           self._filtersUpdate()
-      tk.Button(_yearFrame, text='Reset', command=_resetYearFrame).grid(row=2, column=0, columnspan=4, sticky=tk.E)
+      tk.Button(_yearFrame, text='Reset', command=_resetYearFrame).grid(row=1, column=4, sticky=tk.E)
       _yearFrame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for rating filters
       _ratingFrame = tk.Frame(frame)
-      tk.Label(_ratingFrame, text='Moja ocena:').grid(row=0, column=0, columnspan=4, sticky=tk.N+tk.W)
+      tk.Label(_ratingFrame, text='Moja ocena:').grid(row=0, column=0, columnspan=5, sticky=tk.N+tk.W)
       tk.Label(_ratingFrame, text='Od:').grid(row=1, column=0, sticky=tk.W)
       tk.Label(_ratingFrame, text='Do:').grid(row=1, column=2, sticky=tk.W)
       _ratingFrom = tk.Entry(_ratingFrame, width=5, textvariable=self.filters['rating_from'])
@@ -235,7 +237,7 @@ class Main(object):
         self.filters['rating_to'].set('')
         if update:
           self._filtersUpdate()
-      tk.Button(_ratingFrame, text='Reset', command=_resetRatingFrame).grid(row=2, column=0, columnspan=4, sticky=tk.E)
+      tk.Button(_ratingFrame, text='Reset', command=_resetRatingFrame).grid(row=1, column=4, sticky=tk.E)
       _ratingFrame.grid(row=2, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for timeSeen filters
       _timeSeenFrame = tk.Frame(frame)
@@ -272,7 +274,6 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_timeSeenFrame, text='Reset', command=_resetTimeSeenFrame).grid(row=3, column=0, columnspan=4, sticky=tk.N+tk.E)
       _timeSeenFrame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
-      self.setYearChoices()
       #frame for genre filters
       _genreFrame = tk.Frame(frame)
       tk.Label(_genreFrame, text='Gatunek:').grid(row=0, column=0, columnspan=2, sticky=tk.N+tk.W)
@@ -297,7 +298,6 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_genreFrame, text='Reset', command=_resetGenreFrame).grid(row=2, column=1, sticky=tk.N+tk.E)
       _genreFrame.grid(row=1, column=1, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
-      self.setGenreChoices()
       #frame for country filters
       _countryFrame = tk.Frame(frame)
       tk.Label(_countryFrame, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.N+tk.W)
@@ -316,7 +316,6 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_countryFrame, text='Reset', command=_resetCountryFrame).grid(row=2, column=0, sticky=tk.N+tk.E)
       _countryFrame.grid(row=1, column=2, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
-      self.setCountryChoices()
       #frame for director filters
       _directorFrame = tk.Frame(frame)
       tk.Label(_directorFrame, text='Reżyser:').grid(row=0, column=0, sticky=tk.N+tk.W)
@@ -335,7 +334,6 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_directorFrame, text='Reset', command=_resetDirectorFrame).grid(row=2, column=0, sticky=tk.N+tk.E)
       _directorFrame.grid(row=1, column=3, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
-      self.setDirectorChoices()
       #reset all filters
       def _resetAllFrames():
         _resetYearFrame(False)
@@ -422,6 +420,11 @@ class Main(object):
         self.tree.heading(column=restored_column_name, text=restored_heading)
         self.sorting = None
         self._changeSorting(column)
+  def _fillFilterData(self):
+    self.setYearChoices()
+    self.setGenreChoices()
+    self.setCountryChoices()
+    self.setDirectorChoices()
 
   #CALLBACKS
   def _filtersUpdate(self, event=None):
@@ -472,12 +475,9 @@ class Main(object):
       self.session = self.loginHandler.requestLogin()
     if self.session is not None:
       self.database.softUpdate(self.session)
-    #refresh data used in the GUI
-    self.setYearChoices()
-    self.setGenreChoices()
-    self.setCountryChoices()
-    self.setDirectorChoices()
-    self._filtersUpdate() #triggers a full refresh
+    #refresh data used in the GUI and refill the view
+    self._fillFilterData()
+    self._filtersUpdate()
   def _reloadData(self, newDatabase=False):
     self.session = self.loginHandler.requestLogin(message='Zaloguj się by zaimportować oceny' if newDatabase else '')
     if self.session is None:
@@ -485,12 +485,9 @@ class Main(object):
     if newDatabase:
       self.database = db.Database(self.session.username)
     self.database.hardUpdate(self.session)
-    #refresh data used in the GUI
-    self.setYearChoices()
-    self.setGenreChoices()
-    self.setCountryChoices()
-    self.setDirectorChoices()
-    self._filtersUpdate() #triggers a full refresh
+    #refresh data used in the GUI and refill the view
+    self._fillFilterData()
+    self._filtersUpdate()
   def _quit(self):
     #saves data and exits
     self.root.quit()
