@@ -13,7 +13,7 @@ Razem z Twoimi ocenami, fw-local pobiera także podstawowe informacje o obejrzan
 ### Jak uruchomić fw-local?
 Na ten moment program nie ma instalatora, więc pierwsze uruchomienie może być mało wygodne.
 
-0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/1.0-alpha.3.zip) i wypakuj, gdzie Ci wygodnie.
+0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/1.0-alpha.4.zip) i wypakuj, gdzie Ci wygodnie.
 
 1. Pierwszym krokiem będzie prawdopodobnie instalacja Python3 ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
 na chwilę obecną najnowszym wydaniem jest Python 3.6.5.

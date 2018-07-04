@@ -54,6 +54,8 @@ class Login(object):
     self.session = None
     self.root = root
     self.window.resizable(0,0)
+    self.window.attributes("-topmost", True)
+    self.window.title('Zaloguj się')
     self.isDone = tk.BooleanVar()
     self.isDone.set(False)
     self.stateGood = True
@@ -73,7 +75,6 @@ class Login(object):
   #CONSTRUCTION
   def constructLoginWindow(self):
     self.window = cw = tk.Toplevel()
-    cw.title('Zaloguj się')
     self.messageLabel = tk.Label(master=cw, text=self.default_message)
     self.messageLabel.grid(row=0, column=0, columnspan=2)
     tk.Label(master=cw, text='Nazwa użytkownika:').grid(row=1, column=0, sticky=tk.E)
@@ -485,9 +486,11 @@ class Main(object):
     if newDatabase:
       self.database = db.Database(self.session.username)
     self.database.hardUpdate(self.session)
-    #refresh data used in the GUI and refill the view
-    self._fillFilterData()
-    self._filtersUpdate()
+    if not newDatabase:
+      #refresh data used in the GUI and refill the view - only if we're not
+      #building a new database though (in this case Main::__init__ will do this)
+      self._fillFilterData()
+      self._filtersUpdate()
   def _quit(self):
     #saves data and exits
     self.root.quit()
