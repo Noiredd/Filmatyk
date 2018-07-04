@@ -111,6 +111,7 @@ class Database(object):
     histogram = [0 for i in range(11)]
     for movie in self.filtered:
       mov = []
+      mov.append(movie['id'])
       for conf in self.config:
         #Each conf is a 2-tuple containing key name and presentation rule
         if conf[1]['format'] is not None:
@@ -132,6 +133,11 @@ class Database(object):
     for movie in self.movies:
       all_years.add(movie['timeSeen'].year)
     return sorted(list(all_years))
+  def getMovieByID(self, id):
+    for movie in self.movies:
+      if movie['id'] == str(id):
+        return movie
+    return None
 
   #INTERNALS
   def _save(self):

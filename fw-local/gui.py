@@ -50,7 +50,7 @@ class Login(object):
   default_message = 'Zaloguj się do filmweb.pl'
 
   def __init__(self, root):
-    self.constructLoginWindow()
+    self.__construct()
     self.session = None
     self.root = root
     self.window.resizable(0,0)
@@ -73,7 +73,7 @@ class Login(object):
     return _ses
 
   #CONSTRUCTION
-  def constructLoginWindow(self):
+  def __construct(self):
     self.window = cw = tk.Toplevel()
     self.messageLabel = tk.Label(master=cw, text=self.default_message)
     self.messageLabel.grid(row=0, column=0, columnspan=2)
@@ -125,6 +125,42 @@ class Login(object):
     self.isDone.set(True)
     self.window.withdraw()
 
+class Detail(object):
+  default_font = 'TkDefaultFont'
+  font_title   = (default_font, 24)
+  font_otitle  = (default_font, 12)
+
+  def __init__(self, root):
+    self.__construct()
+    self.root = root
+    self.window.resizable(0,0)
+    self.window.title('Podgląd')
+
+  #PUBLIC
+  def launchPreview(self, item):
+    #fill the window with item's data and bring it up
+    self.titleLabel['text']  = item['title']
+    self.otitleLabel['text'] = item['otitle']
+    self.window.title(self._makeTitle(item))
+    self.window.deiconify()
+
+  #CONSTRUCTION
+  def __construct(self):
+    self.window = cw = tk.Toplevel()
+    self.titleLabel = tk.Label(master=cw, text='', font=self.font_title)
+    self.titleLabel.grid(row=0, column=0, sticky=tk.W+tk.N)
+    self.otitleLabel = tk.Label(master=cw, text='', font=self.font_otitle)
+    self.otitleLabel.grid(row=1, column=0, sticky=tk.W+tk.N)
+    tk.Button(master=cw, text='Zamknij', command=self._closeClick).grid(row=3, column=1, sticky=tk.E+tk.S)
+    self.window.withdraw()
+
+  #CALLBACKS
+  def _closeClick(self):
+    self.window.withdraw()
+
+  #INTERNALS
+  def _makeTitle(self, item):
+    return '{} ({})'.format(item['title'], item['year'])
 
 class Main(object):
   summary_format = 'Wyświetlono {0!s} z {1!s} filmów'
@@ -135,6 +171,7 @@ class Main(object):
     #prepare the components
     self.config = readConfigFile()
     self.loginHandler = Login(self.root)
+    self.detailHandler = Detail(self.root)
     self.session = None
     self.filters = {
       'year_from':  tk.StringVar(),
@@ -151,7 +188,7 @@ class Main(object):
     #prepare the window
     root.title('FW local')
     root.resizable(0,0)
-    self.constructMainWindow()
+    self.__construct()
     #see if there already is a database, or create a new one
     if db.checkDataExists():
       self.database = db.restoreFromFile()
@@ -169,14 +206,15 @@ class Main(object):
     tk.mainloop()
 
   #CONSTRUCTION
-  def constructMainWindow(self):
+  def __construct(self):
     def _constructTreeView(self):
       wrap = tk.Frame(self.root)
       self.tree = tree = ttk.Treeview(wrap,
                                       height=32,
                                       selectmode='none',
-                                      columns=[c[0] for c in self.config])
-      tree.column(column='#0', width=0, stretch=False)
+                                      columns=['id']+[c[0] for c in self.config])
+      hide = ['#0', 'id']
+      tree['displaycolumns'] = [c for c in tree['columns'] if c not in hide]
       total_width = 0
       for item in self.config:
         total_width += item[1]['width']
@@ -186,7 +224,8 @@ class Main(object):
         else:
           tree.column(column=item[0], width=item[1]['width'], stretch=False)
         tree.heading(column=item[0], text=item[1]['name'], anchor=tk.W)
-      tree.bind('<1>', self._sortingUpdate)
+      tree.bind('<Button-1>', self._sortingUpdate)
+      tree.bind('<Double-Button-1>', self._spawnPreview)
       tree.grid(row=0, column=0)
       #scrollbars
       yScroll = ttk.Scrollbar(wrap, command=tree.yview)
@@ -428,6 +467,18 @@ class Main(object):
     self.setDirectorChoices()
 
   #CALLBACKS
+  def _spawnPreview(self, event=None):
+    #this is only effective is the user double-clicks a Treeview's cell
+    if event is not None:
+      region = self.tree.identify_region(event.x, event.y)
+      if region=='cell':
+        itemID = self.tree.identify_row(event.y)
+        item = self.tree.item(itemID)
+        itemID = item['values'][0]
+        movie = self.database.getMovieByID(itemID)
+        #if the user clicked on a movie, display the detailed view
+        if movie is not None:
+          self.detailHandler.launchPreview(movie)
   def _filtersUpdate(self, event=None):
     #year filters update automatically, but genres have to be collected manually
     self.filters['genre']['list'] = [self.genres[i] for i in self.genreBox.curselection()]
@@ -447,7 +498,7 @@ class Main(object):
   def _sortingUpdate(self, event=None):
     #if the method was called by the Treeview - change in sorting was requested
     if event is not None:
-      region = self.tree.identify('region', event.x, event.y)
+      region = self.tree.identify_region(event.x, event.y)
       if region=='heading':
         column_num = self.tree.identify_column(event.x)
         column_name = self.tree.column(column=column_num, option='id')
