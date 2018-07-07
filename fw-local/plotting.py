@@ -1,8 +1,13 @@
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
 
+fig = None
+
 def drawHistogram(histogram):
-  fig = plt.figure(figsize=(6,3))
+  global fig
+  if fig is None:
+    fig = plt.figure(figsize=(6,3))
+  plt.clf()
   plt.bar(range(11), histogram, width=.5, zorder=1.0)
   plt.grid(True, which='major', axis='y')
   fig.axes[0].set_xticks(range(11))
