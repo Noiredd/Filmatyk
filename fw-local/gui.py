@@ -126,9 +126,14 @@ class Login(object):
     self.window.withdraw()
 
 class Detail(object):
-  default_font = 'TkDefaultFont'
-  font_title   = (default_font, 24)
-  font_otitle  = (default_font, 12)
+  default_font  = 'TkDefaultFont'
+  font_title    = (default_font, 24)
+  font_otitle   = (default_font, 10)
+  font_rating   = (default_font, 48)
+  font_fwRating = (default_font, 20)
+  font_favorite = (default_font, 32)
+  font_comment  = (default_font, 12, 'italic')
+  favorite_sign = '♥'
 
   def __init__(self, root):
     self.__construct()
@@ -139,19 +144,72 @@ class Detail(object):
   #PUBLIC
   def launchPreview(self, item):
     #fill the window with item's data and bring it up
-    self.titleLabel['text']  = item['title']
-    self.otitleLabel['text'] = item['otitle']
+    self.titleLabel['text']    = item['title']
+    self.otitleLabel['text']   = item['otitle']
+    self.yearLabel['text']     = item['year']
+    self.genreLabel['text']    = ', '.join(item['genres'])
+    #TODO: this nasty hack could be avoided by reworking database & blueprint
+    #so that movies are stored as objects instead of as dicts/lists
+    #(this would allow item.getDuration() instead of that)
+    self.durationLabel['text'] = Blueprint['duration']['presentation']['format'](item['duration'])
+    self.countryLabel['text']  = ', '.join(item['countries'])
+    self.directorLabel['text'] = ', '.join(item['directors'])
+    self.castLabel['text']     = ', '.join(item['cast'])
+    self.fwRatingLabel['text'] = '{:.2f}'.format(float(item['fwRating']))
+    self.ratingLabel['text']   = item['rating'] if item['rating'] != '0' else '-'
+    #TODO: same here
+    self.favoriteHeart['text'] = Blueprint['favourite']['presentation']['format'](item['favourite'])
+    self.timeSeenLabel['text'] = str(item['timeSeen'])
+    self.commentLabel['text']  = Blueprint['comment']['presentation']['format'](item['comment'])
     self.window.title(self._makeTitle(item))
     self.window.deiconify()
 
   #CONSTRUCTION
   def __construct(self):
     self.window = cw = tk.Toplevel()
-    self.titleLabel = tk.Label(master=cw, text='', font=self.font_title)
-    self.titleLabel.grid(row=0, column=0, sticky=tk.W+tk.N)
-    self.otitleLabel = tk.Label(master=cw, text='', font=self.font_otitle)
-    self.otitleLabel.grid(row=1, column=0, sticky=tk.W+tk.N)
-    tk.Button(master=cw, text='Zamknij', command=self._closeClick).grid(row=3, column=1, sticky=tk.E+tk.S)
+    self.posterLabel = tk.Label(master=cw, text='POSTER', width=15, height=10, anchor=tk.NW)
+    self.posterLabel.grid(row=0, column=0, rowspan=3)
+    ti = tk.Frame(cw) #title frame
+    self.titleLabel = tk.Label(master=ti, text='', width=30, anchor=tk.NW, font=self.font_title)
+    self.titleLabel.grid(row=0, column=0, sticky=tk.NW)
+    self.otitleLabel = tk.Label(master=ti, text='', anchor=tk.NW, font=self.font_otitle)
+    self.otitleLabel.grid(row=1, column=0, sticky=tk.NW)
+    mi = tk.Frame(cw) #main info frame
+    self.yearLabel = tk.Label(master=mi, text='', width=7, anchor=tk.NW)
+    self.yearLabel.grid(row=0, column=0, sticky=tk.NW, padx=5)
+    self.countryLabel = tk.Label(master=mi, text='', width=30, anchor=tk.N)
+    self.countryLabel.grid(row=0, column=1, sticky=tk.NW)
+    self.genreLabel = tk.Label(master=mi, text='', width=35, anchor=tk.N)
+    self.genreLabel.grid(row=0, column=2, sticky=tk.NW)
+    self.durationLabel = tk.Label(master=mi, text='', width=7, anchor=tk.NE)
+    self.durationLabel.grid(row=0, column=3, sticky=tk.NW, padx=5)
+    di = tk.Frame(cw) #detailed info frame
+    tk.Label(master=di, text='Reżyser:', anchor=tk.NW).grid(row=1, column=0, sticky=tk.NW)
+    self.directorLabel = tk.Label(master=di, text='', width=25, anchor=tk.NW)
+    self.directorLabel.grid(row=1, column=1, sticky=tk.NW)
+    tk.Label(master=di, text='Obsada:', anchor=tk.NW).grid(row=2, column=0, sticky=tk.NW)
+    self.castLabel = tk.Label(master=di, text='', width=40, anchor=tk.NW)
+    self.castLabel.grid(row=2, column=1, sticky=tk.NW)
+    fi = tk.Frame(cw) #filweb rating frame
+    tk.Label(master=fi, text='Ocena\nFilmwebu:', anchor=tk.NW, justify=tk.LEFT).grid(row=0, column=0, stick=tk.SE)
+    self.fwRatingLabel = tk.Label(master=fi, text='', font=self.font_fwRating)
+    self.fwRatingLabel.grid(row=0, column=1, sticky=tk.SE)
+    ri = tk.Frame(cw) #rating info frame
+    self.ratingLabel = tk.Label(master=ri, text='', width=2, font=self.font_rating)
+    self.ratingLabel.grid(row=0, column=0)
+    self.favoriteHeart = tk.Label(master=ri, text='', width=1, font=self.font_favorite)
+    self.favoriteHeart.grid(row=0, column=1)
+    self.timeSeenLabel = tk.Label(master=ri, text='')
+    self.timeSeenLabel.grid(row=1, column=0, columnspan=2)
+    self.commentLabel = tk.Label(master=ri, text='', width=55, wraplength=450, anchor=tk.CENTER, font=self.font_comment)
+    self.commentLabel.grid(row=0, column=2, rowspan=2, sticky=tk.W)
+    #put the window together
+    ti.grid(row=0, column=1, columnspan=2, sticky=tk.NW)
+    mi.grid(row=1, column=1, columnspan=2, sticky=tk.NW)
+    di.grid(row=2, column=1, sticky=tk.NW)
+    fi.grid(row=2, column=2, sticky=tk.NE)
+    ri.grid(row=3, column=1, columnspan=2, sticky=tk.NW)
+    tk.Button(master=cw, text='Zamknij', command=self._closeClick).grid(row=4, column=2, sticky=tk.SE)
     self.window.withdraw()
 
   #CALLBACKS
