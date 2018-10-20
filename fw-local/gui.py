@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from blueprint import Blueprint
-import database as db
+import database2 as db
 from plotting import drawHistogram
 import scraper
 
@@ -251,13 +251,15 @@ class Main(object):
     if db.checkDataExists():
       self.database = db.restoreFromFile()
     else:
-      self._reloadData(newDatabase = True)
+      #self._reloadData(newDatabase = True)
+      self.database = db.Database(None)
+      self.database.save()
     self.database.setConfig(self.config)
     #fill the controls with data from the database
     self._fillFilterData()
     #all set - refresh and pass control to user
-    self._changeSorting('timeSeen')
-    self._changeSorting('timeSeen') #twice - latest first
+    self._changeSorting('title')
+    #self._changeSorting('timeSeen') #twice - latest first
     self._filtersUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
