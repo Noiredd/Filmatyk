@@ -45,6 +45,7 @@ class FilmwebAPI(object):
     self.session = session
     self.username = username
     self.parsingRules = {}
+    self.itemClasses = {}
     self.__cacheParsingRules(containers.Item)
 
   def __cacheParsingRules(self, class_):
@@ -74,17 +75,19 @@ class FilmwebAPI(object):
         }
     #store the result
     self.parsingRules[class_.__name__] = pTree
+    #also store the class object (for constructor calls during parsing)
+    self.itemClasses[class_.__name__] = class_
 
   def getMoviesPage(self, page=1):
     url = self.Constants.getUserMoviePage(self.username)
     page = self.__fetchPage(url)
-    return self.__parsePage(page, containers.Item)
+    return self.__parsePage(page, 'Item')
 
   def getDemoPage(self):
     with open('unrendered.html', 'rb') as f:
       h = f.read()
       bs = BS(h, 'lxml')
-    return self.__parsePage(bs, containers.Item)
+    return self.__parsePage(bs, 'Item')
 
   def __fetchPage(self, url):
     page = self.session.get(url)
@@ -94,12 +97,7 @@ class FilmwebAPI(object):
     else:
       return BS(page.html.html, 'lxml')
 
-  def __parsePage(self, page, iType):
-    #depending on the type of item to parse, select the correct parser
-    if iType is containers.Item:
-      parse = self.__parseItem
-    else:
-      exit() #this shouldn't ever happen, even after adding other item types
+  def __parsePage(self, page, itemClassName):
     parsed = []
     #this finds a voting div with all the item details (that need parsing)
     for div in page.body.find_all('div'):
@@ -107,15 +105,17 @@ class FilmwebAPI(object):
         continue
       if not self.Constants.item_class in div.attrs['class']:
         continue
-      #use the parser on the each item (constructs an item object)
-      parsed.append(parse(div))
+      #parse each single item (constructs an item object)
+      parsed.append(self.__parseOne(div, itemClassName))
     return parsed
 
-  def __parseItem(self, div):
-    #first we gather all results in a dict
+  def __parseOne(self, div, itemClassName):
+    #first, gather all results in a dict
     parsed = {'id': div.attrs['data-id']}
-    #then we go through the parsing tree, tag by tag
-    for tag, classes in self.parsingRules['Item'].items():
+    #then, select the right set of parsing rules
+    parsing_rules = self.parsingRules[itemClassName]
+    #finally, we go through the parsing tree, tag by tag
+    for tag, classes in parsing_rules.items():
       #fetch all the items of this tag
       for item in div.find_all(tag):
         #ignore those which do not belong to any class
@@ -143,4 +143,6 @@ class FilmwebAPI(object):
         parsed['comment'] = ''
         #parsed['timeSeen'] = date(year=2000,month=9,day=22)
         parsed['favourite'] = '0'
-    return containers.Item(**parsed)
+    #fetch the object constructor
+    constructObject = self.itemClasses[itemClassName]
+    return constructObject(**parsed)
