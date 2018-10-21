@@ -1,4 +1,5 @@
 from datetime import date
+import json
 
 from bs4 import BeautifulSoup as BS
 import requests_html
@@ -99,7 +100,7 @@ class FilmwebAPI(object):
 
   def __parsePage(self, page, itemClassName):
     parsed = []
-    #this finds a voting div with all the item details (that need parsing)
+    #find all voting divs with the item details (that will be parsed)
     for div in page.body.find_all('div'):
       if not div.has_attr('data-id') or not div.has_attr('class'):
         continue
@@ -107,11 +108,24 @@ class FilmwebAPI(object):
         continue
       #parse each single item (constructs an item object)
       parsed.append(self.__parseOne(div, itemClassName))
+    #ratings are stored elsewhere, but fortunately they are just JSONs
+    for span in page.body.find_all('span'):
+      if not span.has_attr('id'):
+        continue
+      span_id = span.attrs['id']
+      for p in span.parents:
+        if p.has_attr('data-source') and 'userVotes' in p.attrs['data-source']:
+          #get a formatted dict from the JSON and ID of the item it belongs to
+          rating, id = self.__parseRating(span.text)
+          #among the parsed items, find one with matching ID and attach
+          for item in parsed:
+            if item['id'] == id:
+              item.addRating(rating)
     return parsed
 
   def __parseOne(self, div, itemClassName):
     #first, gather all results in a dict
-    parsed = {'id': div.attrs['data-id']}
+    parsed = {'id': int(div.attrs['data-id'])}
     #then, select the right set of parsing rules
     parsing_rules = self.parsingRules[itemClassName]
     #finally, we go through the parsing tree, tag by tag
@@ -138,11 +152,19 @@ class FilmwebAPI(object):
               parsed[key] = item.attrs[rule['attr']]
             #we're done with this one
             break
-        # TEMP, until we sort out parsing ratings/wanna
-        parsed['rating'] = '0'
-        parsed['comment'] = ''
-        #parsed['timeSeen'] = date(year=2000,month=9,day=22)
-        parsed['favourite'] = '0'
-    #fetch the object constructor
+    #fetch the right class and construct the object
     constructObject = self.itemClasses[itemClassName]
     return constructObject(**parsed)
+
+  def __parseRating(self, text):
+    #FW stores the ratings as simple dict serialized to JSON
+    origDict = json.loads(text)
+    #translate that dict to more readable standard
+    id = origDict['eId']
+    ratingDict = {
+      'rating':  origDict['r'],
+      'comment': origDict['c'] if 'c' in origDict.keys() else '',
+      'dateOf':  origDict['d'],
+      'faved':   origDict['a']
+    }
+    return ratingDict, id
