@@ -1,15 +1,16 @@
 import containers
-from filmweb import FilmwebAPI
+import filmweb as fw
 
 import json
 import os
+from math import ceil
 
 class Database(object):
-  def __init__(self, username, api=None):
+  def __init__(self, username:str, itemtype:str='Item', api:object=None):
     self.username = username
+    self.itemtype = itemtype
     self.items = []
-    self.api = api if api is not None else FilmwebAPI(None,None)
-    self.items = self.api.getDemoPage()
+    self.api = api if api is not None else fw.FilmwebAPI(None,None)
   def getItems(self):
     return self.items
   # Serialization-deserialization
@@ -26,15 +27,28 @@ class Database(object):
       dbf.write(self.storeToString())
   # Data acquisition
   def softUpdate(self):
-    # ask the API how many items should there be
-    # compute how many items should be requested
-    # ask the API how many items are per page
+    # TODO: user management - not as simple as it may seem
+    # ask the API how many items should there be and how many are there per page
+    rated, per_page = self.api.getNumOf(self.itemtype)
     # compute how many pages should be requested
+    pages = ceil((rated-len(self.items))/per_page)
     # request these pages from the API
-    # add items to the database, replacing dupes
-    pass
+    itemPages = []
+    for page in range(pages):
+      itemPages.append(self.api.getItemsPage(itemtype=self.itemtype, page=page))
+      #print("Got page {}/{}!".format(page+1, pages))  # TODO: progress bar?
+    new_items = [item for page in itemPages for item in page]
+    # add items to the database, replacing duplicates by new ones
+    old_items = self.items
+    self.items = new_items
+    new_ids = [item['id'] for item in new_items]
+    for item in old_items:
+      if item['id'] not in new_ids:
+        self.items.append(item)
   def hardUpdate(self):
-    pass
+    # delete all items and get them from scratch
+    self.items = []
+    self.softUpdate()
   # LEGACY INTERFACE
   def setConfig(self, config):
     self.config = config

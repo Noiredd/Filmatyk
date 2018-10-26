@@ -13,6 +13,7 @@ class FilmwebAPI(object):
     base_path  = 'https://www.filmweb.pl'
     auth_error = 'błędny e-mail lub hasło' #TODO: be a bit more intelligent here
     item_class = 'userVotesPage__result'
+    f_cnt_span = 'blockHeader__titleInfoCount'
     def getUserPage(username):
       return FilmwebAPI.Constants.base_path + '/user/' + username
     def getUserMoviePage(username, page=1):
@@ -78,6 +79,40 @@ class FilmwebAPI(object):
     self.parsingRules[class_.__name__] = pTree
     #also store the class object (for constructor calls during parsing)
     self.itemClasses[class_.__name__] = class_
+
+  def getNumOf(self, itemtype:str):
+    if itemtype == 'Movie':
+      return self.getNumOfMovies()
+    else:
+      raise KeyError
+
+  def getNumOfMovies(self):
+    #return a tuple: (number of rated movies, number of movies per page)
+    url = self.Constants.getUserMoviePage(self.username)
+    page = self.__fetchPage(url)
+    # TODO: in principle, this page could be cached for some small time
+    #the number of user's movies is inside a span of a specific class
+    for span in page.body.find_all('span'):
+      if not span.has_attr('class'):
+        continue
+      if self.Constants.f_cnt_span not in span.attrs['class']:
+        continue
+      movies = int(span.text)
+    #find all voting divs, like during parsing
+    per_page = 0
+    for div in page.body.find_all('div'):
+      if not div.has_attr('data-id') or not div.has_attr('class'):
+        continue
+      if not self.Constants.item_class in div.attrs['class']:
+        continue
+      per_page += 1
+    return movies, per_page
+
+  def getItemsPage(self, itemtype:str, page:int=1):
+    if itemtype == 'Movie':
+      return self.getMoviesPage(page=page)
+    else:
+      raise KeyError #should never happen though
 
   def getMoviesPage(self, page=1):
     url = self.Constants.getUserMoviePage(self.username)
