@@ -6,11 +6,13 @@ import os
 from math import ceil
 
 class Database(object):
-  def __init__(self, username:str, itemtype:str='Item', api:object=None):
+  def __init__(self, username:str, itemtype:str='Item', api:object=None, demo=False):
     self.username = username
     self.itemtype = itemtype
     self.items = []
     self.api = api if api is not None else fw.FilmwebAPI(None,None)
+    if demo:
+      self.items = self.api.getDemoPage()
   def getItems(self):
     return self.items
   # Serialization-deserialization

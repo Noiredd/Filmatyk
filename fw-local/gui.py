@@ -5,44 +5,11 @@ import tkinter as tk
 from tkinter import ttk
 
 from blueprint import Blueprint
-import database2 as db
+from database2 import Database
+from filmweb import FilmwebAPI
 from plotting import drawHistogram
+from presenter import Presenter
 import scraper
-
-
-def readConfigFile():
-  config_path = '../config.txt'
-  if not os.path.isfile(config_path):
-    #write default config:
-    with open(config_path, 'w') as cf:
-      cf.write('title\n')
-      cf.write('#otitle\n')
-      cf.write('year\n')
-      cf.write('genres\n')
-      cf.write('#duration\n')
-      cf.write('#countries\n')
-      cf.write('#directors\n')
-      cf.write('#cast\n')
-      cf.write('#fwRating\n')
-      cf.write('timeSeen\n')
-      cf.write('rating\n')
-      cf.write('#favourite\n')
-      cf.write('comment\n')
-  with open(config_path, 'r') as cf:
-    config = []
-    for item in cf.readlines():
-      item = item.strip('\n')
-      if item.startswith('#'):
-        continue
-      if item not in Blueprint.keys():
-        print('Unknown key: "' + item + '", check ' + config_path)
-        exit()
-      elif Blueprint[item]['presentation'] is None:
-        print('This item cannot be printed!')
-        exit()
-      else:
-        config.append((item, Blueprint[item]['presentation']))
-    return config
 
 
 class Login(object):
@@ -227,10 +194,9 @@ class Main(object):
   def __init__(self):
     self.root = root = tk.Tk()
     #prepare the components
-    self.config = readConfigFile()
     self.loginHandler = Login(self.root)
     self.detailHandler = Detail(self.root)
-    self.session = None
+    self.api = None#FilmwebAPI.hackin()
     self.filters = {
       'year_from':  tk.StringVar(),
       'year_to':    tk.StringVar(),
@@ -247,20 +213,13 @@ class Main(object):
     root.title('FW local')
     root.resizable(0,0)
     self.__construct()
-    #see if there already is a database, or create a new one
-    if db.checkDataExists():
-      self.database = db.restoreFromFile()
-    else:
-      #self._reloadData(newDatabase = True)
-      self.database = db.Database(None)
-      self.database.save()
-    self.database.setConfig(self.config)
-    #fill the controls with data from the database
-    self._fillFilterData()
-    #all set - refresh and pass control to user
-    self._changeSorting('title')
-    #self._changeSorting('timeSeen') #twice - latest first
-    self._filtersUpdate()
+    #load the savefile and instantiate Presenter(s) and Database(s)
+    # TODO: actually load a file
+    # TODO: actually multiple DBs
+    # TODO: saving the file on update/exit, not Presenter reconfig
+    self.database = Database('', 'Movie', self.api, demo=True)
+    self.presenter = Presenter(root, self.api, self.database, '')
+    self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
     #center window AFTER creating everything (including plot)
     self.centerWindow()
     tk.mainloop()
@@ -452,7 +411,7 @@ class Main(object):
       tk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.S+tk.W)
       frame.grid(row=3, column=1, padx=5, pady=5, sticky=tk.S+tk.W)
       tk.Button(self.root, text='Wyjście', command=self._quit).grid(row=3, column=1, padx=5, pady=5, sticky=tk.S+tk.E)
-    _constructTreeView(self)
+    #_constructTreeView(self)
     _constructFilterFrame(self)
     _constructControlPanel(self)
   def centerWindow(self):
