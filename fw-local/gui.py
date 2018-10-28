@@ -4,12 +4,10 @@ import os
 import tkinter as tk
 from tkinter import ttk
 
-from blueprint import Blueprint
 from database2 import Database
 from filmweb import FilmwebAPI
 from plotting import drawHistogram
 from presenter import Presenter
-import scraper
 
 
 class Login(object):
@@ -196,7 +194,7 @@ class Main(object):
     #prepare the components
     self.loginHandler = Login(self.root)
     self.detailHandler = Detail(self.root)
-    self.api = None#FilmwebAPI.hackin()
+    self.api = FilmwebAPI(None, None)#.hackin()
     self.filters = {
       'year_from':  tk.StringVar(),
       'year_to':    tk.StringVar(),
@@ -218,8 +216,9 @@ class Main(object):
     # TODO: actually multiple DBs
     # TODO: saving the file on update/exit, not Presenter reconfig
     self.database = Database('', 'Movie', self.api, demo=True)
-    self.presenter = Presenter(root, self.api, self.database, '')
+    self.presenter = Presenter(root, self.api, self.database, '', '')
     self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
+    self.presenter.displayUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
     tk.mainloop()

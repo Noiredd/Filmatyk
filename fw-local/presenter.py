@@ -1,11 +1,33 @@
 import tkinter as tk
 from tkinter import ttk
 
+class Config(object):
+  # Stores the current treeview configuration, handling serialization and
+  # deserialization, as well as config changes. Presenter owns one and queries
+  # it when displaying items.
+  # TODO: GUI aspect for user-interactive config.
+  def __init__(self, itemtype):
+    self.columns = ['title', 'year', 'rating']
+    self.columnWidths = {
+      'title': 200,
+      'year': 35,
+      'rating': 150
+    }
+    # TODO: binding with containers (and Blueprints) for headers
+    self.columnHeaders = {
+      'title': 'Tytuł',
+      'year': 'Rok',
+      'rating': 'Ocena'
+    }
+  @staticmethod
+  def restoreFromString(itemtype, string:str):
+    return Config(itemtype)
+  def storeToString(self):
+    pass
 
 class Presenter(object):
   """ TODO MAJOR
       3. GUI stores the savefile by serializing Presenter and Database separately
-      4. Presenter retrieves objects from DB and only displays selected attrs
       5. Presenter is semi-configurable (i.e. stores and restores column config,
          but without GUI window for controlling it)
       6. Presenter only has a handle to the Database which is instantiated by the
@@ -17,29 +39,27 @@ class Presenter(object):
          login (GUI callback) when executing commands that need a session
       9. Presenter handles sorting and preview callbacks
   """
-  def __init__(self, root, api, database, username:str, displayRating=True, allowUpdate=True):
+  # TODO: config fine-tuning basing on displayed item type?
+  def __init__(self, root, api, database, config:str, username:str, displayRating=True, allowUpdate=True):
     self.root = root
     self.main = tk.Frame(root)
     self.database = database
+    self.config = Config.restoreFromString(database.itemtype, config)
     self.constructTreeView()
-    # LEGACY: config
-    self.config = [
-      ('title', None),
-      ('year', None),
-      ('rating', None)
-    ]
 
   def constructTreeView(self):
-    # TODO: column display configuration
     self.tree = tree = ttk.Treeview(
       self.main,
       height=32,
       selectmode='none',
-      columns=['id', 'title', 'year', 'rating']
+      columns=['id'] + self.config.columns
     )
     tree['displaycolumns'] = [c for c in tree['columns'] if c not in ['#0', 'id']]
-    # TODO: column headings
-    # TODO: column width configuration
+    tree.column(column='#0', width=0)
+    for column, header in self.config.columnHeaders.items():
+      # TODO: column width overflow handling?
+      tree.column(column=column, width=self.config.columnWidths[column], stretch=False)
+      tree.heading(column=column, text=header, anchor=tk.W)
     # TODO: sorting and preview spawn callbacks
     tree.grid(row=0, column=0)
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
@@ -52,3 +72,20 @@ class Presenter(object):
     self.main.pack(**kw)
   def grid(self, **kw):
     self.main.grid(**kw)
+
+  # Display pipeline
+  def filtersUpdate(self, event=None):
+    # do things
+    self.sortingUpdate()
+  def sortingUpdate(self, event=None):
+    # do things
+    self.displayUpdate()
+  def displayUpdate(self):
+    # clear existing results
+    for item in self.tree.get_children():
+      self.tree.delete(item)
+    # get the requested properties of items to present
+    for item in self.database.getItems():
+      values = [item['id']] + [item[prop] for prop in self.config.columns]
+      self.tree.insert(parent='', index=0, text='', values=values)
+    # TODO: update summaries, plots etc.

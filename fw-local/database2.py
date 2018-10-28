@@ -1,16 +1,13 @@
-import containers
-import filmweb as fw
-
 import json
 import os
 from math import ceil
 
 class Database(object):
-  def __init__(self, username:str, itemtype:str='Item', api:object=None, demo=False):
+  def __init__(self, username:str, itemtype:str, api:object, demo=False):
     self.username = username
     self.itemtype = itemtype
     self.items = []
-    self.api = api if api is not None else fw.FilmwebAPI(None,None)
+    self.api = api
     if demo:
       self.items = self.api.getDemoPage()
   def getItems(self):
@@ -51,40 +48,6 @@ class Database(object):
     # delete all items and get them from scratch
     self.items = []
     self.softUpdate()
-  # LEGACY INTERFACE
-  def setConfig(self, config):
-    self.config = config
-  def filterMovies(self, filters:dict={}):
-    pass
-  def sortMovies(self, sorting):
-    pass
-  def returnMovies(self):
-    self.filtered = self.items #some of the GUI code asks for this attr
-    self.movies = self.items   #some of the GUI code asks for this attr
-    display = []
-    histogram = [0 for i in range(11)]
-    for movie in self.items:
-      mov = []
-      mov.append(movie['id'])
-      for conf in self.config:
-        #Each conf is a 2-tuple containing key name and presentation rule
-        key, rule = conf
-        mov.append(movie[key])
-      display.append(mov)
-      #This can be bugged for now, but in the end it will not be done by the
-      #database anyway, but a dedicated statistics module
-      #rating = int(movie['rating'])
-      #histogram[rating] += 1
-    return display, histogram
-  def getListOfAll(self, what):
-    return []
-  def getYearsSeen(self):
-    return []
-  def getMovieByID(self, id):
-    for movie in self.items:
-      if movie['id'] == str(id):
-        return movie
-    return None
 
 def restoreFromFile():
   with open('database.fdb', 'r') as dbf:
