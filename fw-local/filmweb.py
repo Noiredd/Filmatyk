@@ -48,14 +48,13 @@ class FilmwebAPI(object):
     self.username = username
     self.parsingRules = {}
     self.itemClasses = {}
-    self.__cacheParsingRules(containers.Item)
+    self.__cacheParsingRules('Movie')
 
-  def __cacheParsingRules(self, class_):
+  def __cacheParsingRules(self, itemtype:str):
     #get all the blueprints of a given class
     rawRules = {}
-    for key, val in class_.__dict__.items():
-      if type(val) is containers.Blueprint:
-        rawRules[key] = val.getParsing()
+    for key, val in containers.classByString[itemtype].blueprints.items():
+      rawRules[key] = val.getParsing()
     #convert them to a parsing tree
     pTree = {}
     classes = set(rule['tag'] for rule in rawRules.values() if rule is not None)
@@ -76,9 +75,7 @@ class FilmwebAPI(object):
           'attr': rule['attr'] if 'attr' in rule.keys() else None
         }
     #store the result
-    self.parsingRules[class_.__name__] = pTree
-    #also store the class object (for constructor calls during parsing)
-    self.itemClasses[class_.__name__] = class_
+    self.parsingRules[itemtype] = pTree
 
   def getNumOf(self, itemtype:str):
     if itemtype == 'Movie':
@@ -117,13 +114,13 @@ class FilmwebAPI(object):
   def getMoviesPage(self, page=1):
     url = self.Constants.getUserMoviePage(self.username)
     page = self.__fetchPage(url)
-    return self.__parsePage(page, 'Item')
+    return self.__parsePage(page, 'Movie')
 
   def getDemoPage(self):
     with open('unrendered.html', 'rb') as f:
       h = f.read()
       bs = BS(h, 'lxml')
-    return self.__parsePage(bs, 'Item')
+    return self.__parsePage(bs, 'Movie')
 
   def __fetchPage(self, url):
     page = self.session.get(url)
@@ -133,7 +130,7 @@ class FilmwebAPI(object):
     else:
       return BS(page.html.html, 'lxml')
 
-  def __parsePage(self, page, itemClassName):
+  def __parsePage(self, page, itemtype:str):
     parsed = []
     #find all voting divs with the item details (that will be parsed)
     for div in page.body.find_all('div'):
@@ -142,7 +139,7 @@ class FilmwebAPI(object):
       if not self.Constants.item_class in div.attrs['class']:
         continue
       #parse each single item (constructs an item object)
-      parsed.append(self.__parseOne(div, itemClassName))
+      parsed.append(self.__parseOne(div, itemtype))
     #ratings are stored elsewhere, but fortunately they are just JSONs
     for span in page.body.find_all('span'):
       if not span.has_attr('id'):
@@ -158,11 +155,11 @@ class FilmwebAPI(object):
               item.addRating(rating)
     return parsed
 
-  def __parseOne(self, div, itemClassName):
+  def __parseOne(self, div, itemtype:str):
     #first, gather all results in a dict
     parsed = {'id': int(div.attrs['data-id'])}
     #then, select the right set of parsing rules
-    parsing_rules = self.parsingRules[itemClassName]
+    parsing_rules = self.parsingRules[itemtype]
     #finally, we go through the parsing tree, tag by tag
     for tag, classes in parsing_rules.items():
       #fetch all the items of this tag
@@ -188,7 +185,7 @@ class FilmwebAPI(object):
             #we're done with this one
             break
     #fetch the right class and construct the object
-    constructObject = self.itemClasses[itemClassName]
+    constructObject = containers.classByString[itemtype]
     return constructObject(**parsed)
 
   def __parseRating(self, text):
