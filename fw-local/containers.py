@@ -1,5 +1,7 @@
 from datetime import date
 
+classByString = {}
+
 class Blueprint(object):
   @staticmethod
   def _default(x): return str(x)
@@ -26,6 +28,7 @@ class Blueprint(object):
     return '♥' if x == 1 else ''
 
   def __init__(self, name:str, parsing:dict={}, display:dict={}, store=True):
+    self.display_name = name
     self.parsing_rule = parsing if parsing else None
     self.display_rule = display if display else self._default
     self.store = store
@@ -33,6 +36,8 @@ class Blueprint(object):
     return self.parsing_rule
   def getDisplay(self):
     return self.display_rule
+  def getHeading(self):
+    return self.display_name
 
 class UserData(object):
   def __init__(self, data, parent):
@@ -115,6 +120,8 @@ class BlueprintInheritance(type):
           c.blueprints[k] = v
     # Keep track of the storable blueprints
     c.storables = [name for name, bp in c.blueprints.items() if bp.store]
+    # Register the class
+    classByString[name] = c
     # The new class is now ready
     return c
 
@@ -234,8 +241,3 @@ class Movie(Item):
 
   def __init__(self, userdata:dict={}, **properties):
     super(Movie, self).__init__(userdata, **properties)
-
-#TODO: do the registering with metaclass
-classByString = {
-  'Movie': Movie
-}
