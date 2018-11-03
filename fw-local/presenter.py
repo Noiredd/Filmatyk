@@ -1,26 +1,25 @@
 import tkinter as tk
 from tkinter import ttk
 
+import containers
+
 class Config(object):
   # Stores the current treeview configuration, handling serialization and
   # deserialization, as well as config changes. Presenter owns one and queries
   # it when displaying items.
   # TODO: GUI aspect for user-interactive config.
-  def __init__(self, itemtype):
-    self.columns = ['title', 'year', 'rating']
+  def __init__(self, itemtype:str):
+    self.columns = ['title', 'year', 'rating', 'cast']
     self.columnWidths = {
       'title': 200,
       'year': 35,
-      'rating': 150
+      'rating': 150,
+      'cast': 200
     }
-    # TODO: binding with containers (and Blueprints) for headers
-    self.columnHeaders = {
-      'title': 'Tytuł',
-      'year': 'Rok',
-      'rating': 'Ocena'
-    }
+    itemclass = containers.classByString[itemtype]
+    self.columnHeaders = {name: bp.getHeading() for name, bp in itemclass.blueprints.items()}
   @staticmethod
-  def restoreFromString(itemtype, string:str):
+  def restoreFromString(itemtype:str, string:str):
     return Config(itemtype)
   def storeToString(self):
     pass
@@ -40,7 +39,7 @@ class Presenter(object):
       9. Presenter handles sorting and preview callbacks
   """
   # TODO: config fine-tuning basing on displayed item type?
-  def __init__(self, root, api, database, config:str, username:str, displayRating=True, allowUpdate=True):
+  def __init__(self, root, api, database, config:str, displayRating=True):
     self.root = root
     self.main = tk.Frame(root)
     self.database = database
@@ -56,10 +55,10 @@ class Presenter(object):
     )
     tree['displaycolumns'] = [c for c in tree['columns'] if c not in ['#0', 'id']]
     tree.column(column='#0', width=0)
-    for column, header in self.config.columnHeaders.items():
+    for column in self.config.columns:
       # TODO: column width overflow handling?
       tree.column(column=column, width=self.config.columnWidths[column], stretch=False)
-      tree.heading(column=column, text=header, anchor=tk.W)
+      tree.heading(column=column, text=self.config.columnHeaders[column], anchor=tk.W)
     # TODO: sorting and preview spawn callbacks
     tree.grid(row=0, column=0)
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
