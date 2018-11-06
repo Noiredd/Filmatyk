@@ -1,34 +1,48 @@
+import json
 import tkinter as tk
 from tkinter import ttk
 
 import containers
+from defaults import DEFAULT_CONFIGS
 
 class Config(object):
   # Stores the current treeview configuration, handling serialization and
   # deserialization, as well as config changes. Presenter owns one and queries
   # it when displaying items.
   # TODO: GUI aspect for user-interactive config.
-  def __init__(self, itemtype:str):
-    self.columns = ['title', 'year', 'rating', 'cast']
-    self.columnWidths = {
-      'title': 200,
-      'year': 35,
-      'rating': 150,
-      'cast': 200
-    }
+  def __init__(self, itemtype:str, columns:dict={}):
+    self.rawConfig = columns
     itemclass = containers.classByString[itemtype]
+    self.allColumns = [name for name in itemclass.blueprints.items()]
     self.columnHeaders = {name: bp.getHeading() for name, bp in itemclass.blueprints.items()}
+    self.columnWidths = {name: bp.getColWidth() for name, bp in itemclass.blueprints.items()}
+    self.columns = {}
+    for name in self.rawConfig.keys():
+      default_width = self.columnWidths[name]
+      config_width = self.rawConfig[name]
+      set_width = config_width if config_width is not None else default_width
+      self.columns[name] = set_width
+  def getColumns(self):
+    return list(self.columns.keys())
+  def getWidth(self, column):
+    return self.columns[column]
+  def getHeading(self, column):
+    return self.columnHeaders[column]
   @staticmethod
   def restoreFromString(itemtype:str, string:str):
-    return Config(itemtype)
+    # The config string is a JSON dump of a dict that contains columns to be
+    # presented as keys, and their widths as values (or None for defaults).
+    if string == '':
+      config = DEFAULT_CONFIGS[itemtype]
+    else:
+      config = json.loads(string)
+    return Config(itemtype, config)
   def storeToString(self):
-    pass
+    return json.dumps(self.rawConfig)
 
 class Presenter(object):
   """ TODO MAJOR
       3. GUI stores the savefile by serializing Presenter and Database separately
-      5. Presenter is semi-configurable (i.e. stores and restores column config,
-         but without GUI window for controlling it)
       6. Presenter only has a handle to the Database which is instantiated by the
          GUI, and a switch whether to display ratings or want-tos', as well as a
          flag whether to allow database updates (so that the unified underlying
@@ -38,7 +52,6 @@ class Presenter(object):
          login (GUI callback) when executing commands that need a session
       9. Presenter handles sorting and preview callbacks
   """
-  # TODO: config fine-tuning basing on displayed item type?
   def __init__(self, root, api, database, config:str, displayRating=True):
     self.root = root
     self.main = tk.Frame(root)
@@ -51,20 +64,25 @@ class Presenter(object):
       self.main,
       height=32,
       selectmode='none',
-      columns=['id'] + self.config.columns
+      columns=['id'] + self.config.getColumns()
     )
     tree['displaycolumns'] = [c for c in tree['columns'] if c not in ['#0', 'id']]
     tree.column(column='#0', width=0)
-    for column in self.config.columns:
-      # TODO: column width overflow handling?
-      tree.column(column=column, width=self.config.columnWidths[column], stretch=False)
-      tree.heading(column=column, text=self.config.columnHeaders[column], anchor=tk.W)
+    for column in self.config.getColumns():
+      # TODO (low priority): treeview total width limiting and X-scrolling
+      # potential problem: Notebook view (different TVs having different widths)
+      # may be unnecessary though - why try to cram all the info in a single TV,
+      # if there is already a Detail view (e.g. for those long comments)?
+      tree.column(column=column, width=self.config.getWidth(column), stretch=False)
+      tree.heading(column=column, text=self.config.getHeading(column), anchor=tk.W)
     # TODO: sorting and preview spawn callbacks
     tree.grid(row=0, column=0)
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
     yScroll.grid(row=0, column=1, sticky=tk.NS)
-    # TODO: column width and x-scrolling
-    tree.configure(yscrollcommand=yScroll.set)#, xscrollcommand=xScroll.set)
+    tree.configure(yscrollcommand=yScroll.set)
+
+  def storeToString(self):
+    return self.config.storeToString()
 
   # TK interface for GUI placement
   def pack(self, **kw):
@@ -85,6 +103,6 @@ class Presenter(object):
       self.tree.delete(item)
     # get the requested properties of items to present
     for item in self.database.getItems():
-      values = [item['id']] + [item[prop] for prop in self.config.columns]
+      values = [item['id']] + [item[prop] for prop in self.config.getColumns()]
       self.tree.insert(parent='', index=0, text='', values=values)
     # TODO: update summaries, plots etc.

@@ -27,8 +27,9 @@ class Blueprint(object):
   def _favourite(x):
     return '♥' if x == 1 else ''
 
-  def __init__(self, name:str, parsing:dict={}, display:dict={}, store=True):
+  def __init__(self, name:str, colwidth:int, parsing:dict={}, display:dict={}, store=True):
     self.display_name = name
+    self.column_width = colwidth
     self.parsing_rule = parsing if parsing else None
     self.display_rule = display if display else self._default
     self.store = store
@@ -38,6 +39,8 @@ class Blueprint(object):
     return self.display_rule
   def getHeading(self):
     return self.display_name
+  def getColWidth(self):
+    return self.column_width
 
 class UserData(object):
   def __init__(self, data, parent):
@@ -128,59 +131,72 @@ class BlueprintInheritance(type):
 class Item(metaclass=BlueprintInheritance):
   title = Blueprint(
     name='Tytuł',
+    colwidth=200,
     parsing={'tag':'h3', 'class':'filmPreview__title', 'text':True, 'list':False}
   )
   otitle = Blueprint(
     name='Tytuł oryginalny',
+    colwidth=200,
     parsing={'tag':'div', 'class':'filmPreview__originalTitle', 'text':True, 'list':False}
   )
   year = Blueprint(
     name='Rok',
+    colwidth=35,
     parsing={'tag':'span', 'class':'filmPreview__year', 'text':True, 'list':False}
   )
   link = Blueprint(
     name='URL',
+    colwidth=200,
     parsing={'tag':'a', 'class':'filmPreview__link', 'text':False, 'attr':'href'}
   )
   imglink = Blueprint(
     name='ImgURL',
+    colwidth=200,
     parsing={'tag':'img', 'class':'filmPoster__image', 'text':False, 'attr':'data-src'}
   )
   fwRating = Blueprint(
     name='Ocena FW',
+    colwidth=50,
     parsing={'tag':'div', 'class':'filmPreview__rateBox', 'text':False, 'attr':'data-rate'},
     display=Blueprint._fwRating
   )
   plot = Blueprint(
     name='Zarys fabuły',
+    colwidth=500,
     parsing={'tag':'div', 'class':'filmPreview__description', 'text':True, 'list':False}
   )
   genres = Blueprint(
     name='Gatunek',
+    colwidth=200,
     parsing={'tag':'div', 'class':'filmPreview__info--genres', 'text':True, 'list':True},
     display=Blueprint._list
   )
   #rating and ID fields are special, will be parsed and stored differently
   id = Blueprint(
     name='ID',
+    colwidth=0,
     display=lambda x: x
   )
   rating = Blueprint(
     name='Ocena',
+    colwidth=150,
     display=Blueprint._rating,
     store=False
   )
   faved = Blueprint(
     name='Ulubione',
+    colwidth=50,
     display=Blueprint._favourite,
     store=False
   )
   dateOf = Blueprint(
     name='Data obejrzenia',
+    colwidth=100,
     store=False
   )
   comment = Blueprint(
     name='Komentarz',
+    colwidth=500,
     store=False
   )
 
@@ -220,21 +236,25 @@ class Item(metaclass=BlueprintInheritance):
 class Movie(Item):
   duration = Blueprint(
     name='Długość',
+    colwidth=50,
     parsing={'tag':'div', 'class':'filmPreview__filmTime', 'text':False, 'attr':'data-duration'},
     display=Blueprint._duration
   )
   countries = Blueprint(
     name='Kraj produkcji',
+    colwidth=150,
     parsing={'tag':'div', 'class':'filmPreview__info--countries', 'text':True, 'list':True},
     display=Blueprint._list
   )
   directors = Blueprint(
     name='Reżyseria',
+    colwidth=150,
     parsing={'tag':'div', 'class':'filmPreview__info--directors', 'text':True, 'list':True},
     display=Blueprint._list
   )
   cast = Blueprint(
     name='Obsada',
+    colwidth=200,
     parsing={'tag':'div', 'class':'filmPreview__info--cast', 'text':True, 'list':True},
     display=Blueprint._list
   )

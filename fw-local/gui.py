@@ -216,7 +216,7 @@ class Main(object):
     # TODO: actually multiple DBs
     # TODO: saving the file on update/exit, not Presenter reconfig
     self.database = Database('', 'Movie', self.api, demo=True)
-    self.presenter = Presenter(root, self.api, self.database, '', '')
+    self.presenter = Presenter(root, self.api, self.database, '')
     self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
     self.presenter.displayUpdate()
     #center window AFTER creating everything (including plot)
