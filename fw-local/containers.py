@@ -27,7 +27,7 @@ class Blueprint(object):
   def _favourite(x):
     return '♥' if x == 1 else ''
 
-  def __init__(self, name:str, colwidth:int, parsing:dict={}, display:dict={}, store=True):
+  def __init__(self, name:str, colwidth:int, parsing:dict={}, display=None, store=True):
     self.display_name = name
     self.column_width = colwidth
     self.parsing_rule = parsing if parsing else None
@@ -84,19 +84,6 @@ class UserData(object):
       serial['rating'] = self.wantto
     return serial
 
-class RawAccess(object):
-  #allows access to raw values of properties
-  # "Item.title"        requires the caller to have the prop name hard-coded
-  # "Item['title']"     returns formatted value
-  # "Item.raw['title']" returns raw value of the same attribute
-  def __init__(self, parent):
-    self.parent = parent  #store where do values come from
-  def __getitem__(self, prop):
-    if prop in self.parent.properties.keys():
-      return self.parent.properties[prop]
-    else:
-      return '' #still don't know what to do with possible missing props
-
 class BlueprintInheritance(type):
   """ This metaclass ensures that all classes derived from Item have proper
       access to all of the blueprints. Normally, iterating over cls.__dict__
@@ -129,6 +116,12 @@ class BlueprintInheritance(type):
     return c
 
 class Item(metaclass=BlueprintInheritance):
+  # Special ID field
+  id = Blueprint(
+    name='ID',
+    colwidth=0
+  )
+  # General parsed fields
   title = Blueprint(
     name='Tytuł',
     colwidth=200,
@@ -171,12 +164,7 @@ class Item(metaclass=BlueprintInheritance):
     parsing={'tag':'div', 'class':'filmPreview__info--genres', 'text':True, 'list':True},
     display=Blueprint._list
   )
-  #rating and ID fields are special, will be parsed and stored differently
-  id = Blueprint(
-    name='ID',
-    colwidth=0,
-    display=lambda x: x
-  )
+  #rating fields are special, will be parsed and stored differently
   rating = Blueprint(
     name='Ocena',
     colwidth=150,
@@ -209,7 +197,6 @@ class Item(metaclass=BlueprintInheritance):
       # ignore any values that are not defined by the blueprints
       if prop in self.blueprints.keys():
         self.properties[prop] = val
-    self.raw = RawAccess(self)
     #construct the UserData object for rating/wantto information
     self.userdata = UserData(userdata, self)
   def __getitem__(self, prop):

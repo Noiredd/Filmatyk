@@ -151,7 +151,7 @@ class FilmwebAPI(object):
           rating, id = self.__parseRating(span.text)
           #among the parsed items, find one with matching ID and attach
           for item in parsed:
-            if item['id'] == id:
+            if item.properties['id'] == id:
               item.addRating(rating)
     return parsed
 
