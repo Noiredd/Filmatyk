@@ -215,7 +215,7 @@ class Main(object):
     # TODO: actually load a file
     # TODO: actually multiple DBs
     # TODO: saving the file on update/exit, not Presenter reconfig
-    self.database = Database('', 'Movie', self.api, demo=True)
+    self.database = Database.restoreFromString('Movie', '', self.api)
     self.presenter = Presenter(root, self.api, self.database, '')
     self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
     self.presenter.displayUpdate()

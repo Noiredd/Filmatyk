@@ -5,8 +5,7 @@ from math import ceil
 import containers
 
 class Database(object):
-  def __init__(self, username:str, itemtype:str, api:object, demo=False):
-    self.username = username
+  def __init__(self, itemtype:str, api:object, demo=False):
     self.itemtype = itemtype
     self.items = []
     self.api = api
@@ -16,17 +15,17 @@ class Database(object):
     return self.items
   # Serialization-deserialization
   @staticmethod
-  def restoreFromString(username, itemtype:object, string:str, api=None):
-    newDatabase = Database(username, itemtype, api)
+  def restoreFromString(itemtype:object, string:str, api=None):
+    newDatabase = Database(itemtype, api)
+    if not string:
+      # simply return a raw, empty DB
+      return newDatabase
     listOfDicts = json.loads(string)
     itemclass = containers.classByString[itemtype]
     newDatabase.items = [itemclass(**dct) for dct in listOfDicts]
     return newDatabase
   def storeToString(self):
     return json.dumps([item.asDict() for item in self.items])
-  def save(self):
-    with open('database.fdb', 'w') as dbf:
-      dbf.write(self.storeToString())
   # Data acquisition
   def softUpdate(self):
     # TODO: user management - not as simple as it may seem
@@ -52,9 +51,3 @@ class Database(object):
     self.items = []
     self.softUpdate()
 
-def restoreFromFile():
-  with open('database.fdb', 'r') as dbf:
-    data = dbf.read()
-  return Database.restoreFromString(None, containers.Item, data)
-def checkDataExists():
-  return os.path.isfile('database.fdb')
