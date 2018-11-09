@@ -12,12 +12,15 @@ from presenter import Presenter
 VERSION = '1.0-alpha.5'
 
 class Login(object):
-  #Handles the login operation, from construction of the window to scraper calls
+  # By default a dormant window that offers a request function to be called by
+  # the API. That function blocks until user enters data and clicks to log in.
+  # It then calls API again to do the actual backend login stuff.
   default_message = 'Zaloguj się do filmweb.pl'
 
   def __init__(self, root):
     self.__construct()
     self.session = None
+    self.username = ''
     self.root = root
     self.window.resizable(0,0)
     self.window.attributes("-topmost", True)
@@ -27,16 +30,26 @@ class Login(object):
     self.stateGood = True
 
   #PUBLIC
-  def requestLogin(self, message=''):
+  def requestLogin(self, username:str=''):
     #bring up the window and block until user completes
-    self.messageLabel['text'] = message if message!='' else self.default_message
     self.window.deiconify()
-    self.usernameEntry.focus_set()
+    #if the username was given by caller, prevent user from changing it
+    self.username = username
+    if username:
+      #because there is no set() method :|
+      self.usernameEntry.delete(0, 1000)
+      self.usernameEntry.insert(0, username)
+      self.usernameEntry.config(state=tk.DISABLED)
+      self.passwordEntry.focus_set()
+    else:
+      self.usernameEntry.config(state=tk.NORMAL)
+      self.usernameEntry.focus_set()
     self.root.wait_variable(self.isDone)
     _ses = self.session
     self.session = None
     self.isDone.set(False)
-    return _ses
+    #return both the acquired session as well as the (perhaps acquired) username
+    return _ses, self.username
 
   #CONSTRUCTION
   def __construct(self):
@@ -74,14 +87,14 @@ class Login(object):
     password = self.passwordEntry.get()
     self.passwordEntry.delete(0, tk.END)  #always clear the password field
     #attempt to log in
-    session = scraper.login(username, password)
+    session = FilmwebAPI.login(username, password)
     if session is None:
-      #inform the user
       self._setStateBad()
     else:
-      #clear&hide the window, store session and pass control back to the caller
+      #clear&hide, store session/username and pass control back to the caller
       self.usernameEntry.delete(0, tk.END)
       self.session = session
+      self.username = username
       self.isDone.set(True)
       self.window.withdraw()
   def _cancelClick(self):
@@ -194,7 +207,6 @@ class Main(object):
     #prepare the components
     self.loginHandler = Login(self.root)
     self.detailHandler = Detail(self.root)
-    self.api = FilmwebAPI(None, None)#.hackin()
     self.filters = {
       'year_from':  tk.StringVar(),
       'year_to':    tk.StringVar(),
@@ -213,11 +225,11 @@ class Main(object):
     self.__construct()
     #load the savefile and instantiate Presenter(s) and Database(s)
     userdata = self.loadUserData()
+    u_name = userdata[1] if userdata else ''
     conf_m = userdata[2] if userdata else ''
     data_m = userdata[3] if userdata else ''
+    self.api = FilmwebAPI(self.loginHandler.requestLogin, u_name)
     self.database = Database.restoreFromString('Movie', data_m, self.api)
-    if not userdata:
-      self.firstRun()
     self.presenter = Presenter(root, self.api, self.database, conf_m)
     self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
     self.presenter.displayUpdate()
@@ -225,6 +237,8 @@ class Main(object):
     self.saveUserData()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
+    if not userdata:
+      self._reloadData() # first run
     tk.mainloop()
 
   #CONSTRUCTION
@@ -462,6 +476,9 @@ class Main(object):
       userdata = [line.strip('\n') for line in userfile.readlines() if not line.startswith('#')]
     return userdata
   def saveUserData(self):
+    # if for any reason the first update hasn't commenced - don't save anything
+    if self.api.username is None:
+      return
     # safety feature against failing to write new data and removing the old
     if os.path.exists(self.filename):
       os.rename(self.filename, self.filename + '.bak')
@@ -477,10 +494,6 @@ class Main(object):
     # if there were no errors at point, new data has been successfully written
     if os.path.exists(self.filename + '.bak'):
       os.remove(self.filename + '.bak')
-  def firstRun(self):
-    # set an event until after the mainloop starts
-    # on the event: trigger the hard update of all databases
-    pass
 
   #INTERNALS
   def _changeSorting(self, column):
@@ -574,27 +587,18 @@ class Main(object):
     total = len(self.database.movies)
     self.summ['text'] = self.summary_format.format(shown, total)
   def _updateData(self):
-    if self.session is None:
-      self.session = self.loginHandler.requestLogin()
-    if self.session is not None:
-      self.database.softUpdate(self.session)
-    #refresh data used in the GUI and refill the view
-    self._fillFilterData()
-    self._filtersUpdate()
-  def _reloadData(self, newDatabase=False):
-    self.session = self.loginHandler.requestLogin(message='Zaloguj się by zaimportować oceny' if newDatabase else '')
-    if self.session is None:
-      return
-    if newDatabase:
-      self.database = db.Database(self.session.username)
-    self.database.hardUpdate(self.session)
-    if not newDatabase:
-      #refresh data used in the GUI and refill the view - only if we're not
-      #building a new database though (in this case Main::__init__ will do this)
-      self._fillFilterData()
-      self._filtersUpdate()
+    # call softUpdate on (all) the database(s)
+    self.database.softUpdate()
+    # update (all) the presenter(s)
+    self.presenter.filtersUpdate()
+    # save data
+    self.saveUserData()
+  def _reloadData(self):
+    self.database.hardUpdate()
+    self.presenter.filtersUpdate()
+    self.saveUserData()
   def _quit(self):
-    #saves data and exits
+    self.saveUserData()
     self.root.quit()
 
 Main()

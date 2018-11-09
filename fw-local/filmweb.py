@@ -7,7 +7,6 @@ import requests_html
 import containers
 
 class FilmwebAPI(object):
-  @staticmethod
   class Constants(object):
     login_path = 'https://ssl.filmweb.pl/j_login'
     base_path  = 'https://www.filmweb.pl'
@@ -18,36 +17,42 @@ class FilmwebAPI(object):
       return FilmwebAPI.Constants.base_path + '/user/' + username
     def getUserMoviePage(username, page=1):
       userpage = FilmwebAPI.Constants.getUserPage(username)
-      if page == 1:
-        return userpage + '/films'
-      else:
-        return userpage + '/films?page=' + str(page)
+      return userpage + '/films?page=' + str(page)
 
   @staticmethod
   def login(username, password):
-    credentials = {'j_username': username, 'j_password': password}
-
     session = requests_html.HTMLSession()
-    log = session.post(FilmwebAPI.Constants.login_path, data=credentials)
-
+    log = session.post(
+      FilmwebAPI.Constants.login_path,
+      data={'j_username': username, 'j_password': password}
+    )
     if FilmwebAPI.Constants.auth_error in log.text:
       print('BŁĄD LOGOWANIA')
       return None
     else:
-      return FilmwebAPI(session, username)
+      return session
 
-  ## HACK
-  @staticmethod
-  def hackin():
-    with open('creds.txt', 'r') as p:
-      creds = p.read().split(',')
-    return FilmwebAPI.login(*creds)
+  #@staticmethod -- but not actually a static method, see:
+  # https://stackoverflow.com/q/21382801/6919631
+  # https://stackoverflow.com/q/11058686/6919631
+  #in short: THIS METHOD SHOULD NEVER BE CALLED DIRECTLY
+  def enforceSession(fun):
+    #this decorator makes the function being called cause the caller
+    #(assumed to be the first object in the argument list) to call the
+    #session check method (which in turn can request a new session)
+    def wrapper(*args, **kwargs):
+      self = args[0]
+      if self.checkSession():
+        return fun(*args, **kwargs)
+      else:
+        return None
+    return wrapper
 
-  def __init__(self, session, username):
-    self.session = session
+  def __init__(self, callback, username:str=''):
     self.username = username
+    self.requestLogin = callback
+    self.session = None
     self.parsingRules = {}
-    self.itemClasses = {}
     self.__cacheParsingRules('Movie')
 
   def __cacheParsingRules(self, itemtype:str):
@@ -77,12 +82,39 @@ class FilmwebAPI(object):
     #store the result
     self.parsingRules[itemtype] = pTree
 
+  def checkSession(self):
+    #check if there is a session and acquire one if not
+    if not self.session:
+      self.requestSession()
+    #check again - in case the user cancelled a login
+    if not self.session:
+      return False
+    #at this point everything is definitely safe
+    return True
+
+  def requestSession(self):
+    #call the GUI callback for login handling
+    #it will halt execution until the user logs in or cancels
+    session, username = self.requestLogin(self.username)
+    #if the session wasn't acquired, don't care about username
+    #but for good session, check if it agrees with the existing one (or set it)
+    if session:
+      if not self.username:
+        self.username = username
+      else:
+        if username != self.username:
+          #this should never happen, if GUI is to be trusted
+          #returning is not as important as *not* setting self.session
+          return None
+    self.session = session
+
   def getNumOf(self, itemtype:str):
     if itemtype == 'Movie':
       return self.getNumOfMovies()
     else:
       raise KeyError
 
+  @enforceSession
   def getNumOfMovies(self):
     #return a tuple: (number of rated movies, number of movies per page)
     url = self.Constants.getUserMoviePage(self.username)
@@ -116,13 +148,8 @@ class FilmwebAPI(object):
     page = self.__fetchPage(url)
     return self.__parsePage(page, 'Movie')
 
-  def getDemoPage(self):
-    with open('unrendered.html', 'rb') as f:
-      h = f.read()
-      bs = BS(h, 'lxml')
-    return self.__parsePage(bs, 'Movie')
-
   def __fetchPage(self, url):
+    #fetch the page and return its parsed representation
     page = self.session.get(url)
     if not page.ok:
       status = page.status_code
