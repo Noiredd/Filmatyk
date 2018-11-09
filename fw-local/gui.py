@@ -9,6 +9,7 @@ from filmweb import FilmwebAPI
 from plotting import drawHistogram
 from presenter import Presenter
 
+VERSION = '1.0-alpha.5'
 
 class Login(object):
   #Handles the login operation, from construction of the window to scraper calls
@@ -186,8 +187,7 @@ class Detail(object):
     return '{} ({})'.format(item['title'], item['year'])
 
 class Main(object):
-  summary_format = 'Wyświetlono {0!s} z {1!s} filmów'
-  max_width = 800
+  filename = 'userdata.fws' # TODO: maybe use user's local folder?
 
   def __init__(self):
     self.root = root = tk.Tk()
@@ -212,13 +212,17 @@ class Main(object):
     root.resizable(0,0)
     self.__construct()
     #load the savefile and instantiate Presenter(s) and Database(s)
-    # TODO: actually load a file
-    # TODO: actually multiple DBs
-    # TODO: saving the file on update/exit, not Presenter reconfig
-    self.database = Database.restoreFromString('Movie', '', self.api)
-    self.presenter = Presenter(root, self.api, self.database, '')
+    userdata = self.loadUserData()
+    conf_m = userdata[2] if userdata else ''
+    data_m = userdata[3] if userdata else ''
+    self.database = Database.restoreFromString('Movie', data_m, self.api)
+    if not userdata:
+      self.firstRun()
+    self.presenter = Presenter(root, self.api, self.database, conf_m)
     self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
     self.presenter.displayUpdate()
+    # TODO: saving the file on update/exit, not Presenter reconfig
+    self.saveUserData()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
     tk.mainloop()
@@ -448,6 +452,35 @@ class Main(object):
     self.filters['seen_to']['year'].set(today.year)
     self.filters['seen_to']['month'].set(today.month)
     self.filters['seen_to']['day'].set(today.day)
+
+  #USER DATA MANAGEMENT
+  def loadUserData(self):
+    # loads data and returns it as list of lines - for format, see saveUserData
+    if not os.path.exists(self.filename):
+      return None
+    with open(self.filename, 'r') as userfile:
+      userdata = [line.strip('\n') for line in userfile.readlines() if not line.startswith('#')]
+    return userdata
+  def saveUserData(self):
+    # safety feature against failing to write new data and removing the old
+    if os.path.exists(self.filename):
+      os.rename(self.filename, self.filename + '.bak')
+    with open(self.filename, 'w') as userfile:
+      userfile.write('#VERSION\n')
+      userfile.write(VERSION + '\n')
+      userfile.write('#USERNAME\n')
+      userfile.write(self.api.username + '\n')
+      userfile.write('#MOVIES\n')
+      userfile.write(self.presenter.storeToString() + '\n')
+      userfile.write(self.database.storeToString() + '\n')
+      # series and games can be added sequentially right after
+    # if there were no errors at point, new data has been successfully written
+    if os.path.exists(self.filename + '.bak'):
+      os.remove(self.filename + '.bak')
+  def firstRun(self):
+    # set an event until after the mainloop starts
+    # on the event: trigger the hard update of all databases
+    pass
 
   #INTERNALS
   def _changeSorting(self, column):

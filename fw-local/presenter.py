@@ -42,11 +42,8 @@ class Config(object):
 
 class Presenter(object):
   """ TODO MAJOR
-      3. GUI stores the savefile by serializing Presenter and Database separately
       6. Presenter only has a handle to the Database which is instantiated by the
-         GUI, and a switch whether to display ratings or want-tos', as well as a
-         flag whether to allow database updates (so that the unified underlying
-         database wasn't updated twice)
+         GUI, and a switch whether to display ratings or want-tos
       7. GUI calls update on Presenter, which calls DB
       7. Session management - API is constructed immediately, but only asks for
          login (GUI callback) when executing commands that need a session
