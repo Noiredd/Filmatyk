@@ -56,3 +56,8 @@ oraz plakat.
 ### Czy to bezpieczne?
 Udostępniam kod fw-local otwarcie na licencji MIT. Głównie znaczy to, że każdy może sprawdzić, co program robi "pod maską" - dlatego
 nie ma obaw, że np. kradnę hasła użytkowników.
+
+### Dla programistów
+Napisałem mały [dokument](HOWITWORKS.md) (ENG) opisujący zgrubnie mechanikę fw-local.
+Może będzie wygodniej czytać kod znając ogólny pomysł na program.  
+Propozycje ulepszeń a także kontrybucje są mile widziane! :)

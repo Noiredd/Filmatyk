@@ -4,7 +4,7 @@ import os
 import tkinter as tk
 from tkinter import ttk
 
-from database2 import Database
+from database import Database
 from filmweb import FilmwebAPI
 from plotting import drawHistogram
 from presenter import Presenter

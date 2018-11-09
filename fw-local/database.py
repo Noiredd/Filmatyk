@@ -58,4 +58,3 @@ class Database(object):
     self.items = []
     if not self.softUpdate():
       self.items = old_items
-
