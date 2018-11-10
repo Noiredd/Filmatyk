@@ -229,9 +229,9 @@ class Main(object):
     conf_m = userdata[2] if userdata else ''
     data_m = userdata[3] if userdata else ''
     self.api = FilmwebAPI(self.loginHandler.requestLogin, u_name)
-    self.database = Database.restoreFromString('Movie', data_m, self.api)
+    self.database = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
     self.presenter = Presenter(root, self.api, self.database, conf_m)
-    self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
+    self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
     self.presenter.displayUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
@@ -422,15 +422,16 @@ class Main(object):
       tk.Button(frame, text='Resetuj wszystkie', command=_resetAllFrames).grid(row=3, column=3, padx=5, pady=5, sticky=tk.S+tk.E)
       #instantiate the outer frame
       frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
-    def _constructControlPanel(self):
-      frame = tk.Frame(self.root)
-      tk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.S+tk.W)
-      tk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.S+tk.W)
-      frame.grid(row=3, column=1, padx=5, pady=5, sticky=tk.S+tk.W)
-      tk.Button(self.root, text='Wyjście', command=self._quit).grid(row=3, column=1, padx=5, pady=5, sticky=tk.S+tk.E)
-    #_constructTreeView(self)
-    _constructFilterFrame(self)
-    _constructControlPanel(self)
+    #control panel
+    frame = tk.Frame(self.root)
+    tk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.SW)
+    tk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.SW)
+    self.progressVar = tk.IntVar()
+    self.progressbar = ttk.Progressbar(self.root, orient='horizontal', length=400, mode='determinate', variable=self.progressVar)
+    self.progressbar.grid(row=4, column=1, padx=5, pady=5)
+    self._setProgress(-1) # start with the progress bar hidden
+    tk.Button(self.root, text='Wyjście', command=self._quit).grid(row=4, column=2, padx=5, pady=5, sticky=tk.SE)
+    frame.grid(row=4, column=0, padx=5, pady=5, sticky=tk.S+tk.W)
   def centerWindow(self):
     self.root.update()
     ws = self.root.winfo_screenwidth()
@@ -586,6 +587,16 @@ class Main(object):
     shown = len(self.database.filtered)
     total = len(self.database.movies)
     self.summ['text'] = self.summary_format.format(shown, total)
+  def _setProgress(self, value:int):
+    # allows the caller to set the percentage value of the progress bar
+    # non-negative values cause the bar to show up, negative hides it
+    if value < 0:
+      self.progressbar.grid_remove()
+      self.progressVar.set(0)
+    else:
+      self.progressbar.grid()
+      self.progressVar.set(value)
+    self.root.update()
   def _updateData(self):
     # call softUpdate on (all) the database(s)
     self.database.softUpdate()
