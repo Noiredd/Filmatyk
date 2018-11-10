@@ -38,9 +38,9 @@ class Database(object):
     pages = ceil((rated-len(self.items))/per_page)
     # request these pages from the API
     itemPages = []
-    for page in range(pages):
+    for page in range(1, pages + 1):
       itemPages.append(self.api.getItemsPage(itemtype=self.itemtype, page=page))
-      perc_done = int(100 * (page+1) / pages)
+      perc_done = int(100 * page / pages)
       self.callback(perc_done) #increment the progress bar
     self.callback(100) #correct the rounding error - set the bar to full
     new_items = [item for page in itemPages for item in page]

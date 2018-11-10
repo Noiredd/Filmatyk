@@ -219,12 +219,18 @@ class FilmwebAPI(object):
   def __parseRating(self, text):
     #FW stores the ratings as simple dict serialized to JSON
     origDict = json.loads(text)
+    #ensure all date keys are present
+    date_ = origDict['d']
+    if 'm' not in date_.keys():
+      date_['m'] = 1
+    if 'd' not in date_.keys():
+      date_['d'] = 1
     #translate that dict to more readable standard
     id = origDict['eId']
     ratingDict = {
       'rating':  origDict['r'],
       'comment': origDict['c'] if 'c' in origDict.keys() else '',
-      'dateOf':  origDict['d'],
+      'dateOf':  date_,
       'faved':   origDict['a']
     }
     return ratingDict, id
