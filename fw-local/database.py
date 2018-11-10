@@ -11,7 +11,7 @@ class Database(object):
     self.items = []
     self.api = api
   def getItems(self):
-    return self.items
+    return self.items.copy()
   # Serialization-deserialization
   @staticmethod
   def restoreFromString(itemtype:object, string:str, api:object, callback):

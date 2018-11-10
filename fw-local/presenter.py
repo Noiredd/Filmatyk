@@ -40,21 +40,71 @@ class Config(object):
   def storeToString(self):
     return json.dumps(self.rawConfig)
 
+class SortingMachine(object):
+  # Changes the column heading to indicate the chosen sorting
+  # Returns a dict of parameters for the sort function
+  ASC_CHAR = '▲ '
+  DSC_CHAR = '▼ '
+  @staticmethod
+  def makeLambda(key):
+    return lambda x: x.properties[key]
+  def __init__(self, tree, columns):
+    self.tree = tree
+    self.columns = columns
+    self.current_id = ''
+    self.original_heading = ''
+    self.sorting = None
+    self.ascending = False
+  def update(self, column_id:str):
+    # retrieve the column name which is also the name of element to sort by
+    column_name = self.tree.column(column=column_id, option='id')
+    # retrieve the column's original heading
+    column_heading = self.tree.heading(column=column_id, option='text')
+    # first run
+    if not self.current_id:
+      self.current_id = column_id
+      self.original_heading = column_heading
+      self.tree.heading(column=column_id, text=self.DSC_CHAR + self.original_heading)
+      self.sorting = dict(key=self.makeLambda(column_name), reverse=self.ascending)
+      return self.sorting
+    # on every other run, check whether the same column was clicked again
+    elif column_id == self.current_id:
+      # only switch the order in this case
+      if self.ascending:
+        self.ascending = False
+        char = self.DSC_CHAR
+      else:
+        self.ascending = True
+        char = self.ASC_CHAR
+      self.tree.heading(column=column_id, text=char + self.original_heading)
+      self.sorting['reverse'] = self.ascending
+      return self.sorting
+    # otherwise, a different column was clicked
+    else:
+      # in this case, restore the original column's heading
+      self.tree.heading(column=self.current_id, text=self.original_heading)
+      self.current_id = column_id
+      self.original_heading = column_heading
+      self.ascending = False
+      self.tree.heading(column=column_id, text=self.DSC_CHAR + self.original_heading)
+      self.sorting = dict(key=self.makeLambda(column_name), reverse=self.ascending)
+      return self.sorting
+  def getSorting(self):
+    return self.sorting
+
 class Presenter(object):
   """ TODO MAJOR
-      6. Presenter only has a handle to the Database which is instantiated by the
-         GUI, and a switch whether to display ratings or want-tos
-      7. GUI calls update on Presenter, which calls DB
-      7. Session management - API is constructed immediately, but only asks for
-         login (GUI callback) when executing commands that need a session
-      9. Presenter handles sorting and preview callbacks
+      1. Presenter has a switch whether to display ratings or want-tos
+      2. Presenter handles filtering and preview callbacks
   """
   def __init__(self, root, api, database, config:str, displayRating=True):
     self.root = root
     self.main = tk.Frame(root)
     self.database = database
+    self.items = []
     self.config = Config.restoreFromString(database.itemtype, config)
     self.constructTreeView()
+    self.sortMachine = SortingMachine(self.tree, self.config.getColumns())
 
   def constructTreeView(self):
     self.tree = tree = ttk.Treeview(
@@ -72,11 +122,12 @@ class Presenter(object):
       # if there is already a Detail view (e.g. for those long comments)?
       tree.column(column=column, width=self.config.getWidth(column), stretch=False)
       tree.heading(column=column, text=self.config.getHeading(column), anchor=tk.W)
-    # TODO: sorting and preview spawn callbacks
     tree.grid(row=0, column=0)
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
     yScroll.grid(row=0, column=1, sticky=tk.NS)
     tree.configure(yscrollcommand=yScroll.set)
+    # bind event handlers (TODO: detail preview)
+    tree.bind('<Button-1>', self.sortingClick)
 
   def storeToString(self):
     return self.config.storeToString()
@@ -88,18 +139,47 @@ class Presenter(object):
     self.main.grid(**kw)
 
   # Display pipeline
-  def filtersUpdate(self, event=None):
+  # Internally, the pipeline consists of 4 steps: acquiring data from the DB,
+  # filtering it using the given filters, sorting by the given criterion, and
+  # displaying it on the treeview. Each of those operations is performed by
+  # a dedicated function. Those functions are arranged in a call chain - each
+  # one does its work and then calls the next. So there is no need to perform
+  # the complete update everything when just one little thing (e.g. sorting)
+  # has changed - the update can be triggered only from this specific point.
+  def srcdataUpdate(self):
+    # acquire from database to an internal state
+    self.items = self.database.getItems()
+    self.filtersUpdate()
+  def filtersUpdate(self):
     # do things
     self.sortingUpdate()
-  def sortingUpdate(self, event=None):
-    # do things
+  def sortingUpdate(self):
+    sorting = self.sortMachine.getSorting()
+    if sorting:
+      self.items.sort(**sorting)
     self.displayUpdate()
   def displayUpdate(self):
     # clear existing results
     for item in self.tree.get_children():
       self.tree.delete(item)
     # get the requested properties of items to present
-    for item in self.database.getItems():
+    for item in self.items:
       values = [item['id']] + [item[prop] for prop in self.config.getColumns()]
       self.tree.insert(parent='', index=0, text='', values=values)
     # TODO: update summaries, plots etc.
+
+  # Interface
+  def detailClick(self, event=None):
+    # for spawning the detail window
+    pass
+  def totalUpdate(self):
+    # for triggering the whole update chain
+    self.srcdataUpdate()
+  def sortingClick(self, event=None):
+    # if a treeview heading was clicked - update the sorting
+    click_region = self.tree.identify_region(event.x, event.y)
+    if click_region != 'heading':
+      return
+    column_id = self.tree.identify_column(event.x)
+    self.sortMachine.update(column_id)
+    self.sortingUpdate()

@@ -232,7 +232,7 @@ class Main(object):
     self.database = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
     self.presenter = Presenter(root, self.api, self.database, conf_m)
     self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
-    self.presenter.displayUpdate()
+    self.presenter.totalUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
     #ensure a controlled exit no matter what user does (X-button, alt+f4)
@@ -243,34 +243,6 @@ class Main(object):
 
   #CONSTRUCTION
   def __construct(self):
-    def _constructTreeView(self):
-      wrap = tk.Frame(self.root)
-      self.tree = tree = ttk.Treeview(wrap,
-                                      height=32,
-                                      selectmode='none',
-                                      columns=['id']+[c[0] for c in self.config])
-      hide = ['#0', 'id']
-      tree['displaycolumns'] = [c for c in tree['columns'] if c not in hide]
-      total_width = 0
-      for item in self.config:
-        total_width += item[1]['width']
-        if total_width > self.max_width:
-          remaining = item[1]['width'] - (total_width - self.max_width)
-          tree.column(column=item[0], width=remaining, minwidth=item[1]['width'], stretch=True)
-        else:
-          tree.column(column=item[0], width=item[1]['width'], stretch=False)
-        tree.heading(column=item[0], text=item[1]['name'], anchor=tk.W)
-      tree.bind('<Button-1>', self._sortingUpdate)
-      tree.bind('<Double-Button-1>', self._spawnPreview)
-      tree.grid(row=0, column=0)
-      #scrollbars
-      yScroll = ttk.Scrollbar(wrap, command=tree.yview)
-      yScroll.grid(row=0, column=1, sticky=tk.NS)
-      xScroll = ttk.Scrollbar(wrap, command=tree.xview, orient=tk.HORIZONTAL)
-      if total_width > self.max_width:
-        xScroll.grid(row=1, column=0, sticky=tk.EW)
-      tree.configure(yscrollcommand=yScroll.set, xscrollcommand=xScroll.set)
-      wrap.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.N)
     def _constructFilterFrame(self):
       #placeholder for the histogram and summary
       self.summ = tk.Label(self.root, text='')
@@ -497,34 +469,6 @@ class Main(object):
       os.remove(self.filename + '.bak')
 
   #INTERNALS
-  def _changeSorting(self, column):
-    ASC_CHAR = '▲ '
-    DSC_CHAR = '▼ '
-    #when ran for the first time, current sorting will be None
-    if self.sorting == None:
-      #we simply set the sorting and alter the column heading
-      self.sorting = {'key': column, 'descending': False}
-      new_heading = ASC_CHAR + Blueprint[column]['presentation']['name']
-      self.tree.heading(column=column, text=new_heading)
-    else:
-      #otherwise, there are two cases: when the same column was clicked, and when another
-      if column == self.sorting['key']:
-        #if the same column - toggle the sorting direction and change the heading
-        if self.sorting['descending']:
-          self.sorting['descending'] = False
-          new_heading = ASC_CHAR + Blueprint[column]['presentation']['name']
-        else:
-          self.sorting['descending'] = True
-          new_heading = DSC_CHAR + Blueprint[column]['presentation']['name']
-        self.tree.heading(column=column, text=new_heading)
-      else:
-        #if a different column - clear the heading of the old column and proceed
-        #as if it was the first time anything was clicked
-        restored_column_name = self.sorting['key']
-        restored_heading = Blueprint[restored_column_name]['presentation']['name']
-        self.tree.heading(column=restored_column_name, text=restored_heading)
-        self.sorting = None
-        self._changeSorting(column)
   def _fillFilterData(self):
     self.setYearChoices()
     self.setGenreChoices()
@@ -560,18 +504,6 @@ class Main(object):
       self.filters['director'] = ''
     self.database.filterMovies(self.filters)
     self._sortingUpdate()
-  def _sortingUpdate(self, event=None):
-    #if the method was called by the Treeview - change in sorting was requested
-    if event is not None:
-      region = self.tree.identify_region(event.x, event.y)
-      if region=='heading':
-        column_num = self.tree.identify_column(event.x)
-        column_name = self.tree.column(column=column_num, option='id')
-        self._changeSorting(column_name)
-    #otherwise, this was called by _filtersUpdate as a part of refresh operation
-    #in such case we just need to sort the newly filtered data in the same way
-    self.database.sortMovies(self.sorting)
-    self._displayUpdate()
   def _displayUpdate(self):
     #clear the tree
     for item in self.tree.get_children():
@@ -601,12 +533,12 @@ class Main(object):
     # call softUpdate on (all) the database(s)
     self.database.softUpdate()
     # update (all) the presenter(s)
-    self.presenter.filtersUpdate()
+    self.presenter.totalUpdate()
     # save data
     self.saveUserData()
   def _reloadData(self):
     self.database.hardUpdate()
-    self.presenter.filtersUpdate()
+    self.presenter.totalUpdate()
     self.saveUserData()
   def _quit(self):
     self.saveUserData()
