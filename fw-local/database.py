@@ -40,7 +40,6 @@ class Database(object):
     itemPages = []
     for page in range(pages):
       itemPages.append(self.api.getItemsPage(itemtype=self.itemtype, page=page))
-      break # DEBUG DEBUG DEBUG DEBUG
       #print("Got page {}/{}!".format(page+1, pages))  # TODO: progress bar?
     new_items = [item for page in itemPages for item in page]
     # add items to the database, replacing duplicates by new ones
@@ -50,6 +49,7 @@ class Database(object):
     for item in old_items:
       if item['id'] not in new_ids:
         self.items.append(item)
+    return True
   def hardUpdate(self):
     # in theory, this removes all existing items and recollects the whole data
     # but in practice this reacquisition may fall - in which case we shouldn't

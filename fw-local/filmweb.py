@@ -143,8 +143,9 @@ class FilmwebAPI(object):
     else:
       raise KeyError #should never happen though
 
+  @enforceSession
   def getMoviesPage(self, page=1):
-    url = self.Constants.getUserMoviePage(self.username)
+    url = self.Constants.getUserMoviePage(self.username, page)
     page = self.__fetchPage(url)
     return self.__parsePage(page, 'Movie')
 

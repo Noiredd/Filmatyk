@@ -233,10 +233,10 @@ class Main(object):
     self.presenter = Presenter(root, self.api, self.database, conf_m)
     self.presenter.grid(row=0, column=0, rowspan=4, padx=5, pady=5, sticky=tk.NW)
     self.presenter.displayUpdate()
-    # TODO: saving the file on update/exit, not Presenter reconfig
-    self.saveUserData()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
+    #ensure a controlled exit no matter what user does (X-button, alt+f4)
+    root.protocol('WM_DELETE_WINDOW', self._quit)
     if not userdata:
       self._reloadData() # first run
     tk.mainloop()
