@@ -235,6 +235,7 @@ class Main(object):
     self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
     self.presenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     self.presenter.addFilter(filters.GenreFilter, row=0, column=1, sticky=tk.NW)
+    self.presenter.addFilter(filters.CountryFilter, row=0, column=2, sticky=tk.NW)
     self.presenter.totalUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
@@ -307,24 +308,6 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_timeSeenFrame, text='Reset', command=_resetTimeSeenFrame).grid(row=3, column=0, columnspan=4, sticky=tk.N+tk.E)
       _timeSeenFrame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
-      #frame for country filters
-      _countryFrame = tk.Frame(frame)
-      tk.Label(_countryFrame, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.N+tk.W)
-      _countryWrap = tk.Frame(_countryFrame)
-      self.countryBox =_countryBox = tk.Listbox(_countryWrap, height=10, selectmode=tk.SINGLE, exportselection=0)
-      _countryBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate))
-      _countryScroll = ttk.Scrollbar(_countryWrap, command=_countryBox.yview)
-      _countryScroll.pack(side=tk.RIGHT, fill=tk.Y)
-      _countryBox.configure(yscrollcommand=_countryScroll.set)
-      _countryBox.pack(side=tk.LEFT)
-      _countryWrap.grid(row=1, column=0, sticky=tk.N+tk.E)
-      def _resetCountryFrame(update=True):
-        self.filters['country'] = ''
-        self.countryBox.selection_clear(0, tk.END)
-        if update:
-          self._filtersUpdate()
-      tk.Button(_countryFrame, text='Reset', command=_resetCountryFrame).grid(row=2, column=0, sticky=tk.N+tk.E)
-      _countryFrame.grid(row=1, column=2, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for director filters
       _directorFrame = tk.Frame(frame)
       tk.Label(_directorFrame, text='Reżyser:').grid(row=0, column=0, sticky=tk.N+tk.W)
@@ -347,7 +330,6 @@ class Main(object):
       def _resetAllFrames():
         _resetRatingFrame(False)
         _resetTimeSeenFrame(False)
-        _resetCountryFrame(False)
         _resetDirectorFrame(False)
         self._filtersUpdate()
       tk.Button(frame, text='Resetuj wszystkie', command=_resetAllFrames).grid(row=3, column=3, padx=5, pady=5, sticky=tk.S+tk.E)
@@ -372,24 +354,6 @@ class Main(object):
     x = ws/2 - w/2
     y = hs/2 - h/2
     self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-  def setGenreChoices(self):
-    self.genres = self.database.getListOfAll('genres')
-    self.genreBox.delete(0, tk.END)
-    if len(self.genres)>0:
-      for genre in self.genres:
-        self.genreBox.insert(tk.END, genre)
-  def setCountryChoices(self):
-    self.countries = self.database.getListOfAll('countries')
-    self.countryBox.delete(0, tk.END)
-    if len(self.countries)>0:
-      for country in self.countries:
-        self.countryBox.insert(tk.END, country)
-  def setDirectorChoices(self):
-    self.directors = self.database.getListOfAll('directors')
-    self.directorBox.delete(0, tk.END)
-    if len(self.directors)>0:
-      for director in self.directors:
-        self.directorBox.insert(tk.END, director)
   def setYearChoices(self):
     self.yearsSeen = self.database.getYearsSeen()
     self.timeSeenFromYear.configure(values=self.yearsSeen)
@@ -427,13 +391,6 @@ class Main(object):
     if os.path.exists(self.filename + '.bak'):
       os.remove(self.filename + '.bak')
 
-  #INTERNALS
-  def _fillFilterData(self):
-    self.setYearChoices()
-    self.setGenreChoices()
-    self.setCountryChoices()
-    self.setDirectorChoices()
-
   #CALLBACKS
   def _spawnPreview(self, event=None):
     #this is only effective is the user double-clicks a Treeview's cell
@@ -448,20 +405,6 @@ class Main(object):
         if movie is not None:
           self.detailHandler.launchPreview(movie)
   def _filtersUpdate(self, event=None):
-    #year filters update automatically, but genres have to be collected manually
-    self.filters['genre']['list'] = [self.genres[i] for i in self.genreBox.curselection()]
-    #similar with countries and directors, but for now we only allow selecting one
-    selected_country = self.countryBox.curselection()
-    if len(selected_country)>0:
-      self.filters['country'] = self.countries[selected_country[0]]
-    else:
-      self.filters['country'] = ''
-    selected_director = self.directorBox.curselection()
-    if len(selected_director)>0:
-      self.filters['director'] = self.directors[selected_director[0]]
-    else:
-      self.filters['director'] = ''
-    self.database.filterMovies(self.filters)
     self._sortingUpdate()
   def _displayUpdate(self):
     #clear the tree

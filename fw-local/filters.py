@@ -137,11 +137,44 @@ class YearFilter(Filter):
     self.function = yearFilter
     self.notifyMachine()
 
-class GenreFilter(Filter):
+class ListboxFilter(Filter):
+  PROPERTY = '' #derived classes must override this
+  def __init__(self, root, callback):
+    self.all_options = []
+    super(ListboxFilter, self).__init__(root, callback)
+  def makeListbox(self, where, selectmode, **grid_args):
+    frame = tk.Frame(where)
+    # exportselection is necessary, otherwise multiple Listboxes break each other
+    self.box = tk.Listbox(frame, height=10, selectmode=selectmode, exportselection=0)
+    self.box.bind('<1>', self.waitAndUpdate)
+    self.box.pack(side=tk.LEFT)
+    scroll = ttk.Scrollbar(frame, command=self.box.yview)
+    scroll.pack(side=tk.RIGHT, fill=tk.Y)
+    self.box.configure(yscrollcommand=scroll.set)
+    frame.grid(**grid_args)
+  def populateChoices(self, items:list):
+    all_options = set()
+    for item in items:
+      for value in item.properties[self.PROPERTY]:
+        all_options.add(value)
+    self.all_options = sorted(list(all_options))
+    self.box.delete(0, tk.END)
+    for option in self.all_options:
+      self.box.insert(tk.END, option)
+  def waitAndUpdate(self, e=None):
+    # without after(), the callback executes *before* GUI has updated selection
+    self.main.after(50, self._update)
+  def getSelection(self):
+    return [self.all_options[i] for i in self.box.curselection()]
+  def _reset(self):
+    self.box.selection_clear(0, tk.END)
+    Filter._reset(self)
+
+class GenreFilter(ListboxFilter):
+  PROPERTY = 'genres'
   def __init__(self, root, callback):
     self.mode = tk.IntVar()
-    self.allGenres = []
-    self.selGenres = []
+    self.selected = []
     self.filterMap = {
       0: self.filterAtLeast,
       1: self.filterAll,
@@ -150,57 +183,65 @@ class GenreFilter(Filter):
     super(GenreFilter, self).__init__(root, callback)
   def reset(self):
     self.mode.set(0)
-    self.selGenres = []
-    self.genreBox.selection_clear(0, tk.END)
+    self.selected = []
     self._reset()
   def buildUI(self):
     m = self.main
-    tk.Label(m, text='Gatunek:').grid(row=0, column=0, columnspan=2, sticky=tk.NW)
-    # exportselection is necessary, otherwise multiple Listboxes break each other
-    self.genreBox = tk.Listbox(m, height=10, selectmode=tk.EXTENDED, exportselection=0)
-    self.genreBox.bind('<1>', self._waitAndUpdate)
-    self.genreBox.grid(row=1, column=0)
-    genreScroll = ttk.Scrollbar(m, command=self.genreBox.yview)
-    genreScroll.grid(row=1, column=1, sticky=tk.NS)
-    self.genreBox.configure(yscrollcommand=genreScroll.set)
+    tk.Label(m, text='Gatunek:').grid(row=0, column=0, sticky=tk.NW)
+    self.makeListbox(m, tk.EXTENDED, row=1, column=0)
     radios = tk.Frame(m)
-    radios.grid(row=2, column=0, columnspan=2, sticky=tk.NW)
+    radios.grid(row=2, column=0, sticky=tk.NW)
     tk.Radiobutton(radios, text='przynajmniej', variable=self.mode, value=0,
       command=self._update).pack(anchor=tk.W)
     tk.Radiobutton(radios, text='wszystkie', variable=self.mode, value=1,
       command=self._update).pack(anchor=tk.W)
     tk.Radiobutton(radios, text='dokładnie', variable=self.mode, value=2,
       command=self._update).pack(anchor=tk.W)
-    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, columnspan=2, sticky=tk.SE)
-  def populateChoices(self, items:list):
-    all_genres = set()
-    for item in items:
-      for genre in item.properties['genres']:
-        all_genres.add(genre)
-    self.allGenres = sorted(list(all_genres))
-    for genre in self.allGenres:
-      self.genreBox.insert(tk.END, genre)
-  def _waitAndUpdate(self, event=None):
-    # without after(), the callback executes *before* GUI has updated selection
-    self.main.after(50, self._update)
+    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, sticky=tk.SE)
   def _update(self, event=None):
-    self.selGenres = [self.allGenres[i] for i in self.genreBox.curselection()]
-    if len(self.selGenres) == 0:
+    self.selected = self.getSelection()
+    if len(self.selected) == 0:
       self.function = Filter.DEFAULT
     else:
       self.function = self.filterMap[self.mode.get()]
     self.notifyMachine()
   def filterAtLeast(self, item):
-    for genre in self.selGenres:
+    for genre in self.selected:
       if genre in item.properties['genres']:
         return True
     return False
   def filterAll(self, item):
-    for genre in self.selGenres:
+    for genre in self.selected:
       if genre not in item.properties['genres']:
         return False
     return True
   def filterExactly(self, item):
-    if len(self.selGenres) == len(item.properties['genres']):
+    if len(self.selected) == len(item.properties['genres']):
       return self.filterAll(item)
+    return False
+
+class CountryFilter(ListboxFilter):
+  PROPERTY = 'countries'
+  def __init__(self, root, callback):
+    self.selected = []
+    super(CountryFilter, self).__init__(root, callback)
+  def reset(self):
+    self.selected = []
+    self._reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.NW)
+    self.makeListbox(m, tk.SINGLE, row=1, column=0)
+    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+  def _update(self, event=None):
+    self.selected = self.getSelection()
+    if len(self.selected) == 0:
+      self.function = Filter.DEFAULT
+    else:
+      self.function = self.filterBelongs
+    self.notifyMachine()
+  def filterBelongs(self, item):
+    for country in item.properties['countries']:
+      if country in self.selected:
+        return True
     return False
