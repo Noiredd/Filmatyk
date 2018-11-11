@@ -234,8 +234,10 @@ class Main(object):
     self.presenter = Presenter(root, self.api, self.database, conf_m)
     self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
     self.presenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
-    self.presenter.addFilter(filters.GenreFilter, row=0, column=1, sticky=tk.NW)
-    self.presenter.addFilter(filters.CountryFilter, row=0, column=2, sticky=tk.NW)
+    self.presenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
+    self.presenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=2, sticky=tk.NW)
+    self.presenter.addFilter(filters.CountryFilter, row=0, column=2, rowspan=2, sticky=tk.NW)
+    self.presenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=2, sticky=tk.NW)
     self.presenter.totalUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
@@ -255,24 +257,6 @@ class Main(object):
       self.plot.grid(row=1, column=1, sticky=tk.N)
       #outer frame holding all filters
       frame = tk.LabelFrame(self.root, text='Filtry')
-      #frame for rating filters
-      _ratingFrame = tk.Frame(frame)
-      tk.Label(_ratingFrame, text='Moja ocena:').grid(row=0, column=0, columnspan=5, sticky=tk.N+tk.W)
-      tk.Label(_ratingFrame, text='Od:').grid(row=1, column=0, sticky=tk.W)
-      tk.Label(_ratingFrame, text='Do:').grid(row=1, column=2, sticky=tk.W)
-      _ratingFrom = tk.Entry(_ratingFrame, width=5, textvariable=self.filters['rating_from'])
-      _ratingFrom.bind('<KeyRelease>', self._filtersUpdate)
-      _ratingFrom.grid(row=1, column=1, sticky=tk.W)
-      _ratingTo = tk.Entry(_ratingFrame, width=5, textvariable=self.filters['rating_to'])
-      _ratingTo.bind('<KeyRelease>', self._filtersUpdate)
-      _ratingTo.grid(row=1, column=3, sticky=tk.W)
-      def _resetRatingFrame(update=True):
-        self.filters['rating_from'].set('')
-        self.filters['rating_to'].set('')
-        if update:
-          self._filtersUpdate()
-      tk.Button(_ratingFrame, text='Reset', command=_resetRatingFrame).grid(row=1, column=4, sticky=tk.E)
-      _ratingFrame.grid(row=2, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for timeSeen filters
       _timeSeenFrame = tk.Frame(frame)
       tk.Label(_timeSeenFrame, text='Data obejrzenia:').grid(row=0, column=0, columnspan=4, sticky=tk.N+tk.W)
@@ -308,29 +292,9 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_timeSeenFrame, text='Reset', command=_resetTimeSeenFrame).grid(row=3, column=0, columnspan=4, sticky=tk.N+tk.E)
       _timeSeenFrame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
-      #frame for director filters
-      _directorFrame = tk.Frame(frame)
-      tk.Label(_directorFrame, text='Reżyser:').grid(row=0, column=0, sticky=tk.N+tk.W)
-      _directorWrap = tk.Frame(_directorFrame)
-      self.directorBox = _directorBox = tk.Listbox(_directorWrap, height=10, selectmode=tk.SINGLE, exportselection=0)
-      _directorBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate))
-      _directorScroll = ttk.Scrollbar(_directorWrap, command=_directorBox.yview)
-      _directorScroll.pack(side=tk.RIGHT, fill=tk.Y)
-      _directorBox.configure(yscrollcommand=_directorScroll.set)
-      _directorBox.pack(side=tk.LEFT)
-      _directorWrap.grid(row=1, column=0, sticky=tk.N+tk.W)
-      def _resetDirectorFrame(update=True):
-        self.filters['director'] = ''
-        self.directorBox.selection_clear(0, tk.END)
-        if update:
-          self._filtersUpdate()
-      tk.Button(_directorFrame, text='Reset', command=_resetDirectorFrame).grid(row=2, column=0, sticky=tk.N+tk.E)
-      _directorFrame.grid(row=1, column=3, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
       #reset all filters
       def _resetAllFrames():
-        _resetRatingFrame(False)
         _resetTimeSeenFrame(False)
-        _resetDirectorFrame(False)
         self._filtersUpdate()
       tk.Button(frame, text='Resetuj wszystkie', command=_resetAllFrames).grid(row=3, column=3, padx=5, pady=5, sticky=tk.S+tk.E)
       #instantiate the outer frame

@@ -245,3 +245,68 @@ class CountryFilter(ListboxFilter):
       if country in self.selected:
         return True
     return False
+
+class DirectorFilter(ListboxFilter):
+  PROPERTY = 'directors'
+  def __init__(self, root, callback):
+    self.selected = []
+    super(DirectorFilter, self).__init__(root, callback)
+  def reset(self):
+    self.selected = []
+    self._reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Reżyser:').grid(row=0, column=0, sticky=tk.NW)
+    self.makeListbox(m, tk.SINGLE, row=1, column=0)
+    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+  def _update(self, event=None):
+    self.selected = self.getSelection()
+    if len(self.selected) == 0:
+      self.function = Filter.DEFAULT
+    else:
+      self.function = self.filterBelongs
+    self.notifyMachine()
+  def filterBelongs(self, item):
+    for director in item.getRawProperty('directors'):
+      if director in self.selected:
+        return True
+    return False
+
+class RatingFilter(Filter):
+  def __init__(self, root, callback):
+    self.rate_from = tk.StringVar()
+    self.rate_to = tk.StringVar()
+    super(RatingFilter, self).__init__(root, callback)
+  def reset(self):
+    self.rate_from.set('')
+    self.rate_to.set('')
+    self._reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Moja ocena:').grid(row=0, column=0, columnspan=5, sticky=tk.NW)
+    tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
+    tk.Label(m, text='Do:').grid(row=1, column=2, sticky=tk.NW)
+    rFrom = tk.Entry(m, width=5, textvariable=self.rate_from)
+    rFrom.bind('<KeyRelease>', self._update)
+    rFrom.grid(row=1, column=1, sticky=tk.NW)
+    rTo = tk.Entry(m, width=5, textvariable=self.rate_to)
+    rTo.bind('<KeyRelease>', self._update)
+    rTo.grid(row=1, column=3, sticky=tk.NW)
+    tk.Button(m, text='Reset', command=self.reset).grid(row=1, column=4, sticky=tk.NE)
+  def _update(self, event=None):
+    try:
+      rateFrom = int(self.rate_from.get())
+    except ValueError:
+      rateFrom = 0
+    try:
+      rateTo = int(self.rate_to.get())
+    except ValueError:
+      rateTo = 10
+    def ratingFilter(item):
+      rating = int(item.getRawProperty('rating'))
+      if rating >= rateFrom and rating <= rateTo:
+        return True
+      else:
+        return False
+    self.function = ratingFilter
+    self.notifyMachine()
