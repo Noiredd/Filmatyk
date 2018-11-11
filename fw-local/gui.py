@@ -4,6 +4,7 @@ import os
 import tkinter as tk
 from tkinter import ttk
 
+import filters
 from database import Database
 from filmweb import FilmwebAPI
 from plotting import drawHistogram
@@ -232,6 +233,7 @@ class Main(object):
     self.database = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
     self.presenter = Presenter(root, self.api, self.database, conf_m)
     self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
+    self.presenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     self.presenter.totalUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
@@ -251,24 +253,6 @@ class Main(object):
       self.plot.grid(row=1, column=1, sticky=tk.N)
       #outer frame holding all filters
       frame = tk.LabelFrame(self.root, text='Filtry')
-      #frame for year filters
-      _yearFrame = tk.Frame(frame)
-      tk.Label(_yearFrame, text='Rok produkcji:').grid(row=0, column=0, columnspan=5, sticky=tk.N+tk.W)
-      tk.Label(_yearFrame, text='Od:').grid(row=1, column=0, sticky=tk.W)
-      tk.Label(_yearFrame, text='Do:').grid(row=1, column=2, sticky=tk.W)
-      _yearFrom = tk.Entry(_yearFrame, width=5, textvariable=self.filters['year_from'])
-      _yearFrom.bind('<KeyRelease>', self._filtersUpdate)
-      _yearFrom.grid(row=1, column=1, sticky=tk.W)
-      _yearTo = tk.Entry(_yearFrame, width=5, textvariable=self.filters['year_to'])
-      _yearTo.bind('<KeyRelease>', self._filtersUpdate)
-      _yearTo.grid(row=1, column=3, sticky=tk.W)
-      def _resetYearFrame(update=True):
-        self.filters['year_from'].set('')
-        self.filters['year_to'].set('')
-        if update:
-          self._filtersUpdate()
-      tk.Button(_yearFrame, text='Reset', command=_resetYearFrame).grid(row=1, column=4, sticky=tk.E)
-      _yearFrame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for rating filters
       _ratingFrame = tk.Frame(frame)
       tk.Label(_ratingFrame, text='Moja ocena:').grid(row=0, column=0, columnspan=5, sticky=tk.N+tk.W)

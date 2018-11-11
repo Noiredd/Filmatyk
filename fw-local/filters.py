@@ -21,7 +21,8 @@ class FilterMachine(object):
     self.callback()
   def getFiltering(self):
     # returns a callable that executes all of the filters
-    return lambda item: all([fun(item) for fun in self.filterFuns])
+    funs = self.filterFuns if len(self.filterFuns) > 0 else [lambda x: True]
+    return lambda item: all([fun(item) for fun in funs])
 
 class Filter(object):
   # Filters return callables that, executed on Items, return a boolean value
@@ -66,6 +67,10 @@ class Filter(object):
   # execute this every time the user modifies filter settings
   def notifyMachine(self):
     self.machineCallback(self.ID, self.function)
+  # execute this when the filter was reset
+  def reset(self):
+    self.function = self.DEFAULT
+    self.notifyMachine()
   def getID(self):
     return self.ID
   def getFunction(self):
@@ -76,3 +81,43 @@ class Filter(object):
     self.main.pack(**kw)
   def grid(self, **kw):
     self.main.grid(**kw)
+
+class YearFilter(Filter):
+  def __init__(self, root, callback):
+    self.year_from = tk.StringVar()
+    self.year_to   = tk.StringVar()
+    super(YearFilter, self).__init__(root, callback)
+  def _reset(self):
+    self.year_from.set('')
+    self.year_to.set('')
+    self.reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Rok produkcji:').grid(row=0, column=0, columnspan=5, sticky=tk.NW)
+    tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
+    tk.Label(m, text='Do:').grid(row=1, column=2, sticky=tk.NW)
+    yFrom = tk.Entry(m, width=5, textvariable=self.year_from)
+    yFrom.bind('<KeyRelease>', self._update)
+    yFrom.grid(row=1, column=1, sticky=tk.NW)
+    yTo = tk.Entry(m, width=5, textvariable=self.year_to)
+    yTo.bind('<KeyRelease>', self._update)
+    yTo.grid(row=1, column=3, sticky=tk.NW)
+    tk.Button(m, text='Reset', command=self._reset).grid(row=1, column=4, sticky=tk.NW)
+  def _update(self, event):
+    try:
+      yearFrom = int(self.year_from.get())
+    except ValueError:
+      yearFrom = 0
+    try:
+      yearTo = int(self.year_to.get())
+    except ValueError:
+      yearTo = 9999
+    # CONSIDER: if years were stored in the DB as ints...
+    def yearFilter(item):
+      year = int(item.properties['year'])
+      if year >= yearFrom and year <= yearTo:
+        return True
+      else:
+        return False
+    self.function = yearFilter
+    self.notifyMachine()

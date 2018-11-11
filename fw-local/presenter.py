@@ -4,6 +4,7 @@ from tkinter import ttk
 
 import containers
 from defaults import DEFAULT_CONFIGS
+from filters import FilterMachine
 
 class Config(object):
   # Stores the current treeview configuration, handling serialization and
@@ -95,7 +96,7 @@ class SortingMachine(object):
 class Presenter(object):
   """ TODO MAJOR
       1. Presenter has a switch whether to display ratings or want-tos
-      2. Presenter handles filtering and preview callbacks
+      2. Presenter handles preview
   """
   def __init__(self, root, api, database, config:str, displayRating=True):
     self.root = root
@@ -103,10 +104,12 @@ class Presenter(object):
     self.database = database
     self.items = []
     self.config = Config.restoreFromString(database.itemtype, config)
-    self.constructTreeView()
+    self.__construct()
     self.sortMachine = SortingMachine(self.tree, self.config.getColumns())
+    self.filtMachine = FilterMachine(self.filtersUpdate)
 
-  def constructTreeView(self):
+  def __construct(self):
+    # TREEVIEW
     self.tree = tree = ttk.Treeview(
       self.main,
       height=32,
@@ -126,8 +129,11 @@ class Presenter(object):
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
     yScroll.grid(row=0, column=1, sticky=tk.NS)
     tree.configure(yscrollcommand=yScroll.set)
-    # bind event handlers (TODO: detail preview)
+    # bind event handlers (TODO: detail preview, column resize, pop-up menu)
     tree.bind('<Button-1>', self.sortingClick)
+    # FILTER FRAME
+    self.fframe = tk.Frame(self.main)
+    self.fframe.grid(row=0, column=2, sticky=tk.NW)
 
   def storeToString(self):
     return self.config.storeToString()
@@ -137,6 +143,11 @@ class Presenter(object):
     self.main.pack(**kw)
   def grid(self, **kw):
     self.main.grid(**kw)
+
+  def addFilter(self, filter_class, **grid_args):
+    filter_object = filter_class(self.fframe, self.filtMachine.updateCallback)
+    self.filtMachine.registerFilter(filter_object)
+    filter_object.grid(**grid_args)
 
   # Display pipeline
   # Internally, the pipeline consists of 4 steps: acquiring data from the DB,
@@ -148,10 +159,12 @@ class Presenter(object):
   # has changed - the update can be triggered only from this specific point.
   def srcdataUpdate(self):
     # acquire from database to an internal state
-    self.items = self.database.getItems()
+    self.o_items = self.database.getItems()
+    self.items = self.o_items
     self.filtersUpdate()
   def filtersUpdate(self):
-    # do things
+    filtering = self.filtMachine.getFiltering()
+    self.items = list(filter(filtering, self.o_items))
     self.sortingUpdate()
   def sortingUpdate(self):
     sorting = self.sortMachine.getSorting()
