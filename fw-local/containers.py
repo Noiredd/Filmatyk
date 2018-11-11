@@ -189,9 +189,6 @@ class Item(metaclass=BlueprintInheritance):
   )
 
   def __init__(self, userdata:dict={}, **properties):
-    # TODO: what about properties defined in the blueprints but NOT passed in
-    # the constructor? Should there be any special behavior (default values?
-    # failure to construct if missing?) here or in item getter?
     self.properties = {}
     for prop, val in properties.items():
       # ignore any values that are not defined by the blueprints
