@@ -157,10 +157,11 @@ class Presenter(object):
   # one does its work and then calls the next. So there is no need to perform
   # the complete update everything when just one little thing (e.g. sorting)
   # has changed - the update can be triggered only from this specific point.
-  def srcdataUpdate(self):
+  def totalUpdate(self):
     # acquire from database to an internal state
     self.o_items = self.database.getItems()
     self.items = self.o_items
+    self.filtMachine.populateChoices(self.o_items)
     self.filtersUpdate()
   def filtersUpdate(self):
     filtering = self.filtMachine.getFiltering()
@@ -185,9 +186,6 @@ class Presenter(object):
   def detailClick(self, event=None):
     # for spawning the detail window
     pass
-  def totalUpdate(self):
-    # for triggering the whole update chain
-    self.srcdataUpdate()
   def sortingClick(self, event=None):
     # if a treeview heading was clicked - update the sorting
     click_region = self.tree.identify_region(event.x, event.y)

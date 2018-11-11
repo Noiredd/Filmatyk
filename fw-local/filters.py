@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 
 class FilterMachine(object):
   # Holds multiple filters and returns a callable that can be simply passed to a
@@ -19,6 +20,10 @@ class FilterMachine(object):
     filter_pos = self.filterMap[filter_id]
     self.filterFuns[filter_pos] = new_function
     self.callback()
+  def populateChoices(self, items:list):
+    for filter in self.filterObjs:
+      filter.populateChoices(items)
+      filter.reset()
   def getFiltering(self):
     # returns a callable that executes all of the filters
     funs = self.filterFuns if len(self.filterFuns) > 0 else [lambda x: True]
@@ -43,8 +48,8 @@ class Filter(object):
   NEXT_ID = 0
   @classmethod
   def __getNewID(cls):
-    id = cls.NEXT_ID
-    cls.NEXT_ID += 1
+    id = Filter.NEXT_ID
+    Filter.NEXT_ID += 1
     return id
   # by default any filter is inactive and everything shall pass it
   @staticmethod
@@ -62,13 +67,18 @@ class Filter(object):
     # end result of a filter: a callable
     self.function = self.DEFAULT
   def buildUI(self):
-    # user-defined code for UI construction
+    # derived-class-defined code for UI construction
+    pass
+  def populateChoices(self, items):
+    # derived-class-defined code for updating internal filter data from items
     pass
   # execute this every time the user modifies filter settings
   def notifyMachine(self):
     self.machineCallback(self.ID, self.function)
   # execute this when the filter was reset
   def reset(self):
+    self._reset()
+  def _reset(self):
     self.function = self.DEFAULT
     self.notifyMachine()
   def getID(self):
@@ -87,10 +97,10 @@ class YearFilter(Filter):
     self.year_from = tk.StringVar()
     self.year_to   = tk.StringVar()
     super(YearFilter, self).__init__(root, callback)
-  def _reset(self):
+  def reset(self):
     self.year_from.set('')
     self.year_to.set('')
-    self.reset()
+    self._reset()
   def buildUI(self):
     m = self.main
     tk.Label(m, text='Rok produkcji:').grid(row=0, column=0, columnspan=5, sticky=tk.NW)
@@ -102,7 +112,7 @@ class YearFilter(Filter):
     yTo = tk.Entry(m, width=5, textvariable=self.year_to)
     yTo.bind('<KeyRelease>', self._update)
     yTo.grid(row=1, column=3, sticky=tk.NW)
-    tk.Button(m, text='Reset', command=self._reset).grid(row=1, column=4, sticky=tk.NW)
+    tk.Button(m, text='Reset', command=self.reset).grid(row=1, column=4, sticky=tk.NW)
   def _update(self, event):
     try:
       yearFrom = int(self.year_from.get())
@@ -111,6 +121,11 @@ class YearFilter(Filter):
     try:
       yearTo = int(self.year_to.get())
     except ValueError:
+      yearTo = 9999
+    # reject nonsensical input (e.g. if user types "199", about to hit "5")
+    if yearFrom > 2999:
+      yearFrom = 0
+    if yearTo < 1000:
       yearTo = 9999
     # CONSIDER: if years were stored in the DB as ints...
     def yearFilter(item):
@@ -121,3 +136,71 @@ class YearFilter(Filter):
         return False
     self.function = yearFilter
     self.notifyMachine()
+
+class GenreFilter(Filter):
+  def __init__(self, root, callback):
+    self.mode = tk.IntVar()
+    self.allGenres = []
+    self.selGenres = []
+    self.filterMap = {
+      0: self.filterAtLeast,
+      1: self.filterAll,
+      2: self.filterExactly
+    }
+    super(GenreFilter, self).__init__(root, callback)
+  def reset(self):
+    self.mode.set(0)
+    self.selGenres = []
+    self.genreBox.selection_clear(0, tk.END)
+    self._reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Gatunek:').grid(row=0, column=0, columnspan=2, sticky=tk.NW)
+    # exportselection is necessary, otherwise multiple Listboxes break each other
+    self.genreBox = tk.Listbox(m, height=10, selectmode=tk.EXTENDED, exportselection=0)
+    self.genreBox.bind('<1>', self._waitAndUpdate)
+    self.genreBox.grid(row=1, column=0)
+    genreScroll = ttk.Scrollbar(m, command=self.genreBox.yview)
+    genreScroll.grid(row=1, column=1, sticky=tk.NS)
+    self.genreBox.configure(yscrollcommand=genreScroll.set)
+    radios = tk.Frame(m)
+    radios.grid(row=2, column=0, columnspan=2, sticky=tk.NW)
+    tk.Radiobutton(radios, text='przynajmniej', variable=self.mode, value=0,
+      command=self._update).pack(anchor=tk.W)
+    tk.Radiobutton(radios, text='wszystkie', variable=self.mode, value=1,
+      command=self._update).pack(anchor=tk.W)
+    tk.Radiobutton(radios, text='dokładnie', variable=self.mode, value=2,
+      command=self._update).pack(anchor=tk.W)
+    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, columnspan=2, sticky=tk.SE)
+  def populateChoices(self, items:list):
+    all_genres = set()
+    for item in items:
+      for genre in item.properties['genres']:
+        all_genres.add(genre)
+    self.allGenres = sorted(list(all_genres))
+    for genre in self.allGenres:
+      self.genreBox.insert(tk.END, genre)
+  def _waitAndUpdate(self, event=None):
+    # without after(), the callback executes *before* GUI has updated selection
+    self.main.after(50, self._update)
+  def _update(self, event=None):
+    self.selGenres = [self.allGenres[i] for i in self.genreBox.curselection()]
+    if len(self.selGenres) == 0:
+      self.function = Filter.DEFAULT
+    else:
+      self.function = self.filterMap[self.mode.get()]
+    self.notifyMachine()
+  def filterAtLeast(self, item):
+    for genre in self.selGenres:
+      if genre in item.properties['genres']:
+        return True
+    return False
+  def filterAll(self, item):
+    for genre in self.selGenres:
+      if genre not in item.properties['genres']:
+        return False
+    return True
+  def filterExactly(self, item):
+    if len(self.selGenres) == len(item.properties['genres']):
+      return self.filterAll(item)
+    return False

@@ -234,6 +234,7 @@ class Main(object):
     self.presenter = Presenter(root, self.api, self.database, conf_m)
     self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
     self.presenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
+    self.presenter.addFilter(filters.GenreFilter, row=0, column=1, sticky=tk.NW)
     self.presenter.totalUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
@@ -306,30 +307,6 @@ class Main(object):
           self._filtersUpdate()
       tk.Button(_timeSeenFrame, text='Reset', command=_resetTimeSeenFrame).grid(row=3, column=0, columnspan=4, sticky=tk.N+tk.E)
       _timeSeenFrame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
-      #frame for genre filters
-      _genreFrame = tk.Frame(frame)
-      tk.Label(_genreFrame, text='Gatunek:').grid(row=0, column=0, columnspan=2, sticky=tk.N+tk.W)
-      _genreWrap = tk.Frame(_genreFrame)
-      self.genreBox = _genreBox = tk.Listbox(_genreWrap, height=10, selectmode=tk.EXTENDED, exportselection=0)  #multiple listboxes with exportselection mutually block each other
-      _genreBox.bind('<1>', lambda e: self.root.after(50, self._filtersUpdate)) #ugly but necessary - need to wait till GUI updates selection
-      _genreScroll = ttk.Scrollbar(_genreWrap, command=_genreBox.yview)
-      _genreScroll.pack(side=tk.RIGHT, fill=tk.Y)
-      _genreBox.configure(yscrollcommand=_genreScroll.set)
-      _genreBox.pack(side=tk.LEFT)
-      _genreWrap.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.N+tk.E)
-      _radioWrap = tk.Frame(_genreFrame)
-      tk.Radiobutton(_radioWrap, text='przynajmniej', variable=self.filters['genre']['mode'], value=0, command=self._filtersUpdate).pack(anchor=tk.W)
-      tk.Radiobutton(_radioWrap, text='wszystkie', variable=self.filters['genre']['mode'], value=1, command=self._filtersUpdate).pack(anchor=tk.W)
-      tk.Radiobutton(_radioWrap, text='dokładnie', variable=self.filters['genre']['mode'], value=2, command=self._filtersUpdate).pack(anchor=tk.W)
-      _radioWrap.grid(row=2, column=0, sticky=tk.S+tk.W)
-      def _resetGenreFrame(update=True):
-        self.filters['genre']['mode'].set(0)
-        self.filters['genre']['list'] = []
-        self.genreBox.selection_clear(0, tk.END)
-        if update:
-          self._filtersUpdate()
-      tk.Button(_genreFrame, text='Reset', command=_resetGenreFrame).grid(row=2, column=1, sticky=tk.N+tk.E)
-      _genreFrame.grid(row=1, column=1, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
       #frame for country filters
       _countryFrame = tk.Frame(frame)
       tk.Label(_countryFrame, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.N+tk.W)
@@ -368,10 +345,8 @@ class Main(object):
       _directorFrame.grid(row=1, column=3, rowspan=4, padx=5, pady=5, sticky=tk.N+tk.W)
       #reset all filters
       def _resetAllFrames():
-        _resetYearFrame(False)
         _resetRatingFrame(False)
         _resetTimeSeenFrame(False)
-        _resetGenreFrame(False)
         _resetCountryFrame(False)
         _resetDirectorFrame(False)
         self._filtersUpdate()
