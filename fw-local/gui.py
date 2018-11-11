@@ -208,18 +208,6 @@ class Main(object):
     #prepare the components
     self.loginHandler = Login(self.root)
     self.detailHandler = Detail(self.root)
-    self.filters = {
-      'year_from':  tk.StringVar(),
-      'year_to':    tk.StringVar(),
-      'rating_from':tk.StringVar(),
-      'rating_to':  tk.StringVar(),
-      'genre':      {'mode': tk.IntVar(), 'list': []},
-      'country':    '',
-      'seen_from':  {'year': tk.IntVar(), 'month': tk.IntVar(), 'day': tk.IntVar()},
-      'seen_to':    {'year': tk.IntVar(), 'month': tk.IntVar(), 'day': tk.IntVar()},
-      'director':   ''
-    }
-    self.sorting = None
     #prepare the window
     root.title('FW local')
     root.resizable(0,0)
@@ -235,9 +223,10 @@ class Main(object):
     self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
     self.presenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     self.presenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
-    self.presenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=2, sticky=tk.NW)
-    self.presenter.addFilter(filters.CountryFilter, row=0, column=2, rowspan=2, sticky=tk.NW)
-    self.presenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=2, sticky=tk.NW)
+    self.presenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
+    self.presenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=3, sticky=tk.NW)
+    self.presenter.addFilter(filters.CountryFilter, row=0, column=2, rowspan=3, sticky=tk.NW)
+    self.presenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=3, sticky=tk.NW)
     self.presenter.totalUpdate()
     #center window AFTER creating everything (including plot)
     self.centerWindow()
@@ -249,56 +238,6 @@ class Main(object):
 
   #CONSTRUCTION
   def __construct(self):
-    def _constructFilterFrame(self):
-      #placeholder for the histogram and summary
-      self.summ = tk.Label(self.root, text='')
-      self.summ.grid(row=0, column=1, sticky=tk.N+tk.W)
-      self.plot = tk.Label(self.root, text='--------------------------------------')
-      self.plot.grid(row=1, column=1, sticky=tk.N)
-      #outer frame holding all filters
-      frame = tk.LabelFrame(self.root, text='Filtry')
-      #frame for timeSeen filters
-      _timeSeenFrame = tk.Frame(frame)
-      tk.Label(_timeSeenFrame, text='Data obejrzenia:').grid(row=0, column=0, columnspan=4, sticky=tk.N+tk.W)
-      tk.Label(_timeSeenFrame, text='Od:').grid(row=1, column=0, sticky=tk.N+tk.W)
-      tk.Label(_timeSeenFrame, text='Do:').grid(row=2, column=0, sticky=tk.N+tk.W)
-      self.timeSeenFromYear = tk.Spinbox(_timeSeenFrame, width=7, textvariable=self.filters['seen_from']['year'], command=self._filtersUpdate)
-      self.timeSeenFromYear.bind('<KeyRelease>', self._filtersUpdate)
-      self.timeSeenFromYear.grid(row=1, column=1, sticky=tk.N+tk.W)
-      _timeSeenFromMonth = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_from']['month'], command=self._filtersUpdate, values=[i+1 for i in range(12)])
-      _timeSeenFromMonth.bind('<KeyRelease>', self._filtersUpdate)
-      _timeSeenFromMonth.grid(row=1, column=2, sticky=tk.N+tk.W)
-      _timeSeenFromDay = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_from']['day'], command=self._filtersUpdate, values=[i+1 for i in range(31)])
-      _timeSeenFromDay.bind('<KeyRelease>', self._filtersUpdate)
-      _timeSeenFromDay.grid(row=1, column=3, sticky=tk.N+tk.W)
-      self.timeSeenToYear = tk.Spinbox(_timeSeenFrame, width=7, textvariable=self.filters['seen_to']['year'], command=self._filtersUpdate)
-      self.timeSeenToYear.bind('<KeyRelease>', self._filtersUpdate)
-      self.timeSeenToYear.grid(row=2, column=1, sticky=tk.N+tk.W)
-      _timeSeenToMonth = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_to']['month'], command=self._filtersUpdate, values=[i+1 for i in range(12)])
-      _timeSeenToMonth.bind('<KeyRelease>', self._filtersUpdate)
-      _timeSeenToMonth.grid(row=2, column=2, sticky=tk.N+tk.W)
-      _timeSeenToDay = tk.Spinbox(_timeSeenFrame, width=4, textvariable=self.filters['seen_to']['day'], command=self._filtersUpdate, values=[i+1 for i in range(31)])
-      _timeSeenToDay.bind('<KeyRelease>', self._filtersUpdate)
-      _timeSeenToDay.grid(row=2, column=3, sticky=tk.N+tk.W)
-      def _resetTimeSeenFrame(update=True):
-        self.filters['seen_from']['year'].set(self.yearsSeen[0])
-        self.filters['seen_from']['month'].set(1)
-        self.filters['seen_from']['day'].set(1)
-        today = datetime.datetime.now()
-        self.filters['seen_to']['year'].set(today.year)
-        self.filters['seen_to']['month'].set(today.month)
-        self.filters['seen_to']['day'].set(today.day)
-        if update:
-          self._filtersUpdate()
-      tk.Button(_timeSeenFrame, text='Reset', command=_resetTimeSeenFrame).grid(row=3, column=0, columnspan=4, sticky=tk.N+tk.E)
-      _timeSeenFrame.grid(row=3, column=0, padx=5, pady=5, sticky=tk.N+tk.W)
-      #reset all filters
-      def _resetAllFrames():
-        _resetTimeSeenFrame(False)
-        self._filtersUpdate()
-      tk.Button(frame, text='Resetuj wszystkie', command=_resetAllFrames).grid(row=3, column=3, padx=5, pady=5, sticky=tk.S+tk.E)
-      #instantiate the outer frame
-      frame.grid(row=2, column=1, padx=5, pady=5, sticky=tk.N+tk.W)
     #control panel
     frame = tk.Frame(self.root)
     tk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.SW)
@@ -318,14 +257,6 @@ class Main(object):
     x = ws/2 - w/2
     y = hs/2 - h/2
     self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-  def setYearChoices(self):
-    self.yearsSeen = self.database.getYearsSeen()
-    self.timeSeenFromYear.configure(values=self.yearsSeen)
-    self.timeSeenToYear.configure(values=self.yearsSeen)
-    today = datetime.datetime.now()
-    self.filters['seen_to']['year'].set(today.year)
-    self.filters['seen_to']['month'].set(today.month)
-    self.filters['seen_to']['day'].set(today.day)
 
   #USER DATA MANAGEMENT
   def loadUserData(self):
@@ -368,23 +299,6 @@ class Main(object):
         #if the user clicked on a movie, display the detailed view
         if movie is not None:
           self.detailHandler.launchPreview(movie)
-  def _filtersUpdate(self, event=None):
-    self._sortingUpdate()
-  def _displayUpdate(self):
-    #clear the tree
-    for item in self.tree.get_children():
-      self.tree.delete(item)
-    #fill with new values
-    movies, histogram = self.database.returnMovies()
-    for movie in movies:
-      self.tree.insert(parent='', index=0, text='', values=movie)
-    #update the histogram
-    self.histogram = drawHistogram(histogram)
-    self.plot.config(image=self.histogram)
-    #update the summary
-    shown = len(self.database.filtered)
-    total = len(self.database.movies)
-    self.summ['text'] = self.summary_format.format(shown, total)
   def _setProgress(self, value:int):
     # allows the caller to set the percentage value of the progress bar
     # non-negative values cause the bar to show up, negative hides it

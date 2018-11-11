@@ -134,6 +134,16 @@ class Presenter(object):
     # FILTER FRAME
     self.fframe = tk.Frame(self.main)
     self.fframe.grid(row=0, column=2, sticky=tk.NW)
+    # store the row and col range of inserted filters to know where to place the
+    # reset all button
+    self.fframe_grid = [0, 0]
+    # delay to the first update, after all of the filters have been added
+    self.isResetAllButtonPlaced = False
+  def __placeResetAllButton(self):
+    rab_row = self.fframe_grid[0]
+    rab_col = self.fframe_grid[1]
+    raButton = tk.Button(self.fframe, text='Resetuj filtry!', command=self.filtMachine.resetAllFilters)
+    raButton.grid(row=rab_row, column=rab_col, rowspan=rab_row+1, columnspan=rab_col+1, sticky=tk.SE)
 
   def storeToString(self):
     return self.config.storeToString()
@@ -148,6 +158,11 @@ class Presenter(object):
     filter_object = filter_class(self.fframe, self.filtMachine.updateCallback)
     self.filtMachine.registerFilter(filter_object)
     filter_object.grid(**grid_args)
+    # remember where was the furthest filter placed
+    if grid_args['row'] > self.fframe_grid[0]:
+      self.fframe_grid[0] = grid_args['row']
+    if grid_args['column'] > self.fframe_grid[1]:
+      self.fframe_grid[1] = grid_args['column']
 
   # Display pipeline
   # Internally, the pipeline consists of 4 steps: acquiring data from the DB,
@@ -162,6 +177,11 @@ class Presenter(object):
     self.o_items = self.database.getItems()
     self.items = self.o_items
     self.filtMachine.populateChoices(self.o_items)
+    # The first update is the first moment where all of the Filters have been
+    # placed for sure. This is the time when a resetAll button can be placed.
+    if not self.isResetAllButtonPlaced:
+      self.__placeResetAllButton()
+      self.isResetAllButtonPlaced = True
     self.filtersUpdate()
   def filtersUpdate(self):
     filtering = self.filtMachine.getFiltering()

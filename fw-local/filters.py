@@ -1,3 +1,4 @@
+import datetime
 import tkinter as tk
 from tkinter import ttk
 
@@ -16,6 +17,9 @@ class FilterMachine(object):
     self.filterObjs.append(filter_object)
     self.filterFuns.append(filter_object.getFunction())
     self.filterMap[filter_object.getID()] = len(self.filterObjs) - 1
+  def resetAllFilters(self):
+    for filter in self.filterObjs:
+      filter.reset()
   def updateCallback(self, filter_id:int, new_function):
     filter_pos = self.filterMap[filter_id]
     self.filterFuns[filter_pos] = new_function
@@ -309,4 +313,80 @@ class RatingFilter(Filter):
       else:
         return False
     self.function = ratingFilter
+    self.notifyMachine()
+
+class DateFilter(Filter):
+  def __init__(self, root, callback):
+    self.from_year = tk.IntVar()
+    self.from_month = tk.IntVar()
+    self.from_day = tk.IntVar()
+    self.to_year = tk.IntVar()
+    self.to_month = tk.IntVar()
+    self.to_day = tk.IntVar()
+    self.all_years = []
+    super(DateFilter, self).__init__(root, callback)
+  def reset(self):
+    self.from_year.set(self.all_years[0])
+    self.from_month.set(1)
+    self.from_day.set(1)
+    today = datetime.datetime.now()
+    self.to_year.set(today.year)
+    self.to_month.set(today.month)
+    self.to_day.set(today.day)
+    self._reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Data ocenienia:').grid(row=0, column=0, columnspan=4, sticky=tk.NW)
+    tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
+    tk.Label(m, text='Do:').grid(row=2, column=0, sticky=tk.NW)
+    self.fySpin = fySpin = tk.Spinbox(m, width=7, textvariable=self.from_year, command=self._update)
+    fySpin.bind('<KeyRelease>', self._update)
+    fySpin.grid(row=1, column=1, sticky=tk.NW)
+    self.tySpin = tySpin = tk.Spinbox(m, width=7, textvariable=self.to_year, command=self._update)
+    tySpin.bind('<KeyRelease>', self._update)
+    tySpin.grid(row=2, column=1, sticky=tk.NW)
+    months = [i+1 for i in range(12)]
+    mfSpin = tk.Spinbox(m, width=4, textvariable=self.from_month, command=self._update, values=months)
+    mfSpin.bind('<KeyRelease>', self._update)
+    mfSpin.grid(row=1, column=2, sticky=tk.NW)
+    mtSpin = tk.Spinbox(m, width=4, textvariable=self.to_month, command=self._update, values=months)
+    mtSpin.bind('<KeyRelease>', self._update)
+    mtSpin.grid(row=2, column=2, sticky=tk.NW)
+    days = [i+1 for i in range(31)]
+    dfSpin = tk.Spinbox(m, width=4, textvariable=self.from_day, command=self._update, values=days)
+    dfSpin.bind('<KeyRelease>', self._update)
+    dfSpin.grid(row=1, column=3, sticky=tk.NW)
+    dtSpin = tk.Spinbox(m, width=4, textvariable=self.to_day, command=self._update, values=days)
+    dtSpin.bind('<KeyRelease>', self._update)
+    dtSpin.grid(row=2, column=3, sticky=tk.NW)
+    tk.Button(m, text='Reset', command=self.reset).grid(row=3, column=0, columnspan=4, sticky=tk.NE)
+  def populateChoices(self, items:list):
+    all_years = set()
+    for item in items:
+      item_date = item.getRawProperty('dateOf')
+      if not item_date:
+        continue
+      all_years.add(item_date.year)
+    self.all_years = sorted(list(all_years))
+    self.fySpin.configure(values=self.all_years)
+    self.tySpin.configure(values=self.all_years)
+    self.reset()
+  def _update(self, event=None):
+    dateFrom = datetime.date(
+      year=self.from_year.get(),
+      month=self.from_month.get(),
+      day=self.from_day.get()
+    )
+    dateTo = datetime.date(
+      year=self.to_year.get(),
+      month=self.to_month.get(),
+      day=self.to_day.get()
+    )
+    def dateFilter(item):
+      date = item.getRawProperty('dateOf')
+      if date >= dateFrom and date <= dateTo:
+        return True
+      else:
+        return False
+    self.function = dateFilter
     self.notifyMachine()
