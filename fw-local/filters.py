@@ -129,7 +129,7 @@ class YearFilter(Filter):
       yearTo = 9999
     # CONSIDER: if years were stored in the DB as ints...
     def yearFilter(item):
-      year = int(item.properties['year'])
+      year = int(item.getRawProperty('year'))
       if year >= yearFrom and year <= yearTo:
         return True
       else:
@@ -155,7 +155,7 @@ class ListboxFilter(Filter):
   def populateChoices(self, items:list):
     all_options = set()
     for item in items:
-      for value in item.properties[self.PROPERTY]:
+      for value in item.getRawProperty(self.PROPERTY):
         all_options.add(value)
     self.all_options = sorted(list(all_options))
     self.box.delete(0, tk.END)
@@ -207,16 +207,16 @@ class GenreFilter(ListboxFilter):
     self.notifyMachine()
   def filterAtLeast(self, item):
     for genre in self.selected:
-      if genre in item.properties['genres']:
+      if genre in item.getRawProperty('genres'):
         return True
     return False
   def filterAll(self, item):
     for genre in self.selected:
-      if genre not in item.properties['genres']:
+      if genre not in item.getRawProperty('genres'):
         return False
     return True
   def filterExactly(self, item):
-    if len(self.selected) == len(item.properties['genres']):
+    if len(self.selected) == len(item.getRawProperty('genres')):
       return self.filterAll(item)
     return False
 
@@ -241,7 +241,7 @@ class CountryFilter(ListboxFilter):
       self.function = self.filterBelongs
     self.notifyMachine()
   def filterBelongs(self, item):
-    for country in item.properties['countries']:
+    for country in item.getRawProperty('countries'):
       if country in self.selected:
         return True
     return False

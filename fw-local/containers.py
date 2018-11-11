@@ -206,6 +206,11 @@ class Item(metaclass=BlueprintInheritance):
       return dsp(val)
     else:
       return ''
+  def getRawProperty(self, prop):
+    if prop in self.properties.keys():
+      return self.properties[prop]
+    else:
+      return ''
   def addRating(self, rating):
     self.userdata.addRating(rating)
   def addWantTo(self, wantto):
