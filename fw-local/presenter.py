@@ -4,6 +4,7 @@ from tkinter import ttk
 
 import containers
 from defaults import DEFAULT_CONFIGS
+from detailviews import DetailWindow
 from filters import FilterMachine
 
 class Config(object):
@@ -107,6 +108,7 @@ class Presenter(object):
     self.__construct()
     self.sortMachine = SortingMachine(self.tree, self.config.getColumns())
     self.filtMachine = FilterMachine(self.filtersUpdate)
+    self.detailWindow = DetailWindow.getDetailWindow()
 
   def __construct(self):
     # TREEVIEW
@@ -129,8 +131,9 @@ class Presenter(object):
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
     yScroll.grid(row=0, column=1, sticky=tk.NS)
     tree.configure(yscrollcommand=yScroll.set)
-    # bind event handlers (TODO: detail preview, column resize, pop-up menu)
+    # bind event handlers (TODO: column resize, pop-up menu)
     tree.bind('<Button-1>', self.sortingClick)
+    tree.bind('<Double-Button-1>', self.detailClick)
     # FILTER FRAME
     self.fframe = tk.Frame(self.main)
     self.fframe.grid(row=0, column=2, sticky=tk.NW)
@@ -204,8 +207,17 @@ class Presenter(object):
 
   # Interface
   def detailClick(self, event=None):
-    # for spawning the detail window
-    pass
+    # if a treeview item was double-clicked - spawn the detail view window
+    if event is None:
+      return
+    click_region = self.tree.identify_region(event.x, event.y)
+    if click_region == 'cell':
+      item_row = self.tree.identify_row(event.y)
+      item_dct = self.tree.item(item_row)
+      item_ID = item_dct['values'][0]
+      item_obj = self.database.getItemByID(item_ID)
+      if item_obj is not None:
+        self.detailWindow.launchPreview(item_obj)
   def sortingClick(self, event=None):
     # if a treeview heading was clicked - update the sorting
     click_region = self.tree.identify_region(event.x, event.y)

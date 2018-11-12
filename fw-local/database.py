@@ -10,8 +10,13 @@ class Database(object):
     self.callback = callback
     self.items = []
     self.api = api
+  # INTERFACE
   def getItems(self):
     return self.items.copy()
+  def getItemByID(self, id:int):
+    for item in self.items:
+      if item.getRawProperty('id') == id:
+        return item
   # Serialization-deserialization
   @staticmethod
   def restoreFromString(itemtype:object, string:str, api:object, callback):

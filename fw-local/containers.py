@@ -116,6 +116,7 @@ class BlueprintInheritance(type):
     return c
 
 class Item(metaclass=BlueprintInheritance):
+  TYPE_STRING = ''
   # Special ID field
   id = Blueprint(
     name='ID',
@@ -223,6 +224,7 @@ class Item(metaclass=BlueprintInheritance):
     return _dict
 
 class Movie(Item):
+  TYPE_STRING = 'FILM'
   duration = Blueprint(
     name='Długość',
     colwidth=50,
