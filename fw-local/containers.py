@@ -25,7 +25,7 @@ class Blueprint(object):
       return str(x) + ' ' + ''.join('★' for i in range(v))
   @staticmethod
   def _favourite(x):
-    return '♥' if x == 1 else ''
+    return '♥' if x == 1 else ' '
 
   def __init__(self, name:str, colwidth:int, parsing:dict={}, display=None, store=True):
     self.display_name = name

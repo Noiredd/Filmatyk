@@ -60,7 +60,7 @@ class Database(object):
     return True
   def hardUpdate(self):
     # in theory, this removes all existing items and recollects the whole data
-    # but in practice this reacquisition may fall - in which case we shouldn't
+    # but in practice this reacquisition may fail - in which case we shouldn't
     # just lose the existing database and shrug, so this backs it up first
     old_items = self.items
     self.items = []

@@ -8,3 +8,6 @@ DEFAULT_CONFIGS = {
     'comment': None
   }
 }
+DEFAULT_SORTING = {
+  'Movie': ('dateOf', False) # column name, ascending
+}

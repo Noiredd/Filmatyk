@@ -227,10 +227,11 @@ class FilmwebAPI(object):
       date_['d'] = 1
     #translate that dict to more readable standard
     id = origDict['eId']
+    isFaved = origDict['f'] if 'f' in origDict.keys() else 0
     ratingDict = {
       'rating':  origDict['r'],
       'comment': origDict['c'] if 'c' in origDict.keys() else '',
       'dateOf':  date_,
-      'faved':   origDict['a']
+      'faved':   isFaved
     }
     return ratingDict, id

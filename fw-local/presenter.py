@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import containers
-from defaults import DEFAULT_CONFIGS
+from defaults import DEFAULT_CONFIGS, DEFAULT_SORTING
 from detailviews import DetailWindow
 from filters import FilterMachine
 
@@ -50,13 +50,23 @@ class SortingMachine(object):
   @staticmethod
   def makeLambda(key):
     return lambda x: x.properties[key]
-  def __init__(self, tree, columns):
+  def __init__(self, tree, columns:list, itemtype:str):
     self.tree = tree
     self.columns = columns
     self.current_id = ''
     self.original_heading = ''
     self.sorting = None
     self.ascending = False
+    self.firstRun(itemtype)
+  def firstRun(self, itemtype:str):
+    default_key, default_asc = DEFAULT_SORTING[itemtype]
+    # get the index of a column that holds the default key (if there is such!)
+    if default_key not in self.columns:
+      return
+    column_num = self.columns.index(default_key) + 1 # plus a #0 ID column
+    column_id = '#{}'.format(column_num)
+    self.update(column_id)
+    self.ascending = default_asc
   def update(self, column_id:str):
     # retrieve the column name which is also the name of element to sort by
     column_name = self.tree.column(column=column_id, option='id')
@@ -106,7 +116,7 @@ class Presenter(object):
     self.items = []
     self.config = Config.restoreFromString(database.itemtype, config)
     self.__construct()
-    self.sortMachine = SortingMachine(self.tree, self.config.getColumns())
+    self.sortMachine = SortingMachine(self.tree, self.config.getColumns(), self.database.itemtype)
     self.filtMachine = FilterMachine(self.filtersUpdate)
     self.detailWindow = DetailWindow.getDetailWindow()
 
@@ -219,6 +229,8 @@ class Presenter(object):
       if item_obj is not None:
         self.detailWindow.launchPreview(item_obj)
   def sortingClick(self, event=None):
+    if event is None:
+      return
     # if a treeview heading was clicked - update the sorting
     click_region = self.tree.identify_region(event.x, event.y)
     if click_region != 'heading':
