@@ -6,6 +6,7 @@ import containers
 from defaults import DEFAULT_CONFIGS, DEFAULT_SORTING
 from detailviews import DetailWindow
 from filters import FilterMachine
+from statview import StatView
 
 class Config(object):
   # Stores the current treeview configuration, handling serialization and
@@ -107,7 +108,6 @@ class SortingMachine(object):
 class Presenter(object):
   """ TODO MAJOR
       1. Presenter has a switch whether to display ratings or want-tos
-      2. Presenter handles preview
   """
   def __init__(self, root, api, database, config:str, displayRating=True):
     self.root = root
@@ -137,16 +137,19 @@ class Presenter(object):
       # if there is already a Detail view (e.g. for those long comments)?
       tree.column(column=column, width=self.config.getWidth(column), stretch=False)
       tree.heading(column=column, text=self.config.getHeading(column), anchor=tk.W)
-    tree.grid(row=0, column=0)
+    tree.grid(row=0, column=0, rowspan=2)
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
-    yScroll.grid(row=0, column=1, sticky=tk.NS)
+    yScroll.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
     tree.configure(yscrollcommand=yScroll.set)
     # bind event handlers (TODO: column resize, pop-up menu)
     tree.bind('<Button-1>', self.sortingClick)
     tree.bind('<Double-Button-1>', self.detailClick)
+    # STATISTICS VIEW
+    self.stats = StatView(self.main, self.database.itemtype)
+    self.stats.grid(row=0, column=2, sticky=tk.NW)
     # FILTER FRAME
     self.fframe = tk.Frame(self.main)
-    self.fframe.grid(row=0, column=2, sticky=tk.NW)
+    self.fframe.grid(row=1, column=2, sticky=tk.NW)
     # store the row and col range of inserted filters to know where to place the
     # reset all button
     self.fframe_grid = [0, 0]
@@ -213,7 +216,8 @@ class Presenter(object):
     for item in self.items:
       values = [item['id']] + [item[prop] for prop in self.config.getColumns()]
       self.tree.insert(parent='', index=0, text='', values=values)
-    # TODO: update summaries, plots etc.
+    # update statistics
+    self.stats.update(self.items)
 
   # Interface
   def detailClick(self, event=None):

@@ -7,7 +7,6 @@ from tkinter import ttk
 import filters
 from database import Database
 from filmweb import FilmwebAPI
-from plotting import drawHistogram
 from presenter import Presenter
 
 VERSION = '1.0-alpha.5'
