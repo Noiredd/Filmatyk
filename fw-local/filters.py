@@ -100,37 +100,49 @@ class YearFilter(Filter):
   def __init__(self, root, callback):
     self.year_from = tk.StringVar()
     self.year_to   = tk.StringVar()
+    self.all_years = []
     super(YearFilter, self).__init__(root, callback)
   def reset(self):
-    self.year_from.set('')
-    self.year_to.set('')
+    self.year_from.set(str(self.all_years[0]))
+    self.year_to.set(str(self.all_years[-1]))
     self._reset()
   def buildUI(self):
     m = self.main
     tk.Label(m, text='Rok produkcji:').grid(row=0, column=0, columnspan=5, sticky=tk.NW)
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=1, column=2, sticky=tk.NW)
-    yFrom = tk.Entry(m, width=5, textvariable=self.year_from)
+    self.yFrom = yFrom = tk.Spinbox(m, width=5, textvariable=self.year_from, command=self._update)
     yFrom.bind('<KeyRelease>', self._update)
     yFrom.grid(row=1, column=1, sticky=tk.NW)
-    yTo = tk.Entry(m, width=5, textvariable=self.year_to)
+    self.yTo = yTo = tk.Spinbox(m, width=5, textvariable=self.year_to, command=self._update)
     yTo.bind('<KeyRelease>', self._update)
     yTo.grid(row=1, column=3, sticky=tk.NW)
     tk.Button(m, text='Reset', command=self.reset).grid(row=1, column=4, sticky=tk.NW)
-  def _update(self, event):
+  def populateChoices(self, items:list):
+    all_years = set()
+    for item in items:
+      year = item.getRawProperty('year')
+      if not year:
+        continue
+      all_years.add(year)
+    self.all_years = sorted(list(all_years))
+    self.yFrom.configure(values=self.all_years)
+    self.yTo.configure(values=self.all_years)
+    self.reset()
+  def _update(self, event=None):
     try:
       yearFrom = int(self.year_from.get())
     except ValueError:
-      yearFrom = 0
+      yearFrom = int(self.all_years[0])
     try:
       yearTo = int(self.year_to.get())
     except ValueError:
-      yearTo = 9999
+      yearTo = int(self.all_years[-1])
     # reject nonsensical input (e.g. if user types "199", about to hit "5")
     if yearFrom > 2999:
-      yearFrom = 0
+      yearFrom = int(self.all_years[0])
     if yearTo < 1000:
-      yearTo = 9999
+      yearTo = int(self.all_years[-1])
     # CONSIDER: if years were stored in the DB as ints...
     def yearFilter(item):
       year = int(item.getRawProperty('year'))
@@ -282,18 +294,19 @@ class RatingFilter(Filter):
     self.rate_to = tk.StringVar()
     super(RatingFilter, self).__init__(root, callback)
   def reset(self):
-    self.rate_from.set('')
-    self.rate_to.set('')
+    self.rate_from.set('-')
+    self.rate_to.set('10')
     self._reset()
   def buildUI(self):
     m = self.main
     tk.Label(m, text='Moja ocena:').grid(row=0, column=0, columnspan=5, sticky=tk.NW)
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=1, column=2, sticky=tk.NW)
-    rFrom = tk.Entry(m, width=5, textvariable=self.rate_from)
+    values = ['-'] + [str(i) for i in range(1,11)]
+    rFrom = tk.Spinbox(m, width=4, textvariable=self.rate_from, command=self._update, values=values)
     rFrom.bind('<KeyRelease>', self._update)
     rFrom.grid(row=1, column=1, sticky=tk.NW)
-    rTo = tk.Entry(m, width=5, textvariable=self.rate_to)
+    rTo = tk.Spinbox(m, width=4, textvariable=self.rate_to, command=self._update, values=values)
     rTo.bind('<KeyRelease>', self._update)
     rTo.grid(row=1, column=3, sticky=tk.NW)
     tk.Button(m, text='Reset', command=self.reset).grid(row=1, column=4, sticky=tk.NE)
@@ -317,12 +330,12 @@ class RatingFilter(Filter):
 
 class DateFilter(Filter):
   def __init__(self, root, callback):
-    self.from_year = tk.IntVar()
-    self.from_month = tk.IntVar()
-    self.from_day = tk.IntVar()
-    self.to_year = tk.IntVar()
-    self.to_month = tk.IntVar()
-    self.to_day = tk.IntVar()
+    self.from_year = tk.StringVar()
+    self.from_month = tk.StringVar()
+    self.from_day = tk.StringVar()
+    self.to_year = tk.StringVar()
+    self.to_month = tk.StringVar()
+    self.to_day = tk.StringVar()
     self.all_years = []
     super(DateFilter, self).__init__(root, callback)
   def reset(self):
@@ -371,16 +384,23 @@ class DateFilter(Filter):
     self.fySpin.configure(values=self.all_years)
     self.tySpin.configure(values=self.all_years)
     self.reset()
+  def getIntValue(self, var, default:int=1):
+    val = var.get()
+    try:
+      val = int(val)
+    except ValueError:
+      val = default
+    return val
   def _update(self, event=None):
     dateFrom = datetime.date(
-      year=self.from_year.get(),
-      month=self.from_month.get(),
-      day=self.from_day.get()
+      year=self.getIntValue(self.from_year),
+      month=self.getIntValue(self.from_month),
+      day=self.getIntValue(self.from_day)
     )
     dateTo = datetime.date(
-      year=self.to_year.get(),
-      month=self.to_month.get(),
-      day=self.to_day.get()
+      year=self.getIntValue(self.to_year, default=9999),
+      month=self.getIntValue(self.to_month),
+      day=self.getIntValue(self.to_day)
     )
     def dateFilter(item):
       date = item.getRawProperty('dateOf')
