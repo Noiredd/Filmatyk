@@ -183,6 +183,10 @@ class Main(object):
     # if for any reason the first update hasn't commenced - don't save anything
     if self.api.username is None:
       return
+    # if there is no need to save anything - stop right there too
+    # TODO: check presenter in the same way, once the config becomes mutable
+    if not self.database.isDirty:
+      return
     # safety feature against failing to write new data and removing the old
     if os.path.exists(self.filename):
       os.rename(self.filename, self.filename + '.bak')
@@ -198,6 +202,8 @@ class Main(object):
     # if there were no errors at point, new data has been successfully written
     if os.path.exists(self.filename + '.bak'):
       os.remove(self.filename + '.bak')
+    # notify the objects that they were saved - maybe could be a method for this
+    self.database.isDirty = False
 
   #CALLBACKS
   def _setProgress(self, value:int):
