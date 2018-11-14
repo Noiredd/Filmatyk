@@ -1,2 +1,2 @@
 cd fw-local
-python gui.py
+start pythonw gui.py

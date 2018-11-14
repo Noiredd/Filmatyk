@@ -1,4 +1,4 @@
 cd fw-local
-python -m pip install requests_html
-python -m pip install matplotlib
-python -m pip install pillow
+python3 -m pip install requests_html
+python3 -m pip install matplotlib
+python3 -m pip install pillow
