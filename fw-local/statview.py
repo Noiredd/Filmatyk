@@ -1,11 +1,13 @@
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
+import statistics
 import tkinter as tk
 
 class StatView(object):
   STRINGS = {
     'Movie': {
-      'summary': 'Wyświetlono {} z {} filmów.'
+      'summary': 'Wyświetlono {} z {} filmów.',
+      'average': 'Średnia ocena wyświetlonych: {:.2f}'
     }
   }
 
@@ -14,8 +16,10 @@ class StatView(object):
     self.total_length = 0
     self.summary = tk.Label(self.main, text='')
     self.summary.grid(row=0, column=0, sticky=tk.NW)
+    self.average = tk.Label(self.main, text='')
+    self.average.grid(row=1, column=0, sticky=tk.NW)
     self.plot = tk.Label(self.main, text='')
-    self.plot.grid(row=1, column=0, sticky=tk.N)
+    self.plot.grid(row=2, column=0, sticky=tk.N)
     self.figure = None
     self.image = None
     self.strings = self.STRINGS[itemtype]
@@ -28,9 +32,15 @@ class StatView(object):
     for item in items:
       rating = item.getRawProperty('rating')
       item_histo[rating] += 1
-    # update summary string and graphics
+    # update summaries and graphics
     self.summary['text'] = self.strings['summary'].format(item_count, self.total_length)
+    self.printMeanRating(items)
     self.drawHistogram(item_histo)
+  def printMeanRating(self, items:list):
+    ratings = [item.getRawProperty('rating') for item in items]
+    ratings = [r for r in ratings if r > 0]
+    fmt_str = self.strings['average']
+    self.average['text'] = fmt_str.format(statistics.mean(ratings))
   def drawHistogram(self, values):
     # draw
     if self.figure is None:
