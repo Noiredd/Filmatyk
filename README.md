@@ -15,7 +15,7 @@ dzięki temu masz możliwość *przeglądania ich i filtrowania* na różne spos
 ### Jak uruchomić fw-local?
 Na ten moment program nie ma instalatora, więc pierwsze uruchomienie może być mało wygodne.
 
-0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/1.0-alpha.5.zip) i wypakuj, gdzie Ci wygodnie.
+0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0-alpha.6.zip) i wypakuj, gdzie Ci wygodnie.
 
 1. Pierwszym krokiem będzie prawdopodobnie instalacja Python3 ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
 na chwilę obecną najnowszym wydaniem jest Python 3.7.1.
@@ -45,7 +45,8 @@ Następnym krokiem będzie dodanie możliwości przeglądania ocen seriali i gie
 Dalej - list "chcę zobaczyć".
 Oczywiście nowe kategorie będzie można filtrować na takie same sposoby jak obecnie.
 
-Widok podglądu zostanie prawdopodobnie poszerzony o plakat filmu.
+Widok podglądu zostanie prawdopodobnie poszerzony o plakat filmu,
+pojawi się także możliwość konfiguracji układu kolumn.
 
 Myślę też o poszerzeniu widoku statystyk o parę ciekawszych wskaźników.
 

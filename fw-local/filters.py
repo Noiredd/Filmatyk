@@ -100,7 +100,7 @@ class YearFilter(Filter):
   def __init__(self, root, callback):
     self.year_from = tk.StringVar()
     self.year_to   = tk.StringVar()
-    self.all_years = []
+    self.all_years = [0, 9999]
     super(YearFilter, self).__init__(root, callback)
   def reset(self):
     self.year_from.set(str(self.all_years[0]))
@@ -126,6 +126,8 @@ class YearFilter(Filter):
         continue
       all_years.add(year)
     self.all_years = sorted(list(all_years))
+    if len(self.all_years) == 0:
+      self.all_years = [0, 9999]
     self.yFrom.configure(values=self.all_years)
     self.yTo.configure(values=self.all_years)
     self.reset()
@@ -336,7 +338,7 @@ class DateFilter(Filter):
     self.to_year = tk.StringVar()
     self.to_month = tk.StringVar()
     self.to_day = tk.StringVar()
-    self.all_years = []
+    self.all_years = [0, 9999]
     super(DateFilter, self).__init__(root, callback)
   def reset(self):
     self.from_year.set(self.all_years[0])
@@ -381,6 +383,8 @@ class DateFilter(Filter):
         continue
       all_years.add(item_date.year)
     self.all_years = sorted(list(all_years))
+    if len(self.all_years) == 0:
+      self.all_years = [0, 9999]
     self.fySpin.configure(values=self.all_years)
     self.tySpin.configure(values=self.all_years)
     self.reset()

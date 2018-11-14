@@ -40,7 +40,11 @@ class StatView(object):
     ratings = [item.getRawProperty('rating') for item in items]
     ratings = [r for r in ratings if r > 0]
     fmt_str = self.strings['average']
-    self.average['text'] = fmt_str.format(statistics.mean(ratings))
+    if len(ratings) == 0:
+      mean = 0.0
+    else:
+      mean = statistics.mean(ratings)
+    self.average['text'] = fmt_str.format(mean)
   def drawHistogram(self, values):
     # draw
     if self.figure is None:
