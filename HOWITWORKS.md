@@ -43,7 +43,7 @@ Therefore, each element to be extracted comes with a parsing rule that tells the
 This parsing rule is a `dict`, with keys are described in the table below.
 
 Key | Type | Reqd | Meaning
---- | ---
+--- | --- | --- | ---
 `tag` | str | **YES** | tag of the element holding the data (`div`, `h3`, ...)
 `class` | str | **YES** | the `class` attribute of the element has to contain this string (e.g. `<div class="blah blah name blah"`)
 `text` | bool | **YES** | whether the data is contained directly in the element's text, or in some of its attributes
@@ -67,3 +67,46 @@ The rating information is then appended to the previously parsed generic data, s
 #### Session management
 
 ### Presenter
+
+`Presenter` is a class responsible for displaying items from the database.
+This process consists of 4 steps: retrieving the items from the DB (`totalUpdate`), (optionally) filtering them through some user-given criteria (`filtersUpdate`), (optionally) sorting them by some user-given key (`sortingUpdate`) and eventually putting them into a TreeView for interactive display (`displayUpdate`).
+Those actions are arranged into a call chain; that is, triggering one of them automatically triggers all subsequent steps (this way, updating the sorting method does not require the database to be read again).
+
+The first step is rather trivial, as the Presenter essentially acquires a copy of the data held by the database.
+Rest of the steps will be briefly explained below.
+
+#### Filtering
+
+In this step, the list of items is filtered through a set of criteria chosen by the user.
+The mechanism consists of two parts: a `FilterMachine` that performs the actual (well, almost actual) filtering, and a set of `Filters`.  
+Each `Filter` defines both its functionality - filters return a callable object that inputs an `Item` and returns a `boolean` - as well as a GUI representation - filters directly draw their user-interactive widgets.  
+A `FilterMachine` is a parent to all the instances of a `Filter` - its job is to construct a wrapping callable from all of the callables returned by each individual filter.
+This callable is then evaluated by the `Presenter` on each of the items on the list, resulting in a new list of items which passed all of the criteria.
+
+##### Filter class
+
+The `buildUI` function is responsible for constructing a `tk.Frame` which can then be placed within the `Presenter` using a standard Tkinter interface (either a `grid` or `pack`, which wrap around the `Frame` directly).
+Some filters might need a list of possible values (e.g. all directors) - a way to allow it to retrieve such a list is to implement a `populateChoices` method.
+This method will be called by the `FilterMachine` (triggered by the `Presenter` whenever the database changes), automatically causing all filters to refresh their internals.  
+Within a filter there is usually some update method (most concrete implementations feature an `_update`) that changes its internal state, generating a new callable.  
+A filter is supposed to notify the machine about each change -- `notifyMachine` is defined in the base class for this purpose.
+Since a filter is (supposed to be) equipped with a callback to the machine, this function executes said callback automatically passing the new callable to it, along with a filter ID for identification.
+Each new object of `Filter` assigns itself a unique ID -- see the `__getNewID` class method.  
+Filters can be reset to defaults using a `reset` and `_reset` methods.
+The underscore-prefixed version **shall not** be overridden as it is responsible for the most basic aspect of a reset, that is: returning an always-`True` lambda and calling back to the machine.
+The `reset` function performs a filter-specific activities, and then **shall** call to the `_reset` for the usual.
+
+##### FilterMachine class
+
+`Presenter` does not interact directly with the filters, with the only exception being the moment when it's being added (`Presenter::addFilter`).
+Aside from that, a `FilterMachine` manages the individual filter objects, returning a callable that aggregates all of the individual filter callables -- the presenter uses this callable directly in the `filtersUpdate` on the list of its items.  
+When a database changes, `Presenter` calls `FilterMachine::populateChoices`, and the machine calls the same function on all of its filters.
+Similarly, the *reset all* button calls back `FilterMachine::resetAllFilters` instead of each individual filter directly.  
+`FilterMachine` stores filters and their callables by IDs, allowing only the specific filter-generated callables to be replaced when a filter is modified by the user.
+Each new filter has to be registered with the machine (`registerFilter`).
+Whenever that happens, the machine also endows the filter with a notification callback to itself (`updateCallback`).  
+Finally, whenever any filter is changed and calls back to the machine, the machine also calls back to the presenter, notifying it that it should execute the display chain from the filtering step.
+
+#### Sorting
+
+#### Display

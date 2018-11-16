@@ -14,6 +14,7 @@ class FilterMachine(object):
     self.filterMap = {} # maps filter ID's to their positions on the lists
     self.callback = callback # to notify the Presenter about any changes
   def registerFilter(self, filter_object:object):
+    filter_object.setCallback(self.updateCallback)
     self.filterObjs.append(filter_object)
     self.filterFuns.append(filter_object.getFunction())
     self.filterMap[filter_object.getID()] = len(self.filterObjs) - 1
@@ -60,16 +61,18 @@ class Filter(object):
   def DEFAULT(x):
     return True
 
-  def __init__(self, root, machineCallback):
+  def __init__(self, root):
     # automatically assign the next free ID
     self.ID = self.__getNewID()
     # construct the GUI aspect
     self.main = tk.Frame(root)
     self.buildUI()
     # callback takes 2 args: an ID (int) and a function (callable)
-    self.machineCallback = machineCallback
+    self.machineCallback = lambda x: x # machine sets that during registering
     # end result of a filter: a callable
     self.function = self.DEFAULT
+  def setCallback(self, callback):
+    self.machineCallback = callback
   def buildUI(self):
     # derived-class-defined code for UI construction
     pass
@@ -97,11 +100,11 @@ class Filter(object):
     self.main.grid(**kw)
 
 class YearFilter(Filter):
-  def __init__(self, root, callback):
+  def __init__(self, root):
     self.year_from = tk.StringVar()
     self.year_to   = tk.StringVar()
     self.all_years = [0, 9999]
-    super(YearFilter, self).__init__(root, callback)
+    super(YearFilter, self).__init__(root)
   def reset(self):
     self.year_from.set(str(self.all_years[0]))
     self.year_to.set(str(self.all_years[-1]))
@@ -157,9 +160,9 @@ class YearFilter(Filter):
 
 class ListboxFilter(Filter):
   PROPERTY = '' #derived classes must override this
-  def __init__(self, root, callback):
+  def __init__(self, root):
     self.all_options = []
-    super(ListboxFilter, self).__init__(root, callback)
+    super(ListboxFilter, self).__init__(root)
   def makeListbox(self, where, selectmode, **grid_args):
     frame = tk.Frame(where)
     # exportselection is necessary, otherwise multiple Listboxes break each other
@@ -190,7 +193,7 @@ class ListboxFilter(Filter):
 
 class GenreFilter(ListboxFilter):
   PROPERTY = 'genres'
-  def __init__(self, root, callback):
+  def __init__(self, root):
     self.mode = tk.IntVar()
     self.selected = []
     self.filterMap = {
@@ -198,7 +201,7 @@ class GenreFilter(ListboxFilter):
       1: self.filterAll,
       2: self.filterExactly
     }
-    super(GenreFilter, self).__init__(root, callback)
+    super(GenreFilter, self).__init__(root)
   def reset(self):
     self.mode.set(0)
     self.selected = []
@@ -240,9 +243,9 @@ class GenreFilter(ListboxFilter):
 
 class CountryFilter(ListboxFilter):
   PROPERTY = 'countries'
-  def __init__(self, root, callback):
+  def __init__(self, root):
     self.selected = []
-    super(CountryFilter, self).__init__(root, callback)
+    super(CountryFilter, self).__init__(root)
   def reset(self):
     self.selected = []
     self._reset()
@@ -266,9 +269,9 @@ class CountryFilter(ListboxFilter):
 
 class DirectorFilter(ListboxFilter):
   PROPERTY = 'directors'
-  def __init__(self, root, callback):
+  def __init__(self, root):
     self.selected = []
-    super(DirectorFilter, self).__init__(root, callback)
+    super(DirectorFilter, self).__init__(root)
   def reset(self):
     self.selected = []
     self._reset()
@@ -291,10 +294,10 @@ class DirectorFilter(ListboxFilter):
     return False
 
 class RatingFilter(Filter):
-  def __init__(self, root, callback):
+  def __init__(self, root):
     self.rate_from = tk.StringVar()
     self.rate_to = tk.StringVar()
-    super(RatingFilter, self).__init__(root, callback)
+    super(RatingFilter, self).__init__(root)
   def reset(self):
     self.rate_from.set('-')
     self.rate_to.set('10')
@@ -331,7 +334,7 @@ class RatingFilter(Filter):
     self.notifyMachine()
 
 class DateFilter(Filter):
-  def __init__(self, root, callback):
+  def __init__(self, root):
     self.from_year = tk.StringVar()
     self.from_month = tk.StringVar()
     self.from_day = tk.StringVar()
@@ -339,7 +342,7 @@ class DateFilter(Filter):
     self.to_month = tk.StringVar()
     self.to_day = tk.StringVar()
     self.all_years = [0, 9999]
-    super(DateFilter, self).__init__(root, callback)
+    super(DateFilter, self).__init__(root)
   def reset(self):
     self.from_year.set(self.all_years[0])
     self.from_month.set(1)

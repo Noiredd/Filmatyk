@@ -171,7 +171,7 @@ class Presenter(object):
     self.main.grid(**kw)
 
   def addFilter(self, filter_class, **grid_args):
-    filter_object = filter_class(self.fframe, self.filtMachine.updateCallback)
+    filter_object = filter_class(self.fframe)
     self.filtMachine.registerFilter(filter_object)
     filter_object.grid(**grid_args)
     # remember where was the furthest filter placed
