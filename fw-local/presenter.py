@@ -12,7 +12,12 @@ class Config(object):
   # Stores the current treeview configuration, handling serialization and
   # deserialization, as well as config changes. Presenter owns one and queries
   # it when displaying items.
-  # TODO: GUI aspect for user-interactive config.
+  # TODO: GUI aspect for user-interactive config:
+  # 1. populate treeviews
+  # 2. implement configuration methods (arrow buttons) and reset to default
+  # 3. presenter callback to reconfigure columns and trigger display (detect changes)
+  # 4. and handle the dirty bit
+  # 5. find a way to enter a new column width?
   def __init__(self, itemtype:str, columns:dict={}):
     self.rawConfig = columns
     itemclass = containers.classByString[itemtype]
@@ -25,6 +30,68 @@ class Config(object):
       config_width = self.rawConfig[name]
       set_width = config_width if config_width is not None else default_width
       self.columns[name] = set_width
+    self.__construct()
+  # GUI aspect
+  def __construct(self):
+    self.window = cw = tk.Toplevel()
+    self.window.title('Konfiguracja kolumn')
+    columns = ['id', 'name', 'width']
+    self.activeCols = ttk.Treeview(cw, height=10, selectmode='browse', columns=columns)
+    self.activeCols['displaycolumns'] = columns[1:]
+    self.activeCols.column(column='#0', width=0, stretch=False)
+    self.activeCols.column(column='name', width=150, stretch=False)
+    self.activeCols.column(column='width', width=55, stretch=False)
+    self.activeCols.heading(column='name', text='Nazwa', anchor=tk.W)
+    self.activeCols.heading(column='width', text='Rozmiar', anchor=tk.W)
+    self.activeCols.grid(row=0, column=0, rowspan=3)
+    self.availableCols = ttk.Treeview(cw, height=10, selectmode='browse', columns=columns)
+    self.availableCols['displaycolumns'] = columns[1:]
+    self.availableCols.column(column='#0', width=0, stretch=False)
+    self.availableCols.column(column='name', width=150, stretch=False)
+    self.availableCols.column(column='width', width=55, stretch=False)
+    self.availableCols.heading(column='name', text='Nazwa', anchor=tk.W)
+    self.availableCols.heading(column='width', text='Rozmiar', anchor=tk.W)
+    self.availableCols.grid(row=0, column=2, rowspan=3)
+    enablers = tk.Frame(cw)
+    enablers.grid(row=0, column=1, sticky=tk.N)
+    tk.Button(enablers, text='←', command=self._moveToActive).grid(row=0, column=0)
+    tk.Button(enablers, text='→', command=self._moveToAvailable).grid(row=1, column=0)
+    order = tk.Frame(cw)
+    order.grid(row=1, column=1)
+    tk.Button(order, text='↑', command=self._moveUp).grid(row=0, column=0)
+    tk.Button(order, text='↓', command=self._moveDown).grid(row=1, column=0)
+    ctrl = tk.Frame(cw)
+    ctrl.grid(row=2, column=1, sticky=tk.S)
+    tk.Button(ctrl, text='Domyślne', command=lambda x: x).grid(row=0, column=0)
+    tk.Button(ctrl, text='OK', command=self._confirmClick).grid(row=1, column=0)
+    self.window.withdraw()
+  def _moveToActive(self, event=None):
+    # insert a new column
+    pass
+  def _moveToAvailable(self, event=None):
+    # remove a column
+    pass
+  def _moveUp(self, event=None):
+    # change order
+    pass
+  def _moveDown(self, event=None):
+    # change order
+    pass
+  def _confirmClick(self, event=None):
+    self.window.withdraw()
+  def centerWindow(self):
+    self.window.update()
+    ws = self.window.winfo_screenwidth()
+    hs = self.window.winfo_screenheight()
+    w = self.window.winfo_width()
+    h = self.window.winfo_height()
+    x = ws/2 - w/2
+    y = hs/2 - h/2
+    self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+  def popUp(self):
+    self.window.deiconify()
+    self.centerWindow()
+  # getters
   def getColumns(self):
     return list(self.columns.keys())
   def getWidth(self, column):
@@ -51,6 +118,7 @@ class SortingMachine(object):
   @staticmethod
   def makeLambda(key):
     return lambda x: x.properties[key]
+
   def __init__(self, tree, columns:list, itemtype:str):
     self.tree = tree
     self.columns = columns
@@ -141,9 +209,17 @@ class Presenter(object):
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
     yScroll.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
     tree.configure(yscrollcommand=yScroll.set)
-    # bind event handlers (TODO: column resize, pop-up menu)
+    # POP-UP MENU
+    self.menu = tk.Menu(self.main, tearoff=0)
+    self.menu.add_command(label='Konfiguracja', command=self.config.popUp)
+    def menuPop(event):
+      click_region = self.tree.identify_region(event.x, event.y)
+      if click_region == 'heading':
+        self.menu.post(event.x_root, event.y_root)
+    # bind event handlers (TODO: column resize detect & callback)
     tree.bind('<Button-1>', self.sortingClick)
     tree.bind('<Double-Button-1>', self.detailClick)
+    tree.bind('<Button-3>', menuPop)
     # STATISTICS VIEW
     self.stats = StatView(self.main, self.database.itemtype)
     self.stats.grid(row=0, column=2, sticky=tk.NW)
