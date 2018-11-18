@@ -22,7 +22,7 @@ class Login(object):
     self.session = None
     self.username = ''
     self.root = root
-    self.window.resizable(0,0)
+    self.window.resizable(False, False)
     self.window.attributes("-topmost", True)
     self.window.title('Zaloguj się')
     self.isDone = tk.BooleanVar()
@@ -80,7 +80,7 @@ class Login(object):
     h = self.window.winfo_height()
     x = ws/2 - w/2
     y = hs/2 - h/2
-    self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+    self.window.geometry('+{:.0f}+{:.0f}'.format(x, y))
 
   #CALLBACKS
   def _setStateBad(self, event=None):
@@ -125,7 +125,7 @@ class Main(object):
     self.loginHandler = Login(self.root)
     #prepare the window
     root.title('FW local')
-    root.resizable(0,0)
+    root.resizable(False, False)
     self.__construct()
     #load the savefile and instantiate Presenter(s) and Database(s)
     userdata = self.loadUserData()
@@ -171,7 +171,7 @@ class Main(object):
     h = self.root.winfo_height()
     x = ws/2 - w/2
     y = hs/2 - h/2
-    self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
+    self.root.geometry('+{:.0f}+{:.0f}'.format(x, y))
 
   #USER DATA MANAGEMENT
   def loadUserData(self):

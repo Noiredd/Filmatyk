@@ -16,7 +16,6 @@ class Config(object):
   # TODO: GUI aspect for user-interactive config:
   # 5. find a way to enter a new column width?
   # 6. column width detection and callback
-  # 7. resize the whole window along with the TV -- think this through
 
   def __init__(self, itemtype:str, columns:OrderedDict, parent:object):
     self.parent = parent
@@ -42,7 +41,7 @@ class Config(object):
     return wrapper
   def __construct(self):
     self.window = cw = tk.Toplevel()
-    self.window.resizable(0,0)
+    self.window.resizable(False, False)
     self.window.title('Konfiguracja kolumn')
     columns = ['id', 'name', 'width']
     self.activeCols = ttk.Treeview(cw, height=10, selectmode='browse', columns=columns)
@@ -147,8 +146,12 @@ class Config(object):
     # hide window and release focus
     self.window.withdraw()
     self.window.grab_release()
-    # apply changes and refresh the Presenter
+    # apply changes, allowing the window to resize along with the tereview
+    self.parent.root.resizable(True, True)
     self.parent.configureColumns()
+    self.parent.root.update()
+    self.parent.root.resizable(False, False)
+    # refresh items
     self.parent.displayUpdate()
   def centerWindow(self):
     self.window.update()
@@ -158,7 +161,7 @@ class Config(object):
     h = self.window.winfo_height()
     x = ws/2 - w/2
     y = hs/2 - h/2
-    self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
+    self.window.geometry('+{:.0f}+{:.0f}'.format(x, y))
   def popUp(self):
     self.fillTrees()
     # steal focus
