@@ -33,6 +33,7 @@ class Login(object):
   def requestLogin(self, username:str=''):
     #bring up the window and block until user completes
     self.window.deiconify()
+    self.window.grab_set()
     self.centerWindow()
     #if the username was given by caller, prevent user from changing it
     self.username = username
@@ -49,6 +50,7 @@ class Login(object):
     _ses = self.session
     self.session = None
     self.isDone.set(False)
+    self.window.grab_release()
     #return both the acquired session as well as the (perhaps acquired) username
     return _ses, self.username
 

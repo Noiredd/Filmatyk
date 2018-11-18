@@ -26,6 +26,7 @@ class Config(object):
     self.makeColumns()
     self.__construct()
     self.window.protocol('WM_DELETE_WINDOW', self._confirmClick) # always accept changes
+    self.window.attributes("-topmost", True)
   # GUI aspect
   def __construct(self):
     self.window = cw = tk.Toplevel()
@@ -117,7 +118,9 @@ class Config(object):
     self.moveKeyDown(self.rawConfig, name)
   def _confirmClick(self, event=None):
     # TODO: apply changes and refresh the Presenter
+    # hide window and release focus
     self.window.withdraw()
+    self.window.grab_release()
   def centerWindow(self):
     self.window.update()
     ws = self.window.winfo_screenwidth()
@@ -128,6 +131,8 @@ class Config(object):
     y = hs/2 - h/2
     self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
   def popUp(self):
+    # steal focus
+    self.window.grab_set()
     # clear the views and fill with the most up-to-date data
     for item in self.activeCols.get_children():
       self.activeCols.delete(item)
