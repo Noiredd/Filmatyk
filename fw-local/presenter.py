@@ -14,7 +14,6 @@ class Config(object):
   # deserialization, as well as config changes. Presenter owns one and queries
   # it when displaying items.
   # TODO: GUI aspect for user-interactive config:
-  # 4. and handle the dirty bit
   # 5. find a way to enter a new column width?
   # 6. column width detection and callback
   # 7. resize the whole window along with the TV -- think this through
@@ -151,7 +150,6 @@ class Config(object):
     # apply changes and refresh the Presenter
     self.parent.configureColumns()
     self.parent.displayUpdate()
-    # TODO: dirty bit
   def centerWindow(self):
     self.window.update()
     ws = self.window.winfo_screenwidth()
@@ -254,35 +252,25 @@ class SortingMachine(object):
     self.firstRun(itemtype)
   def firstRun(self, itemtype:str):
     default_key, default_asc = DEFAULT_SORTING[itemtype]
-    # get the index of a column that holds the default key (if there is such!)
     if default_key not in self.columns:
       return
-    column_num = self.columns.index(default_key) + 1 # plus a #0 ID column
-    column_id = '#{}'.format(column_num)
-    self.update(column_id)
+    self.update(default_key)
     self.ascending = default_asc
   def update(self, column_id:str):
-    # retrieve the column name which is also the name of element to sort by
-    column_name = self.tree.column(column=column_id, option='id')
     # retrieve the column's original heading
     column_heading = self.tree.heading(column=column_id, option='text')
     # first run
     if not self.current_id:
       self.current_id = column_id
       self.original_heading = column_heading
-      self.tree.heading(column=column_id, text=self.DSC_CHAR + self.original_heading)
-      self.sorting = dict(key=self.makeLambda(column_name), reverse=self.ascending)
+      self.setMarker()
+      self.sorting = dict(key=self.makeLambda(column_id), reverse=self.ascending)
       return self.sorting
     # on every other run, check whether the same column was clicked again
     elif column_id == self.current_id:
       # only switch the order in this case
-      if self.ascending:
-        self.ascending = False
-        char = self.DSC_CHAR
-      else:
-        self.ascending = True
-        char = self.ASC_CHAR
-      self.tree.heading(column=column_id, text=char + self.original_heading)
+      self.ascending = not self.ascending
+      self.setMarker()
       self.sorting['reverse'] = self.ascending
       return self.sorting
     # otherwise, a different column was clicked
@@ -292,9 +280,13 @@ class SortingMachine(object):
       self.current_id = column_id
       self.original_heading = column_heading
       self.ascending = False
-      self.tree.heading(column=column_id, text=self.DSC_CHAR + self.original_heading)
-      self.sorting = dict(key=self.makeLambda(column_name), reverse=self.ascending)
+      self.setMarker()
+      self.sorting = dict(key=self.makeLambda(column_id), reverse=self.ascending)
       return self.sorting
+  def setMarker(self):
+    # prefixes the currently selected column's heading with a marker indicating sort direction
+    char = self.ASC_CHAR if self.ascending else self.DSC_CHAR
+    self.tree.heading(column=self.current_id, text=char + self.original_heading)
   def getSorting(self):
     return self.sorting
 
@@ -357,6 +349,12 @@ class Presenter(object):
     # whenever a new column was added that was narrower than the current last one, the
     # TV would get stretched as if it was as long as that last column (leaving empty space)
     self.tree['displaycolumns'] = self.config.getColumns()
+    try:
+      # if the columns have just been reconfigured, ask the sortMachine to reset the marker
+      self.sortMachine.setMarker()
+    except AttributeError:
+      # this is a first run and the machine doesn't even exist - which is fine
+      pass
   def __placeResetAllButton(self):
     rab_row = self.fframe_grid[0]
     rab_col = self.fframe_grid[1]
@@ -450,5 +448,6 @@ class Presenter(object):
     if click_region != 'heading':
       return
     column_id = self.tree.identify_column(event.x)
-    self.sortMachine.update(column_id)
+    column_name = self.tree.column(column=column_id, option='id')
+    self.sortMachine.update(column_name)
     self.sortingUpdate()
