@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 import tkinter as tk
 from tkinter import ttk
@@ -13,27 +14,22 @@ class Config(object):
   # deserialization, as well as config changes. Presenter owns one and queries
   # it when displaying items.
   # TODO: GUI aspect for user-interactive config:
-  # 1. populate treeviews
-  # 2. implement configuration methods (arrow buttons) and reset to default
   # 3. presenter callback to reconfigure columns and trigger display (detect changes)
   # 4. and handle the dirty bit
   # 5. find a way to enter a new column width?
-  def __init__(self, itemtype:str, columns:dict={}):
+  def __init__(self, itemtype:str, columns:OrderedDict={}):
     self.rawConfig = columns
     itemclass = containers.classByString[itemtype]
-    self.allColumns = [name for name in itemclass.blueprints.items()]
+    self.allColumns = [name for name, bp in itemclass.blueprints.items() if name != 'id']
     self.columnHeaders = {name: bp.getHeading() for name, bp in itemclass.blueprints.items()}
     self.columnWidths = {name: bp.getColWidth() for name, bp in itemclass.blueprints.items()}
-    self.columns = {}
-    for name in self.rawConfig.keys():
-      default_width = self.columnWidths[name]
-      config_width = self.rawConfig[name]
-      set_width = config_width if config_width is not None else default_width
-      self.columns[name] = set_width
+    self.makeColumns()
     self.__construct()
+    self.window.protocol('WM_DELETE_WINDOW', self._confirmClick) # always accept changes
   # GUI aspect
   def __construct(self):
     self.window = cw = tk.Toplevel()
+    self.window.resizable(0,0)
     self.window.title('Konfiguracja kolumn')
     columns = ['id', 'name', 'width']
     self.activeCols = ttk.Treeview(cw, height=10, selectmode='browse', columns=columns)
@@ -44,6 +40,7 @@ class Config(object):
     self.activeCols.heading(column='name', text='Nazwa', anchor=tk.W)
     self.activeCols.heading(column='width', text='Rozmiar', anchor=tk.W)
     self.activeCols.grid(row=0, column=0, rowspan=3)
+    self.activeCols.bind('<Button-1>', self._unselectAvailable)
     self.availableCols = ttk.Treeview(cw, height=10, selectmode='browse', columns=columns)
     self.availableCols['displaycolumns'] = columns[1:]
     self.availableCols.column(column='#0', width=0, stretch=False)
@@ -52,6 +49,7 @@ class Config(object):
     self.availableCols.heading(column='name', text='Nazwa', anchor=tk.W)
     self.availableCols.heading(column='width', text='Rozmiar', anchor=tk.W)
     self.availableCols.grid(row=0, column=2, rowspan=3)
+    self.availableCols.bind('<Button-1>', self._unselectActive)
     enablers = tk.Frame(cw)
     enablers.grid(row=0, column=1, sticky=tk.N)
     tk.Button(enablers, text='←', command=self._moveToActive).grid(row=0, column=0)
@@ -65,19 +63,60 @@ class Config(object):
     tk.Button(ctrl, text='Domyślne', command=lambda x: x).grid(row=0, column=0)
     tk.Button(ctrl, text='OK', command=self._confirmClick).grid(row=1, column=0)
     self.window.withdraw()
+  def _unselectActive(self, event=None):
+    row = self.activeCols.focus()
+    self.activeCols.selection_remove(row)
+  def _unselectAvailable(self, event=None):
+    row = self.availableCols.focus()
+    self.availableCols.selection_remove(row)
   def _moveToActive(self, event=None):
-    # insert a new column
-    pass
+    # if one of the available columns was selected - move it to the active ones
+    row = self.availableCols.focus()
+    if row == '':
+      return
+    item = self.availableCols.item(row)
+    values = item['values']
+    self.activeCols.insert(parent='', index=tk.END, text='', values=values)
+    self.availableCols.delete(row)
+    # also, alter the actual internal dicts
+    name = values[0]
+    self.rawConfig[name] = None # reminder: rawConfig value is column width, None == default
   def _moveToAvailable(self, event=None):
-    # remove a column
-    pass
+    # if one of the active columns was selected - remove it and restore it among availables
+    row = self.activeCols.focus()
+    if row == '':
+      return
+    item = self.activeCols.item(row)
+    self.activeCols.delete(row)
+    name = item['values'][0]
+    values = [name, self.columnHeaders[name], self.columnWidths[name]]
+    self.availableCols.insert(parent='', index=tk.END, text='', values=values)
+    # backend
+    self.rawConfig.pop(name)
   def _moveUp(self, event=None):
-    # change order
-    pass
+    # change order - only for the active columns
+    row = self.activeCols.focus()
+    if row == '':
+      return
+    index = self.activeCols.index(row)
+    self.activeCols.move(row, parent='', index=index-1)
+    # backend
+    item = self.activeCols.item(row)
+    name = item['values'][0]
+    self.moveKeyUp(self.rawConfig, name)
   def _moveDown(self, event=None):
-    # change order
-    pass
+    # change order - only for the active columns
+    row = self.activeCols.focus()
+    if row == '':
+      return
+    index = self.activeCols.index(row)
+    self.activeCols.move(row, parent='', index=index+1)
+    # backend
+    item = self.activeCols.item(row)
+    name = item['values'][0]
+    self.moveKeyDown(self.rawConfig, name)
   def _confirmClick(self, event=None):
+    # TODO: apply changes and refresh the Presenter
     self.window.withdraw()
   def centerWindow(self):
     self.window.update()
@@ -89,8 +128,54 @@ class Config(object):
     y = hs/2 - h/2
     self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
   def popUp(self):
+    # clear the views and fill with the most up-to-date data
+    for item in self.activeCols.get_children():
+      self.activeCols.delete(item)
+    for key, width in self.columns.items():
+      values = [key, self.columnHeaders[key], width]
+      self.activeCols.insert(parent='', index=tk.END, text='', values=values)
+    for item in self.availableCols.get_children():
+      self.availableCols.delete(item)
+    for item in self.allColumns:
+      if item in self.columns.keys():
+        continue
+      values = [item, self.columnHeaders[item], self.columnWidths[item]]
+      self.availableCols.insert(parent='', index=tk.END, text='', values=values)
     self.window.deiconify()
     self.centerWindow()
+  # backend
+  def makeColumns(self):
+    # turn rawConfig into presentable columns
+    self.columns = OrderedDict()
+    for name in self.rawConfig.keys():
+      default_width = self.columnWidths[name]
+      config_width = self.rawConfig[name]
+      set_width = config_width if config_width is not None else default_width
+      self.columns[name] = set_width
+  @staticmethod
+  def moveKeyUp(dct:OrderedDict, key):
+    # moves the 'key' up one position by moving the key before it and all others to the end
+    keys = list(dct.keys())
+    index = keys.index(key)
+    if index == 0:
+      return
+    dct.move_to_end(key)
+    del keys[index] # don't move the original one again
+    for key in keys[index-1:]:
+      dct.move_to_end(key)
+  @staticmethod
+  def moveKeyDown(dct:OrderedDict, key):
+    # moves the 'key' down one position by moving that and then subsequent keys to the end
+    keys = list(dct.keys())
+    index = keys.index(key)
+    last = len(keys) - 1
+    if index < last:
+      # if this wasn't already the last key - move it to the end
+      dct.move_to_end(key)
+      if index <= last-2:
+        # if there are more than one keys behind it - leave that one and move the rest
+        for key in keys[index+2:]:
+          dct.move_to_end(key)
   # getters
   def getColumns(self):
     return list(self.columns.keys())
@@ -105,7 +190,7 @@ class Config(object):
     if string == '':
       config = DEFAULT_CONFIGS[itemtype]
     else:
-      config = json.loads(string)
+      config = json.loads(string, object_pairs_hook=OrderedDict) # preserve order
     return Config(itemtype, config)
   def storeToString(self):
     return json.dumps(self.rawConfig)
