@@ -14,11 +14,15 @@ class Config(object):
   # deserialization, as well as config changes. Presenter owns one and queries
   # it when displaying items.
   # TODO: GUI aspect for user-interactive config:
-  # 3. presenter callback to reconfigure columns and trigger display (detect changes)
   # 4. and handle the dirty bit
   # 5. find a way to enter a new column width?
-  def __init__(self, itemtype:str, columns:OrderedDict={}):
+  # 6. column width detection and callback
+  # 7. resize the whole window along with the TV -- think this through
+
+  def __init__(self, itemtype:str, columns:OrderedDict, parent:object):
+    self.parent = parent
     self.rawConfig = columns
+    self.itemtype = itemtype
     itemclass = containers.classByString[itemtype]
     self.allColumns = [name for name, bp in itemclass.blueprints.items() if name != 'id']
     self.columnHeaders = {name: bp.getHeading() for name, bp in itemclass.blueprints.items()}
@@ -61,7 +65,7 @@ class Config(object):
     tk.Button(order, text='↓', command=self._moveDown).grid(row=1, column=0)
     ctrl = tk.Frame(cw)
     ctrl.grid(row=2, column=1, sticky=tk.S)
-    tk.Button(ctrl, text='Domyślne', command=lambda x: x).grid(row=0, column=0)
+    tk.Button(ctrl, text='Domyślne', command=self._resetDefaults).grid(row=0, column=0)
     tk.Button(ctrl, text='OK', command=self._confirmClick).grid(row=1, column=0)
     self.window.withdraw()
   def _unselectActive(self, event=None):
@@ -82,6 +86,7 @@ class Config(object):
     # also, alter the actual internal dicts
     name = values[0]
     self.rawConfig[name] = None # reminder: rawConfig value is column width, None == default
+    self.makeColumns()
   def _moveToAvailable(self, event=None):
     # if one of the active columns was selected - remove it and restore it among availables
     row = self.activeCols.focus()
@@ -94,6 +99,7 @@ class Config(object):
     self.availableCols.insert(parent='', index=tk.END, text='', values=values)
     # backend
     self.rawConfig.pop(name)
+    self.makeColumns()
   def _moveUp(self, event=None):
     # change order - only for the active columns
     row = self.activeCols.focus()
@@ -105,6 +111,7 @@ class Config(object):
     item = self.activeCols.item(row)
     name = item['values'][0]
     self.moveKeyUp(self.rawConfig, name)
+    self.makeColumns()
   def _moveDown(self, event=None):
     # change order - only for the active columns
     row = self.activeCols.focus()
@@ -116,11 +123,21 @@ class Config(object):
     item = self.activeCols.item(row)
     name = item['values'][0]
     self.moveKeyDown(self.rawConfig, name)
+    self.makeColumns()
+  def _resetDefaults(self, event=None):
+    # restore default settings
+    self.rawConfig = DEFAULT_CONFIGS[self.itemtype].copy()
+    self.makeColumns()
+    # regenerate the window
+    self.fillTrees()
   def _confirmClick(self, event=None):
-    # TODO: apply changes and refresh the Presenter
     # hide window and release focus
     self.window.withdraw()
     self.window.grab_release()
+    # apply changes and refresh the Presenter
+    self.parent.configureColumns()
+    self.parent.displayUpdate()
+    # TODO: dirty bit
   def centerWindow(self):
     self.window.update()
     ws = self.window.winfo_screenwidth()
@@ -131,8 +148,12 @@ class Config(object):
     y = hs/2 - h/2
     self.window.geometry('%dx%d+%d+%d' % (w, h, x, y))
   def popUp(self):
+    self.fillTrees()
     # steal focus
     self.window.grab_set()
+    self.window.deiconify()
+    self.centerWindow()
+  def fillTrees(self):
     # clear the views and fill with the most up-to-date data
     for item in self.activeCols.get_children():
       self.activeCols.delete(item)
@@ -146,8 +167,6 @@ class Config(object):
         continue
       values = [item, self.columnHeaders[item], self.columnWidths[item]]
       self.availableCols.insert(parent='', index=tk.END, text='', values=values)
-    self.window.deiconify()
-    self.centerWindow()
   # backend
   def makeColumns(self):
     # turn rawConfig into presentable columns
@@ -182,6 +201,8 @@ class Config(object):
         for key in keys[index+2:]:
           dct.move_to_end(key)
   # getters
+  def getAllColumns(self):
+    return self.allColumns
   def getColumns(self):
     return list(self.columns.keys())
   def getWidth(self, column):
@@ -189,14 +210,14 @@ class Config(object):
   def getHeading(self, column):
     return self.columnHeaders[column]
   @staticmethod
-  def restoreFromString(itemtype:str, string:str):
+  def restoreFromString(itemtype:str, string:str, parent:object):
     # The config string is a JSON dump of a dict that contains columns to be
     # presented as keys, and their widths as values (or None for defaults).
     if string == '':
       config = DEFAULT_CONFIGS[itemtype]
     else:
       config = json.loads(string, object_pairs_hook=OrderedDict) # preserve order
-    return Config(itemtype, config)
+    return Config(itemtype, config, parent)
   def storeToString(self):
     return json.dumps(self.rawConfig)
 
@@ -272,7 +293,7 @@ class Presenter(object):
     self.main = tk.Frame(root)
     self.database = database
     self.items = []
-    self.config = Config.restoreFromString(database.itemtype, config)
+    self.config = Config.restoreFromString(database.itemtype, config, self)
     self.__construct()
     self.sortMachine = SortingMachine(self.tree, self.config.getColumns(), self.database.itemtype)
     self.filtMachine = FilterMachine(self.filtersUpdate)
@@ -284,17 +305,10 @@ class Presenter(object):
       self.main,
       height=32,
       selectmode='none',
-      columns=['id'] + self.config.getColumns()
+      columns=['id'] + self.config.getAllColumns()
     )
-    tree['displaycolumns'] = [c for c in tree['columns'] if c not in ['#0', 'id']]
-    tree.column(column='#0', width=0)
-    for column in self.config.getColumns():
-      # TODO (low priority): treeview total width limiting and X-scrolling
-      # potential problem: Notebook view (different TVs having different widths)
-      # may be unnecessary though - why try to cram all the info in a single TV,
-      # if there is already a Detail view (e.g. for those long comments)?
-      tree.column(column=column, width=self.config.getWidth(column), stretch=False)
-      tree.heading(column=column, text=self.config.getHeading(column), anchor=tk.W)
+    self.configureColumns()
+    tree.column(column='#0', width=0, minwidth=0, stretch=False)
     tree.grid(row=0, column=0, rowspan=2)
     yScroll = ttk.Scrollbar(self.main, command=tree.yview)
     yScroll.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
@@ -321,6 +335,14 @@ class Presenter(object):
     self.fframe_grid = [0, 0]
     # delay to the first update, after all of the filters have been added
     self.isResetAllButtonPlaced = False
+  def configureColumns(self):
+    for column in self.config.getColumns():
+      self.tree.column(column=column, width=self.config.getWidth(column), stretch=False)
+      self.tree.heading(column=column, text=self.config.getHeading(column), anchor=tk.W)
+    # setting this AFTER widths and headings prevents an annoying little bug in which
+    # whenever a new column was added that was narrower than the current last one, the
+    # TV would get stretched as if it was as long as that last column (leaving empty space)
+    self.tree['displaycolumns'] = self.config.getColumns()
   def __placeResetAllButton(self):
     rab_row = self.fframe_grid[0]
     rab_col = self.fframe_grid[1]
@@ -380,7 +402,15 @@ class Presenter(object):
       self.tree.delete(item)
     # get the requested properties of items to present
     for item in self.items:
-      values = [item['id']] + [item[prop] for prop in self.config.getColumns()]
+      values = [item['id']]
+      showem = self.config.getColumns()
+      # TV requires values for all columns, out of which it will only display
+      # those in displaycolumns - others can be empty but have to be present
+      for col in self.config.getAllColumns():
+        if col not in showem:
+          values.append('')
+        else:
+          values.append(item[col])
       self.tree.insert(parent='', index=0, text='', values=values)
     # update statistics
     self.stats.update(self.items)
