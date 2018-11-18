@@ -186,8 +186,7 @@ class Main(object):
     if self.api.username is None:
       return
     # if there is no need to save anything - stop right there too
-    # TODO: check presenter in the same way, once the config becomes mutable
-    if not self.database.isDirty:
+    if not any([self.database.isDirty, self.presenter.isDirty]):
       return
     # safety feature against failing to write new data and removing the old
     if os.path.exists(self.filename):
@@ -206,6 +205,7 @@ class Main(object):
       os.remove(self.filename + '.bak')
     # notify the objects that they were saved - maybe could be a method for this
     self.database.isDirty = False
+    self.presenter.isDirty = False
 
   #CALLBACKS
   def _setProgress(self, value:int):

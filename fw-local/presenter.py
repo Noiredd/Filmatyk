@@ -32,6 +32,15 @@ class Config(object):
     self.window.protocol('WM_DELETE_WINDOW', self._confirmClick) # always accept changes
     self.window.attributes("-topmost", True)
   # GUI aspect
+  def setDirtyBit(fun):
+    # this is meant to be a decorator, not a method!
+    # will cause any decorated function to set a dirty flag in the parent Presenter
+    # see: filmweb.py > FilmwebAPI.enforceSession for explanation
+    def wrapper(*args, **kwargs):
+      self = args[0]
+      self.parent.isDirty = True
+      return fun(*args, **kwargs)
+    return wrapper
   def __construct(self):
     self.window = cw = tk.Toplevel()
     self.window.resizable(0,0)
@@ -74,6 +83,7 @@ class Config(object):
   def _unselectAvailable(self, event=None):
     row = self.availableCols.focus()
     self.availableCols.selection_remove(row)
+  @setDirtyBit
   def _moveToActive(self, event=None):
     # if one of the available columns was selected - move it to the active ones
     row = self.availableCols.focus()
@@ -87,6 +97,7 @@ class Config(object):
     name = values[0]
     self.rawConfig[name] = None # reminder: rawConfig value is column width, None == default
     self.makeColumns()
+  @setDirtyBit
   def _moveToAvailable(self, event=None):
     # if one of the active columns was selected - remove it and restore it among availables
     row = self.activeCols.focus()
@@ -100,6 +111,7 @@ class Config(object):
     # backend
     self.rawConfig.pop(name)
     self.makeColumns()
+  @setDirtyBit
   def _moveUp(self, event=None):
     # change order - only for the active columns
     row = self.activeCols.focus()
@@ -112,6 +124,7 @@ class Config(object):
     name = item['values'][0]
     self.moveKeyUp(self.rawConfig, name)
     self.makeColumns()
+  @setDirtyBit
   def _moveDown(self, event=None):
     # change order - only for the active columns
     row = self.activeCols.focus()
@@ -124,6 +137,7 @@ class Config(object):
     name = item['values'][0]
     self.moveKeyDown(self.rawConfig, name)
     self.makeColumns()
+  @setDirtyBit
   def _resetDefaults(self, event=None):
     # restore default settings
     self.rawConfig = DEFAULT_CONFIGS[self.itemtype].copy()
@@ -298,7 +312,7 @@ class Presenter(object):
     self.sortMachine = SortingMachine(self.tree, self.config.getColumns(), self.database.itemtype)
     self.filtMachine = FilterMachine(self.filtersUpdate)
     self.detailWindow = DetailWindow.getDetailWindow()
-
+    self.isDirty = False
   def __construct(self):
     # TREEVIEW
     self.tree = tree = ttk.Treeview(
