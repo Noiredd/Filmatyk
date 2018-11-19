@@ -15,7 +15,6 @@ class Config(object):
   # it when displaying items.
   # TODO: GUI aspect for user-interactive config:
   # 5. find a way to enter a new column width?
-  # 6. column width detection and callback
 
   def __init__(self, itemtype:str, columns:OrderedDict, parent:object):
     self.parent = parent
@@ -224,6 +223,26 @@ class Config(object):
     return self.columns[column]
   def getHeading(self, column):
     return self.columnHeaders[column]
+  # setters
+  @setDirtyBit
+  def manualResize(self, column):
+    # the user has manually resized some column - store this change
+    oldWidth = self.getWidth(column)
+    newWidth = self.parent.tree.column(column=column, option='width') # a bit hacky
+    if oldWidth == newWidth:
+      # restore a "None" value in config and default width in current setting
+      self.rawConfig[column] = None
+      self.columns[column] = self.columnWidths[column] # faster than makeColumns just for that
+    else:
+      self.rawConfig[column] = newWidth
+      self.columns[column] = newWidth
+  @setDirtyBit
+  def manualDefault(self, column):
+    # the user has requested this column to return to the default setting
+    self.rawConfig[column] = None
+    defWidth = self.columnWidths[column]
+    self.columns[column] = defWidth
+    self.parent.tree.column(column=column, width=defWidth)
   @staticmethod
   def restoreFromString(itemtype:str, string:str, parent:object):
     # The config string is a JSON dump of a dict that contains columns to be
@@ -325,14 +344,11 @@ class Presenter(object):
     # POP-UP MENU
     self.menu = tk.Menu(self.main, tearoff=0)
     self.menu.add_command(label='Konfiguracja', command=self.config.popUp)
-    def menuPop(event):
-      click_region = self.tree.identify_region(event.x, event.y)
-      if click_region == 'heading':
-        self.menu.post(event.x_root, event.y_root)
-    # bind event handlers (TODO: column resize detect & callback)
-    tree.bind('<Button-1>', self.sortingClick)
-    tree.bind('<Double-Button-1>', self.detailClick)
-    tree.bind('<Button-3>', menuPop)
+    # BIND CALLBACKS
+    tree.bind('<Button-1>', self._singleClick)
+    tree.bind('<Double-Button-1>', self._doubleClick)
+    tree.bind('<ButtonRelease-1>', self._leftRelease)
+    tree.bind('<Button-3>', self._rightClick)
     # STATISTICS VIEW
     self.stats = StatView(self.main, self.database.itemtype)
     self.stats.grid(row=0, column=2, sticky=tk.NW)
@@ -431,26 +447,54 @@ class Presenter(object):
     self.stats.update(self.items)
 
   # Interface
-  def detailClick(self, event=None):
-    # if a treeview item was double-clicked - spawn the detail view window
+  def _singleClick(self, event=None):
     if event is None:
       return
+    # if a treeview heading was clicked - change the sorting
+    click_region = self.tree.identify_region(event.x, event.y)
+    if click_region == 'heading':
+      self.changeSorting(event)
+  def _doubleClick(self, event=None):
+    if event is None:
+      return
+    # if clicked on a cell - spawn a detail view window
+    # if on a column separator - restore column default width
     click_region = self.tree.identify_region(event.x, event.y)
     if click_region == 'cell':
-      item_row = self.tree.identify_row(event.y)
-      item_dct = self.tree.item(item_row)
-      item_ID = item_dct['values'][0]
-      item_obj = self.database.getItemByID(item_ID)
-      if item_obj is not None:
-        self.detailWindow.launchPreview(item_obj)
-  def sortingClick(self, event=None):
+      self.detailSpawn(event)
+    elif click_region == 'separator':
+      self.resetColumn(event)
+  def _rightClick(self, event=None):
     if event is None:
       return
-    # if a treeview heading was clicked - update the sorting
+    # if right clicked on the heading - spawn the pop-up menu
     click_region = self.tree.identify_region(event.x, event.y)
-    if click_region != 'heading':
+    if click_region == 'heading':
+      self.menu.post(event.x_root, event.y_root)
+  def _leftRelease(self, event=None):
+    if event is None:
       return
+    # if the LMB was released over the column separator - notify config of a change
+    click_region = self.tree.identify_region(event.x, event.y)
+    if click_region == 'separator':
+      self.resizeColumn(event)
+  def detailSpawn(self, event):
+    item_row = self.tree.identify_row(event.y)
+    item_dct = self.tree.item(item_row)
+    item_ID = item_dct['values'][0]
+    item_obj = self.database.getItemByID(item_ID)
+    if item_obj is not None:
+      self.detailWindow.launchPreview(item_obj)
+  def resetColumn(self, event):
+    column_id = self.tree.identify_column(event.x)
+    column_name = self.tree.column(column=column_id, option='id')
+    self.config.manualDefault(column_name)
+  def changeSorting(self, event):
     column_id = self.tree.identify_column(event.x)
     column_name = self.tree.column(column=column_id, option='id')
     self.sortMachine.update(column_name)
     self.sortingUpdate()
+  def resizeColumn(self, event):
+    column_id = self.tree.identify_column(event.x)
+    column_name = self.tree.column(column=column_id, option='id')
+    self.config.manualResize(column_name)
