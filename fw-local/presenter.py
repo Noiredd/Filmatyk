@@ -13,8 +13,6 @@ class Config(object):
   # Stores the current treeview configuration, handling serialization and
   # deserialization, as well as config changes. Presenter owns one and queries
   # it when displaying items.
-  # TODO: GUI aspect for user-interactive config:
-  # 5. find a way to enter a new column width?
 
   def __init__(self, itemtype:str, columns:OrderedDict, parent:object):
     self.parent = parent
@@ -36,6 +34,7 @@ class Config(object):
     def wrapper(*args, **kwargs):
       self = args[0]
       self.parent.isDirty = True
+      self.isDirty = True
       return fun(*args, **kwargs)
     return wrapper
   def __construct(self):
@@ -145,11 +144,13 @@ class Config(object):
     # hide window and release focus
     self.window.withdraw()
     self.window.grab_release()
-    # apply changes, allowing the window to resize along with the tereview
-    self.parent.root.resizable(True, True)
-    self.parent.configureColumns()
-    self.parent.root.update()
-    self.parent.root.resizable(False, False)
+    # if changes were made - update the parent and change its window properties
+    # so that it can resize along with the treeview
+    if self.isDirty:
+      self.parent.root.resizable(True, True)
+      self.parent.configureColumns()
+      self.parent.root.update()
+      self.parent.root.resizable(False, False)
     # refresh items
     self.parent.displayUpdate()
   def centerWindow(self):
@@ -162,6 +163,7 @@ class Config(object):
     y = hs/2 - h/2
     self.window.geometry('+{:.0f}+{:.0f}'.format(x, y))
   def popUp(self):
+    self.isDirty = False # until some change has been made
     self.fillTrees()
     # steal focus
     self.window.grab_set()
