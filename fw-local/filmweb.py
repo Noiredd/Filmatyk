@@ -77,7 +77,8 @@ class FilmwebAPI(object):
           'name': key,
           'text': rule['text'],
           'list': rule['list'] if 'list' in rule.keys() else False,
-          'attr': rule['attr'] if 'attr' in rule.keys() else None
+          'attr': rule['attr'] if 'attr' in rule.keys() else None,
+          'type': rule['type'] if 'type' in rule.keys() else None
         }
     #store the result
     self.parsingRules[itemtype] = pTree
@@ -204,13 +205,15 @@ class FilmwebAPI(object):
               #data is stored withing a 'text' field
               if rule['list']:
                 #data is actually a list of things
-                parsed[key] = [x.text.strip() for x in item.find_all('a')]
+                value = [x.text.strip() for x in item.find_all('a')]
               else:
-                parsed[key] = item.text.strip()
+                value = item.text.strip()
             else:
               #data is stored in the attribute
-              parsed[key] = item.attrs[rule['attr']]
-            #we're done with this one
+              value = item.attrs[rule['attr']]
+            #finally, convert the datum to a specified type, if any
+            rtype = rule['type']
+            parsed[key] = rtype(value) if rtype else value
             break
     #fetch the right class and construct the object
     constructObject = containers.classByString[itemtype]
@@ -229,7 +232,7 @@ class FilmwebAPI(object):
     id = origDict['eId']
     isFaved = origDict['f'] if 'f' in origDict.keys() else 0
     ratingDict = {
-      'rating':  origDict['r'],
+      'rating':  int(origDict['r']),
       'comment': origDict['c'] if 'c' in origDict.keys() else '',
       'dateOf':  date_,
       'faved':   isFaved

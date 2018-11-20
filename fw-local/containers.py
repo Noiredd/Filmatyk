@@ -9,20 +9,18 @@ class Blueprint(object):
   def _list(x): return ', '.join(x)
   @staticmethod
   def _duration(x):
-    v = int(x)
-    h = v // 60
-    m = v % 60
+    h = x // 60
+    m = x % 60
     return '{0!s}h {1!s}m'.format(h, m)
   @staticmethod
   def _fwRating(x):
-    return str(round(float(x), 1))
+    return str(round(x, 1))
   @staticmethod
   def _rating(x):
-    v = int(x)
-    if v == 0:
+    if x == 0:
       return '-'
     else:
-      return str(x) + ' ' + ''.join('★' for i in range(v))
+      return str(x) + ' ' + ''.join('★' for i in range(x))
   @staticmethod
   def _favourite(x):
     return '♥' if x == 1 else ' '
@@ -136,7 +134,7 @@ class Item(metaclass=BlueprintInheritance):
   year = Blueprint(
     name='Rok',
     colwidth=35,
-    parsing={'tag':'span', 'class':'filmPreview__year', 'text':True, 'list':False}
+    parsing={'tag':'span', 'class':'filmPreview__year', 'text':True, 'list':False, 'type':int}
   )
   link = Blueprint(
     name='URL',
@@ -149,9 +147,9 @@ class Item(metaclass=BlueprintInheritance):
     parsing={'tag':'img', 'class':'filmPoster__image', 'text':False, 'attr':'data-src'}
   )
   fwRating = Blueprint(
-    name='Ocena FW',
+    name='Oc. FW',
     colwidth=50,
-    parsing={'tag':'div', 'class':'filmPreview__rateBox', 'text':False, 'attr':'data-rate'},
+    parsing={'tag':'div', 'class':'filmPreview__rateBox', 'text':False, 'attr':'data-rate', 'type':float},
     display=Blueprint._fwRating
   )
   plot = Blueprint(
@@ -228,7 +226,7 @@ class Movie(Item):
   duration = Blueprint(
     name='Długość',
     colwidth=50,
-    parsing={'tag':'div', 'class':'filmPreview__filmTime', 'text':False, 'attr':'data-duration'},
+    parsing={'tag':'div', 'class':'filmPreview__filmTime', 'text':False, 'attr':'data-duration', 'type':int},
     display=Blueprint._duration
   )
   countries = Blueprint(

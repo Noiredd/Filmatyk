@@ -49,6 +49,7 @@ Key | Type | Reqd | Meaning
 `text` | bool | **YES** | whether the data is contained directly in the element's text, or in some of its attributes
 `attr` | str | if `text` is `False` | which attribute holds the data (e.g. `'attr': 'something'` will extract 90 from `<div class="blah" something=90`)
 `list` | bool | if `text` is `True` | specifies that the data is stored as several links (`<a>`) and should be parsed into a `list`
+`type` | type | no | use to enforce conversion of a datum to a specified type (e.g. `int`)
 
 This way of defining the parsing rules is more manageable, but not very good for fast processing.
 For each rule, the parser would have to extract all elements of its class, then go through all the elements looking for a given name and then parse the one.
@@ -56,7 +57,7 @@ This means that a quite fine search (e.g. for every `div`) would be repeated mul
 Instead, the API (before doing anything else) retrieves all of the rules and aggregates them by tags, inverting the rule tree.
 The *parsing rules caching* (see `FilmwebAPI::__cacheParsingRules`) constructs a sort of  inverted rule tree, in which the tag type in in the top level, then are the class names, and for each of those, a specific parsing rule is defined.
 The `text`, `attr` and `list` keys describe how to parse the element and the original rule name contains the name of the element to be produced.
-This allows the parser to look by tags, extracting all `div`s just once, scanning through them just once, and - upon finding one with an interesting class name - process the element.
+This allows the parser to look by tags, extracting all `div`s just once, scanning through them just once, and - upon finding one with an interesting class name - retrieve the element and optionally convert it to the given `type`.
 
 This however only lets the parser obtain the generic item information.
 Ratings are held somewhere else in the document - *not* in the same major div as the item.

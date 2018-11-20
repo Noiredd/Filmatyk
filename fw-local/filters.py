@@ -138,19 +138,18 @@ class YearFilter(Filter):
     try:
       yearFrom = int(self.year_from.get())
     except ValueError:
-      yearFrom = int(self.all_years[0])
+      yearFrom = self.all_years[0]
     try:
       yearTo = int(self.year_to.get())
     except ValueError:
-      yearTo = int(self.all_years[-1])
+      yearTo = self.all_years[-1]
     # reject nonsensical input (e.g. if user types "199", about to hit "5")
     if yearFrom > 2999:
-      yearFrom = int(self.all_years[0])
+      yearFrom = self.all_years[0]
     if yearTo < 1000:
-      yearTo = int(self.all_years[-1])
-    # CONSIDER: if years were stored in the DB as ints...
+      yearTo = self.all_years[-1]
     def yearFilter(item):
-      year = int(item.getRawProperty('year'))
+      year = item.getRawProperty('year')
       if year >= yearFrom and year <= yearTo:
         return True
       else:
@@ -325,7 +324,7 @@ class RatingFilter(Filter):
     except ValueError:
       rateTo = 10
     def ratingFilter(item):
-      rating = int(item.getRawProperty('rating'))
+      rating = item.getRawProperty('rating')
       if rating >= rateFrom and rating <= rateTo:
         return True
       else:
