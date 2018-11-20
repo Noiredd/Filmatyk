@@ -120,7 +120,7 @@ class YearFilter(Filter):
     self.yTo = yTo = tk.Spinbox(m, width=5, textvariable=self.year_to, command=self._update)
     yTo.bind('<KeyRelease>', self._update)
     yTo.grid(row=1, column=3, sticky=tk.NW)
-    tk.Button(m, text='Reset', command=self.reset).grid(row=1, column=4, sticky=tk.NW)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NW)
   def populateChoices(self, items:list):
     all_years = set()
     for item in items:
@@ -217,7 +217,7 @@ class GenreFilter(ListboxFilter):
       command=self._update).pack(anchor=tk.W)
     tk.Radiobutton(radios, text='dokładnie', variable=self.mode, value=2,
       command=self._update).pack(anchor=tk.W)
-    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=2, column=0, sticky=tk.SE)
   def _update(self, event=None):
     self.selected = self.getSelection()
     if len(self.selected) == 0:
@@ -252,7 +252,7 @@ class CountryFilter(ListboxFilter):
     m = self.main
     tk.Label(m, text='Kraj produkcji:').grid(row=0, column=0, sticky=tk.NW)
     self.makeListbox(m, tk.SINGLE, row=1, column=0)
-    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=2, column=0, sticky=tk.SE)
   def _update(self, event=None):
     self.selected = self.getSelection()
     if len(self.selected) == 0:
@@ -278,7 +278,7 @@ class DirectorFilter(ListboxFilter):
     m = self.main
     tk.Label(m, text='Reżyser:').grid(row=0, column=0, sticky=tk.NW)
     self.makeListbox(m, tk.SINGLE, row=1, column=0)
-    tk.Button(m, text='Reset', command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=2, column=0, sticky=tk.SE)
   def _update(self, event=None):
     self.selected = self.getSelection()
     if len(self.selected) == 0:
@@ -313,7 +313,7 @@ class RatingFilter(Filter):
     rTo = tk.Spinbox(m, width=4, textvariable=self.rate_to, command=self._update, values=values)
     rTo.bind('<KeyRelease>', self._update)
     rTo.grid(row=1, column=3, sticky=tk.NW)
-    tk.Button(m, text='Reset', command=self.reset).grid(row=1, column=4, sticky=tk.NE)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NE)
   def _update(self, event=None):
     try:
       rateFrom = int(self.rate_from.get())
@@ -376,7 +376,7 @@ class DateFilter(Filter):
     dtSpin = tk.Spinbox(m, width=4, textvariable=self.to_day, command=self._update, values=days)
     dtSpin.bind('<KeyRelease>', self._update)
     dtSpin.grid(row=2, column=3, sticky=tk.NW)
-    tk.Button(m, text='Reset', command=self.reset).grid(row=3, column=0, columnspan=4, sticky=tk.NE)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=3, column=0, columnspan=4, sticky=tk.NE)
   def populateChoices(self, items:list):
     all_years = set()
     for item in items:

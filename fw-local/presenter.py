@@ -61,17 +61,17 @@ class Config(object):
     self.availableCols.grid(row=0, column=2, rowspan=3)
     self.availableCols.bind('<Button-1>', self._unselectActive)
     enablers = tk.Frame(cw)
-    enablers.grid(row=0, column=1, sticky=tk.N)
-    tk.Button(enablers, text='←', command=self._moveToActive).grid(row=0, column=0)
-    tk.Button(enablers, text='→', command=self._moveToAvailable).grid(row=1, column=0)
+    enablers.grid(row=0, column=1, pady=20, sticky=tk.N)
+    ttk.Button(enablers, text='←', width=2, command=self._moveToActive).grid(row=0, column=0)
+    ttk.Button(enablers, text='→', width=2, command=self._moveToAvailable).grid(row=0, column=1)
     order = tk.Frame(cw)
     order.grid(row=1, column=1)
-    tk.Button(order, text='↑', command=self._moveUp).grid(row=0, column=0)
-    tk.Button(order, text='↓', command=self._moveDown).grid(row=1, column=0)
+    ttk.Button(order, text='↑', width=2, command=self._moveUp).grid(row=0, column=0)
+    ttk.Button(order, text='↓', width=2, command=self._moveDown).grid(row=1, column=0)
     ctrl = tk.Frame(cw)
     ctrl.grid(row=2, column=1, sticky=tk.S)
-    tk.Button(ctrl, text='Domyślne', command=self._resetDefaults).grid(row=0, column=0)
-    tk.Button(ctrl, text='OK', command=self._confirmClick).grid(row=1, column=0)
+    ttk.Button(ctrl, text='Domyślne', command=self._resetDefaults).grid(row=0, column=0)
+    ttk.Button(ctrl, text='OK', command=self._confirmClick).grid(row=1, column=0)
     self.window.withdraw()
   def _unselectActive(self, event=None):
     row = self.activeCols.focus()
@@ -379,7 +379,7 @@ class Presenter(object):
   def __placeResetAllButton(self):
     rab_row = self.fframe_grid[0]
     rab_col = self.fframe_grid[1]
-    raButton = tk.Button(self.fframe, text='Resetuj filtry!', command=self.filtMachine.resetAllFilters)
+    raButton = ttk.Button(self.fframe, text='Resetuj filtry!', command=self.filtMachine.resetAllFilters)
     raButton.grid(row=rab_row, column=rab_col, rowspan=rab_row+1, columnspan=rab_col+1, sticky=tk.SE)
 
   def storeToString(self):

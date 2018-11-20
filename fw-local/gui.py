@@ -159,8 +159,8 @@ class Main(object):
   def __construct(self):
     #control panel
     frame = tk.Frame(self.root)
-    tk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.SW)
-    tk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.SW)
+    ttk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.SW)
+    ttk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.SW)
     self.progressVar = tk.IntVar()
     self.progressbar = ttk.Progressbar(self.root, orient='horizontal', length=400, mode='determinate', variable=self.progressVar)
     self.progressbar.grid(row=4, column=1, padx=5, pady=5)
