@@ -128,21 +128,25 @@ class Main(object):
     root.resizable(False, False)
     self.__construct()
     #load the savefile and instantiate Presenter(s) and Database(s)
+    self.databases = []
+    self.presenters = []
     userdata = self.loadUserData()
-    u_name = userdata[1] if userdata else ''
-    conf_m = userdata[2] if userdata else ''
-    data_m = userdata[3] if userdata else ''
+    u_name = userdata['username'] if userdata else ''
+    conf_m = userdata['movie_cfg'] if userdata else ''
+    data_m = userdata['movie_db'] if userdata else ''
     self.api = FilmwebAPI(self.loginHandler.requestLogin, u_name)
-    self.database = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
-    self.presenter = Presenter(root, self.api, self.database, conf_m)
-    self.presenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
-    self.presenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
-    self.presenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
-    self.presenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
-    self.presenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=3, sticky=tk.NW)
-    self.presenter.addFilter(filters.CountryFilter, row=0, column=2, rowspan=3, sticky=tk.NW)
-    self.presenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=3, sticky=tk.NW)
-    self.presenter.totalUpdate()
+    movieDatabase = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
+    moviePresenter = Presenter(root, self.api, movieDatabase, conf_m)
+    moviePresenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
+    moviePresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
+    moviePresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
+    moviePresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
+    moviePresenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=3, sticky=tk.NW)
+    moviePresenter.addFilter(filters.CountryFilter, row=0, column=2, rowspan=3, sticky=tk.NW)
+    moviePresenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=3, sticky=tk.NW)
+    moviePresenter.totalUpdate()
+    self.databases.append(movieDatabase)
+    self.presenters.append(moviePresenter)
     #center window AFTER creating everything (including plot)
     self.centerWindow()
     #ensure a controlled exit no matter what user does (X-button, alt+f4)
@@ -175,18 +179,22 @@ class Main(object):
 
   #USER DATA MANAGEMENT
   def loadUserData(self):
-    # loads data and returns it as list of lines - for format, see saveUserData
+    # loads data and returns it as an externally-understandable dict
     if not os.path.exists(self.filename):
       return None
     with open(self.filename, 'r') as userfile:
       userdata = [line.strip('\n') for line in userfile.readlines() if not line.startswith('#')]
-    return userdata
+    # labels for each line
+    keys = ['version', 'username', 'movie_cfg', 'movie_db']
+    return {key: value for key, value in zip(keys, userdata)}
   def saveUserData(self):
     # if for any reason the first update hasn't commenced - don't save anything
     if self.api.username is None:
       return
     # if there is no need to save anything - stop right there too
-    if not any([self.database.isDirty, self.presenter.isDirty]):
+    if not (
+        any([db.isDirty for db in self.databases]) or
+        any([ps.isDirty for ps in self.presenters])):
       return
     # safety feature against failing to write new data and removing the old
     if os.path.exists(self.filename):
@@ -197,15 +205,17 @@ class Main(object):
       userfile.write('#USERNAME\n')
       userfile.write(self.api.username + '\n')
       userfile.write('#MOVIES\n')
-      userfile.write(self.presenter.storeToString() + '\n')
-      userfile.write(self.database.storeToString() + '\n')
+      userfile.write(self.presenters[0].storeToString() + '\n')
+      userfile.write(self.databases[0].storeToString() + '\n')
       # series and games can be added sequentially right after
     # if there were no errors at point, new data has been successfully written
     if os.path.exists(self.filename + '.bak'):
       os.remove(self.filename + '.bak')
     # notify the objects that they were saved - maybe could be a method for this
-    self.database.isDirty = False
-    self.presenter.isDirty = False
+    for db in self.databases:
+      db.isDirty = False
+    for ps in self.presenters:
+      ps.isDirty = False
 
   #CALLBACKS
   def _setProgress(self, value:int):
@@ -219,15 +229,19 @@ class Main(object):
       self.progressVar.set(value)
     self.root.update()
   def _updateData(self):
-    # call softUpdate on (all) the database(s)
-    self.database.softUpdate()
-    # update (all) the presenter(s)
-    self.presenter.totalUpdate()
+    # call softUpdate on all the databases
+    for db in self.databases:
+      db.softUpdate()
+    # update all the presenters
+    for ps in self.presenters:
+      ps.totalUpdate()
     # save data
     self.saveUserData()
   def _reloadData(self):
-    self.database.hardUpdate()
-    self.presenter.totalUpdate()
+    for db in self.databases:
+      db.hardUpdate()
+    for ps in self.presenters:
+      ps.totalUpdate()
     self.saveUserData()
   def _quit(self):
     self.saveUserData()
