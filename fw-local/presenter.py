@@ -320,7 +320,7 @@ class Presenter(object):
   """
   def __init__(self, root, api, database, config:str, displayRating=True):
     self.root = root
-    self.main = tk.Frame(root)
+    self.main = ttk.Frame(root.notebook)
     self.database = database
     self.items = []
     self.config = Config.restoreFromString(database.itemtype, config, self)
@@ -355,7 +355,7 @@ class Presenter(object):
     self.stats = StatView(self.main, self.database.itemtype)
     self.stats.grid(row=0, column=2, sticky=tk.NW)
     # FILTER FRAME
-    self.fframe = tk.Frame(self.main)
+    self.fframe = ttk.Frame(self.main)
     self.fframe.grid(row=1, column=2, sticky=tk.NW)
     # store the row and col range of inserted filters to know where to place the
     # reset all button
@@ -385,12 +385,6 @@ class Presenter(object):
   def storeToString(self):
     return self.config.storeToString()
 
-  # TK interface for GUI placement
-  def pack(self, **kw):
-    self.main.pack(**kw)
-  def grid(self, **kw):
-    self.main.grid(**kw)
-
   def addFilter(self, filter_class, **grid_args):
     filter_object = filter_class(self.fframe)
     self.filtMachine.registerFilter(filter_object)
@@ -400,6 +394,11 @@ class Presenter(object):
       self.fframe_grid[0] = grid_args['row']
     if grid_args['column'] > self.fframe_grid[1]:
       self.fframe_grid[1] = grid_args['column']
+
+  # take a spot in the entire Notebook tab of a given name
+  def placeInTab(self, tab):
+    self.main.grid(row=0, column=0, pady=5, padx=5)
+    self.root.notebook.add(self.main, text=tab)
 
   # Display pipeline
   # Internally, the pipeline consists of 4 steps: acquiring data from the DB,

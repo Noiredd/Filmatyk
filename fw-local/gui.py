@@ -121,12 +121,20 @@ class Main(object):
 
   def __init__(self):
     self.root = root = tk.Tk()
-    #prepare the components
-    self.loginHandler = Login(self.root)
-    #prepare the window
     root.title('FW local')
-    root.resizable(False, False)
-    self.__construct()
+    #construct the window: first the notebook for tabbed view
+    self.notebook = ttk.Notebook(root)
+    self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
+    #control panel
+    frame = tk.Frame(root)
+    frame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.SW)
+    ttk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.SW)
+    ttk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.SW)
+    self.progressVar = tk.IntVar()
+    self.progressbar = ttk.Progressbar(root, orient='horizontal', length=400, mode='determinate', variable=self.progressVar)
+    self.progressbar.grid(row=1, column=0, padx=5, pady=5)
+    self._setProgress(-1) # start with the progress bar hidden
+    ttk.Button(root, text='Wyjście', command=self._quit).grid(row=1, column=0, padx=5, pady=5, sticky=tk.SE)
     #load the savefile and instantiate Presenter(s) and Database(s)
     self.databases = []
     self.presenters = []
@@ -134,16 +142,17 @@ class Main(object):
     u_name = userdata['username'] if userdata else ''
     conf_m = userdata['movie_cfg'] if userdata else ''
     data_m = userdata['movie_db'] if userdata else ''
+    self.loginHandler = Login(self.root)
     self.api = FilmwebAPI(self.loginHandler.requestLogin, u_name)
     movieDatabase = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
-    moviePresenter = Presenter(root, self.api, movieDatabase, conf_m)
-    moviePresenter.grid(row=0, column=0, rowspan=3, columnspan=3, padx=5, pady=5, sticky=tk.NW)
+    moviePresenter = Presenter(self, self.api, movieDatabase, conf_m)
     moviePresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     moviePresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
     moviePresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
     moviePresenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=3, sticky=tk.NW)
     moviePresenter.addFilter(filters.CountryFilter, row=0, column=2, rowspan=3, sticky=tk.NW)
     moviePresenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=3, sticky=tk.NW)
+    moviePresenter.placeInTab('Filmy')
     moviePresenter.totalUpdate()
     self.databases.append(movieDatabase)
     self.presenters.append(moviePresenter)
@@ -153,20 +162,10 @@ class Main(object):
     root.protocol('WM_DELETE_WINDOW', self._quit)
     if not userdata:
       self._reloadData() # first run
+    #prevent resizing and run the app
+    root.resizable(False, False)
     tk.mainloop()
 
-  #CONSTRUCTION
-  def __construct(self):
-    #control panel
-    frame = tk.Frame(self.root)
-    ttk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.SW)
-    ttk.Button(frame, text='PRZEŁADUJ!', command=self._reloadData).grid(row=0, column=1, sticky=tk.SW)
-    self.progressVar = tk.IntVar()
-    self.progressbar = ttk.Progressbar(self.root, orient='horizontal', length=400, mode='determinate', variable=self.progressVar)
-    self.progressbar.grid(row=4, column=1, padx=5, pady=5)
-    self._setProgress(-1) # start with the progress bar hidden
-    tk.Button(self.root, text='Wyjście', command=self._quit).grid(row=4, column=2, padx=5, pady=5, sticky=tk.SE)
-    frame.grid(row=4, column=0, padx=5, pady=5, sticky=tk.S+tk.W)
   def centerWindow(self):
     self.root.update()
     ws = self.root.winfo_screenwidth()
