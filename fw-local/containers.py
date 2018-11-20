@@ -165,7 +165,7 @@ class Item(metaclass=BlueprintInheritance):
   )
   #rating fields are special, will be parsed and stored differently
   rating = Blueprint(
-    name='Ocena',
+    name='Moja ocena',
     colwidth=150,
     display=Blueprint._rating,
     store=False

@@ -6,8 +6,7 @@ DEFAULT_CONFIGS = {
     year    = None,
     genres  = None,
     dateOf  = None,
-    rating  = None,
-    comment = None
+    rating  = None
   )
 }
 DEFAULT_SORTING = {

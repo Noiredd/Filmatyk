@@ -10,12 +10,12 @@ dzięki temu masz możliwość *przeglądania ich i filtrowania* na różne spos
 **WAŻNE**: fw-local jest na razie w fazie *alfa* - to znaczy, że nie jest jeszcze gotowy i może (oraz będzie) ulegać różnym zmianom!
 
 <a href="https://raw.githubusercontent.com/Noiredd/fw-local/master/screenshot.png">
-<img src="https://github.com/Noiredd/fw-local/blob/master/screenshot.png" width="900" height="432" border="10" alt="Kliknij by zobaczyć w większym rozmiarze" /></a>
+<img src="https://github.com/Noiredd/fw-local/blob/master/screenshot.png" width="900" height="485" border="10" alt="Kliknij by zobaczyć w większym rozmiarze" /></a>
 
 ### Jak uruchomić fw-local?
 Na ten moment program nie ma instalatora, więc pierwsze uruchomienie może być mało wygodne.
 
-0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0-alpha.6.zip) i wypakuj, gdzie Ci wygodnie.
+0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0-alpha.7.zip) i wypakuj, gdzie Ci wygodnie.
 
 1. Pierwszym krokiem będzie prawdopodobnie instalacja Python3 ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
 na chwilę obecną najnowszym wydaniem jest Python 3.7.1.
@@ -40,13 +40,14 @@ Jeśli w międzyczasie dokonano zmiany którejś z ocen, *aktualizacja* tego nie
 * "PRZEŁADUJ" służy do pełnej aktualizacji bazy, tj. cała Twoja historia ocen zostanie przejrzana ponownie i wszystkie oceny zostaną odświeżone.
 Potrwa to trochę dłużej (tym więcej, im więcej masz ocen), ale to jedyna na ten moment metoda, by uwzględnić zmiany w istniejących ocenach.
 
+Pro tip: P-kliknij na nagłówek kolumn by otworzyć menu konfiguracji - możesz dzięki temu wybrać/usunąć dodatkowe kolumny z widoku bądź zmienić ich kolejność :)
+
 ### Co planuję dalej?
 Następnym krokiem będzie dodanie możliwości przeglądania ocen seriali i gier.
 Dalej - list "chcę zobaczyć".
 Oczywiście nowe kategorie będzie można filtrować na takie same sposoby jak obecnie.
 
-Widok podglądu zostanie prawdopodobnie poszerzony o plakat filmu,
-pojawi się także możliwość konfiguracji układu kolumn.
+Widok podglądu zostanie prawdopodobnie poszerzony o plakat filmu.
 
 Myślę też o poszerzeniu widoku statystyk o parę ciekawszych wskaźników.
 
