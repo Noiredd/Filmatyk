@@ -11,27 +11,48 @@ class FilterMachine(object):
   def __init__(self, callback):
     self.filterObjs = []
     self.filterFuns = []
+    # flags for performance improvement: construct a callable only from those
+    # filters that are currently active; only reset those too; additionally,
+    # ignore repeated resets (speeds up startup SIGNIFICANTLY)
+    self.filterFlags = []
     self.filterMap = {} # maps filter ID's to their positions on the lists
     self.callback = callback # to notify the Presenter about any changes
+    self.ignoreCallback = False # see resetAllFilters for the meaning of it
   def registerFilter(self, filter_object:object):
     filter_object.setCallback(self.updateCallback)
     self.filterObjs.append(filter_object)
     self.filterFuns.append(filter_object.getFunction())
+    self.filterFlags.append(False)
     self.filterMap[filter_object.getID()] = len(self.filterObjs) - 1
   def resetAllFilters(self):
-    for filter in self.filterObjs:
-      filter.reset()
-  def updateCallback(self, filter_id:int, new_function):
+    # disable calling back to the Presenter until all of the work is done
+    self.ignoreCallback = True
+    for filter, flag in zip(self.filterObjs, self.filterFlags):
+      if flag:
+        filter.reset()
+    self.filterFlags = [False for flag in self.filterFlags] # clear all
+    # and now call back
+    self.ignoreCallback = False
+    self.callback()
+  def updateCallback(self, filter_id:int, new_function, reset=False):
     filter_pos = self.filterMap[filter_id]
     self.filterFuns[filter_pos] = new_function
-    self.callback()
+    # don't call back if the filter is dormant and has requested a reset
+    if reset and not self.filterFlags[filter_pos]:
+      return
+    # otherwise, proceed; set the flag on update, clear on reset
+    self.filterFlags[filter_pos] = not reset
+    if not self.ignoreCallback:
+      self.callback()
   def populateChoices(self, items:list):
     for filter in self.filterObjs:
       filter.populateChoices(items)
-      filter.reset()
+    self.resetAllFilters()
   def getFiltering(self):
     # returns a callable that executes all of the filters
-    funs = self.filterFuns if len(self.filterFuns) > 0 else [lambda x: True]
+    funs = [fun for fun, flag in zip(self.filterFuns, self.filterFlags) if flag]
+    if not funs:
+      funs = [lambda x: True]
     return lambda item: all([fun(item) for fun in funs])
 
 class Filter(object):
@@ -67,7 +88,8 @@ class Filter(object):
     # construct the GUI aspect
     self.main = tk.Frame(root)
     self.buildUI()
-    # callback takes 2 args: an ID (int) and a function (callable)
+    # callback takes 2 pos args: an ID (int) and a function (callable)
+    # and 1 keyword arg: "reset"
     self.machineCallback = lambda x: x # machine sets that during registering
     # end result of a filter: a callable
     self.function = self.DEFAULT
@@ -87,7 +109,7 @@ class Filter(object):
     self._reset()
   def _reset(self):
     self.function = self.DEFAULT
-    self.notifyMachine()
+    self.machineCallback(self.ID, self.function, reset=True)
   def getID(self):
     return self.ID
   def getFunction(self):
