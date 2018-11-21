@@ -1,18 +1,19 @@
 import tkinter as tk
 from tkinter import ttk
 
+import containers
+
 class Fonts(object):
   default  = 'TkDefaultFont'
   title    = (default, 24)
   otitle   = (default, 12)
   headings = (default, 10, 'bold')
   details  = (default, 10)
-  plot     = (default, 11)#, 'italic')
+  plot     = (default, 11)
   fwRating = (default, 24)
   rating   = (default, 48)
   faved    = (default, 40)
   comment  = (default, 14, 'italic')
-  FAV_SIGN = '♥'
 
 class DetailView(object):
   def __init__(self, root):
@@ -27,6 +28,8 @@ class DetailView(object):
   # TK interface
   def grid(self, **args):
     self.main.grid(**args)
+  def grid_remove(self, **args):
+    self.main.grid_remove(**args)
 
 class DetailViewMovies(DetailView):
   def __init__(self, root):
@@ -86,6 +89,10 @@ class DetailViewRating(DetailView):
     self.faved['text'] = item['faved']
     self.comment['text'] = item['comment']
 
+TYPE_TO_VIEW_BINDINGS = {
+  containers.Movie.TYPE_STRING: DetailViewMovies
+}
+
 class DetailWindow(object):
   # A window that holds general information about the item
   # has an embedded frame, which is itself an object of a class derived from DetailView
@@ -102,6 +109,8 @@ class DetailWindow(object):
 
   def __init__(self):
     self.root = tk.Toplevel()
+    self.detailViews = {} # for displaying the right DetailView
+    self.activeView = None
     self.__construct()
     self.root.resizable(0,0)
     self.root.title('Podgląd')
@@ -122,8 +131,16 @@ class DetailWindow(object):
     self.itypeLabel = tk.Label(self.root, text='', anchor=tk.NE, font=Fonts.otitle)
     self.itypeLabel.grid(row=0, column=1, padx=5, pady=5, sticky=tk.NE)
     # room for detailed information
-    self.movieDetails = DetailViewMovies(self.root)
-    self.movieDetails.grid(row=1, column=1, padx=5, pady=5, sticky=tk.NW)
+    for type_string, view_class in TYPE_TO_VIEW_BINDINGS.items():
+      view = view_class(self.root)
+      # place the frames temporarily, just to let them remember where they should be
+      view.grid(row=1, column=1, padx=5, pady=5, sticky=tk.NW)
+      view.grid_remove()
+      self.detailViews[type_string] = view
+    # during the first run we might not have any view placed, so to be safe we'd have
+    # to ask for it every time - it feels simpler to just place one View instead
+    view.grid()
+    self.activeView = type_string
     # room for rating information
     self.ratingDetails = DetailViewRating(self.root)
     self.ratingDetails.grid(row=2, column=1, padx=5, pady=5, sticky=tk.NW)
@@ -137,11 +154,15 @@ class DetailWindow(object):
     self.otitleLabel['text'] = item['otitle']
     self.itypeLabel['text']  = item.TYPE_STRING
     # fill in details using a dedicated objects
-    # TODO: when series/games/wanted things come in, there will be several detail
-    # handlers; the unused ones (or: currently used one, if there is a change)
-    # will have to be ungridded (grid_remove()) and the correct handler gridded
-    self.movieDetails.fillInDetails(item)
-    # same with rating/wantto
+    # select the right View for the item type
+    if item.TYPE_STRING != self.activeView:
+      # ungrid the previously used View, if there was any
+      self.detailViews[self.activeView].grid_forget()
+      # grid the new one instead
+      self.detailViews[item.TYPE_STRING].grid()
+      self.activeView = item.TYPE_STRING
+    self.detailViews[self.activeView].fillInDetails(item)
+    # TODO: similar with rating/wantto
     self.ratingDetails.fillInDetails(item)
     # set the window title and bring it up
     self.root.title('{} ({})'.format(item['title'], item['year']))
