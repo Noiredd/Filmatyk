@@ -17,16 +17,18 @@ Na ten moment program nie ma instalatora, więc pierwsze uruchomienie może być
 
 0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0-alpha.7.zip) i wypakuj, gdzie Ci wygodnie.
 
-1. Pierwszym krokiem będzie prawdopodobnie instalacja Python3 ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
+1. Pierwszym krokiem będzie prawdopodobnie **instalacja Python3** ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
 na chwilę obecną najnowszym wydaniem jest Python 3.7.1.
-fw-local nie uruchomi się w środowisku Python 2.x!  
+fw-local nie uruchomi się w środowisku starszym niż Python 3.6\*!  
 **Ważne:** na początku instalacji zaznacz `Add Python3 to PATH`!  
-Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.
+Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.  
+\* - jest to spowodowane zależnością względem modułu `requests_html`
 
-2. Instalacja modułów. Po prostu odpal `setup.bat`, skrypt powinien wszystko zrobić za Ciebie.  
-Jeśli to nie Twoje pierwsze starcie z Pythonem, to możesz woleć manualnie zainstalować `pillow`, `requests_html` i `matplotlib`.
+2. **Instalacja modułów**. Po prostu odpal `setup.bat`, skrypt powinien wszystko zrobić za Ciebie.  
+Jeśli to nie Twoje pierwsze starcie z Pythonem, to możesz woleć manualnie zainstalować `pillow`, `requests_html` i `matplotlib`.  
+Jeśli używasz linuksa, jeden z dodatkowych modułów (`BeautifulSoup`) wymaga także doinstalowania odpowiedniego pakietu - [tutaj](https://stackoverflow.com/a/26281671/6919631) więcej informacji.
 
-3. Samo uruchomienie programu, jest już proste - zwyczajnie odpalasz `fw-local.bat`. Powinno ukazać Ci się okno jak w screenie wyżej (tylko puste, z prośbą o pierwsze zalogowanie).
+3. Samo **uruchomienie** programu, jest już proste - zwyczajnie odpalasz `fw-local.bat`. Powinno ukazać Ci się okno jak w screenie wyżej (tylko puste, z prośbą o pierwsze zalogowanie).
 
 ### Co potrafi fw-local?
 Po pierwsze musisz zaimportować swoje oceny z filmwebu. fw-local poprosi Cię o to przy pierwszym uruchomieniu.
