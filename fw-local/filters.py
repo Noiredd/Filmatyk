@@ -367,40 +367,51 @@ class DateFilter(Filter):
     self.all_years = [0, 9999]
     super(DateFilter, self).__init__(root)
   def reset(self):
-    self.from_year.set(self.all_years[0])
-    self.from_month.set(1)
-    self.from_day.set(1)
-    today = datetime.datetime.now()
-    self.to_year.set(today.year)
-    self.to_month.set(today.month)
-    self.to_day.set(today.day)
+    dayzero = datetime.date(
+      year=self.all_years[0],
+      month=1,
+      day=1
+    )
+    self._setDates(dateFrom=dayzero, dateTo=datetime.date.today())
     self._reset()
   def buildUI(self):
     m = self.main
     tk.Label(m, text='Data ocenienia:').grid(row=0, column=0, columnspan=4, sticky=tk.NW)
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=2, column=0, sticky=tk.NW)
-    self.fySpin = fySpin = tk.Spinbox(m, width=7, textvariable=self.from_year, command=self._updateFrom)
+    self.fySpin = fySpin = tk.Spinbox(m, width=5, textvariable=self.from_year, command=self._updateFrom)
     fySpin.bind('<KeyRelease>', self._updateFrom)
     fySpin.grid(row=1, column=1, sticky=tk.NW)
-    self.tySpin = tySpin = tk.Spinbox(m, width=7, textvariable=self.to_year, command=self._updateTo)
+    self.tySpin = tySpin = tk.Spinbox(m, width=5, textvariable=self.to_year, command=self._updateTo)
     tySpin.bind('<KeyRelease>', self._updateTo)
     tySpin.grid(row=2, column=1, sticky=tk.NW)
     months = [i+1 for i in range(12)]
-    fmSpin = tk.Spinbox(m, width=4, textvariable=self.from_month, command=self._updateFrom, values=months)
+    fmSpin = tk.Spinbox(m, width=3, textvariable=self.from_month, command=self._updateFrom, values=months)
     fmSpin.bind('<KeyRelease>', self._updateFrom)
     fmSpin.grid(row=1, column=2, sticky=tk.NW)
-    tmSpin = tk.Spinbox(m, width=4, textvariable=self.to_month, command=self._updateTo, values=months)
+    tmSpin = tk.Spinbox(m, width=3, textvariable=self.to_month, command=self._updateTo, values=months)
     tmSpin.bind('<KeyRelease>', self._updateTo)
     tmSpin.grid(row=2, column=2, sticky=tk.NW)
     days = [i+1 for i in range(31)]
-    fdSpin = tk.Spinbox(m, width=4, textvariable=self.from_day, command=self._updateFrom, values=days)
+    fdSpin = tk.Spinbox(m, width=3, textvariable=self.from_day, command=self._updateFrom, values=days)
     fdSpin.bind('<KeyRelease>', self._updateFrom)
     fdSpin.grid(row=1, column=3, sticky=tk.NW)
-    tdSpin = tk.Spinbox(m, width=4, textvariable=self.to_day, command=self._updateTo, values=days)
+    tdSpin = tk.Spinbox(m, width=3, textvariable=self.to_day, command=self._updateTo, values=days)
     tdSpin.bind('<KeyRelease>', self._updateTo)
     tdSpin.grid(row=2, column=3, sticky=tk.NW)
-    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=3, column=0, columnspan=4, sticky=tk.NE)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, rowspan=2)
+    # shortcut buttons
+    sc = tk.Frame(m)
+    tk.Frame(sc, height=10).grid(row=0, column=0) # separator
+    tk.Label(sc, text='Ostatni:').grid(row=1, column=0, sticky=tk.W)
+    ttk.Button(sc, text='rok', width=4, command=self._thisYear).grid(row=1, column=1)
+    ttk.Button(sc, text='msc', width=4, command=self._thisMonth).grid(row=1, column=2)
+    ttk.Button(sc, text='tdzn', width=4, command=self._thisWeek).grid(row=1, column=3)
+    tk.Label(sc, text='Poprzedni:').grid(row=2, column=0, sticky=tk.W)
+    ttk.Button(sc, text='rok', width=4, command=self._lastYear).grid(row=2, column=1)
+    ttk.Button(sc, text='msc', width=4, command=self._lastMonth).grid(row=2, column=2)
+    ttk.Button(sc, text='tdzn', width=4, command=self._lastWeek).grid(row=2, column=3)
+    sc.grid(row=3, column=0, columnspan=5, sticky=tk.NW)
   def populateChoices(self, items:list):
     all_years = set()
     for item in items:
@@ -421,11 +432,56 @@ class DateFilter(Filter):
     except ValueError:
       val = default
     return val
+  def _thisYear(self):
+    dateTo = datetime.date.today()
+    delta = datetime.timedelta(days=365)
+    dateFrom = dateTo - delta
+    self._setDates(dateFrom=dateFrom, dateTo=dateTo)
+    self._makeUpdate(dateFrom, dateTo)
+  def _thisMonth(self):
+    dateTo = datetime.date.today()
+    delta = datetime.timedelta(days=31)
+    dateFrom = dateTo - delta
+    self._setDates(dateFrom=dateFrom, dateTo=dateTo)
+    self._makeUpdate(dateFrom, dateTo)
+  def _thisWeek(self):
+    dateTo = datetime.date.today()
+    delta = datetime.timedelta(days=7)
+    dateFrom = dateTo - delta
+    self._setDates(dateFrom=dateFrom, dateTo=dateTo)
+    self._makeUpdate(dateFrom, dateTo)
+  def _lastYear(self):
+    delta = datetime.timedelta(days=365)
+    dateTo = datetime.date.today() - delta
+    dateFrom = dateTo - delta
+    self._setDates(dateFrom=dateFrom, dateTo=dateTo)
+    self._makeUpdate(dateFrom, dateTo)
+  def _lastMonth(self):
+    delta = datetime.timedelta(days=31)
+    dateTo = datetime.date.today() - delta
+    dateFrom = dateTo - delta
+    self._setDates(dateFrom=dateFrom, dateTo=dateTo)
+    self._makeUpdate(dateFrom, dateTo)
+  def _lastWeek(self):
+    delta = datetime.timedelta(days=7)
+    dateTo = datetime.date.today() - delta
+    dateFrom = dateTo - delta
+    self._setDates(dateFrom=dateFrom, dateTo=dateTo)
+    self._makeUpdate(dateFrom, dateTo)
   def _updateTo(self, event=None):
     self._update(to=True, event=event)
   def _updateFrom(self, event=None):
     self._update(to=False, event=event)
-  def _update(self, to, event=None):
+  def _setDates(self, dateFrom=None, dateTo=None):
+    if dateFrom:
+      self.from_year.set(str(dateFrom.year))
+      self.from_month.set(str(dateFrom.month))
+      self.from_day.set(str(dateFrom.day))
+    if dateTo:
+      self.to_year.set(str(dateTo.year))
+      self.to_month.set(str(dateTo.month))
+      self.to_day.set(str(dateTo.day))
+  def _getDates(self):
     dateFrom = datetime.date(
       year=self.getIntValue(self.from_year),
       month=self.getIntValue(self.from_month),
@@ -436,6 +492,11 @@ class DateFilter(Filter):
       month=self.getIntValue(self.to_month),
       day=self.getIntValue(self.to_day)
     )
+    return dateFrom, dateTo
+  def _update(self, to, event=None):
+    dateFrom, dateTo = self._getDates()
+    self._makeUpdate(dateFrom, dateTo)
+  def _makeUpdate(self, dateFrom, dateTo):
     def dateFilter(item):
       date = item.getRawProperty('dateOf')
       if date >= dateFrom and date <= dateTo:
