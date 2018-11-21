@@ -114,11 +114,11 @@ class YearFilter(Filter):
     tk.Label(m, text='Rok produkcji:').grid(row=0, column=0, columnspan=5, sticky=tk.NW)
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=1, column=2, sticky=tk.NW)
-    self.yFrom = yFrom = tk.Spinbox(m, width=5, textvariable=self.year_from, command=self._update)
-    yFrom.bind('<KeyRelease>', self._update)
+    self.yFrom = yFrom = tk.Spinbox(m, width=5, textvariable=self.year_from, command=self._updateFrom)
+    yFrom.bind('<KeyRelease>', self._updateFrom)
     yFrom.grid(row=1, column=1, sticky=tk.NW)
-    self.yTo = yTo = tk.Spinbox(m, width=5, textvariable=self.year_to, command=self._update)
-    yTo.bind('<KeyRelease>', self._update)
+    self.yTo = yTo = tk.Spinbox(m, width=5, textvariable=self.year_to, command=self._updateTo)
+    yTo.bind('<KeyRelease>', self._updateTo)
     yTo.grid(row=1, column=3, sticky=tk.NW)
     ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NW)
   def populateChoices(self, items:list):
@@ -134,7 +134,11 @@ class YearFilter(Filter):
     self.yFrom.configure(values=self.all_years)
     self.yTo.configure(values=self.all_years)
     self.reset()
-  def _update(self, event=None):
+  def _updateTo(self, event=None):
+    self._update(to=True, event=event)
+  def _updateFrom(self, event=None):
+    self._update(to=False, event=event)
+  def _update(self, to, event=None):
     try:
       yearFrom = int(self.year_from.get())
     except ValueError:
@@ -148,6 +152,14 @@ class YearFilter(Filter):
       yearFrom = self.all_years[0]
     if yearTo < 1000:
       yearTo = self.all_years[-1]
+    # automatically align the opposite limit if the combination is nonsensical
+    if yearFrom > yearTo:
+      if to: # yearTo was modified -- pull yearFrom down with it
+        yearFrom = yearTo
+        self.year_from.set(str(yearFrom))
+      else: # yearFrom was modified -- pull yearTo up with it
+        yearTo = yearFrom
+        self.year_to.set(str(yearTo))
     def yearFilter(item):
       year = item.getRawProperty('year')
       if year >= yearFrom and year <= yearTo:
@@ -307,14 +319,18 @@ class RatingFilter(Filter):
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=1, column=2, sticky=tk.NW)
     values = ['-'] + [str(i) for i in range(1,11)]
-    rFrom = tk.Spinbox(m, width=4, textvariable=self.rate_from, command=self._update, values=values)
-    rFrom.bind('<KeyRelease>', self._update)
+    rFrom = tk.Spinbox(m, width=4, textvariable=self.rate_from, command=self._updateFrom, values=values)
+    rFrom.bind('<KeyRelease>', self._updateFrom)
     rFrom.grid(row=1, column=1, sticky=tk.NW)
-    rTo = tk.Spinbox(m, width=4, textvariable=self.rate_to, command=self._update, values=values)
-    rTo.bind('<KeyRelease>', self._update)
+    rTo = tk.Spinbox(m, width=4, textvariable=self.rate_to, command=self._updateTo, values=values)
+    rTo.bind('<KeyRelease>', self._updateTo)
     rTo.grid(row=1, column=3, sticky=tk.NW)
     ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NE)
-  def _update(self, event=None):
+  def _updateTo(self, event=None):
+    self._update(to=True, event=event)
+  def _updateFrom(self, event=None):
+    self._update(to=False, event=event)
+  def _update(self, to, event=None):
     try:
       rateFrom = int(self.rate_from.get())
     except ValueError:
@@ -323,6 +339,14 @@ class RatingFilter(Filter):
       rateTo = int(self.rate_to.get())
     except ValueError:
       rateTo = 10
+    # similar mechanism as in YearFilter
+    if rateFrom > rateTo:
+      if to:
+        rateFrom = rateTo
+        self.rate_from.set(str(rateFrom))
+      else:
+        rateTo = rateFrom
+        self.rate_to.set(str(rateTo))
     def ratingFilter(item):
       rating = item.getRawProperty('rating')
       if rating >= rateFrom and rating <= rateTo:
@@ -356,26 +380,26 @@ class DateFilter(Filter):
     tk.Label(m, text='Data ocenienia:').grid(row=0, column=0, columnspan=4, sticky=tk.NW)
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=2, column=0, sticky=tk.NW)
-    self.fySpin = fySpin = tk.Spinbox(m, width=7, textvariable=self.from_year, command=self._update)
-    fySpin.bind('<KeyRelease>', self._update)
+    self.fySpin = fySpin = tk.Spinbox(m, width=7, textvariable=self.from_year, command=self._updateFrom)
+    fySpin.bind('<KeyRelease>', self._updateFrom)
     fySpin.grid(row=1, column=1, sticky=tk.NW)
-    self.tySpin = tySpin = tk.Spinbox(m, width=7, textvariable=self.to_year, command=self._update)
-    tySpin.bind('<KeyRelease>', self._update)
+    self.tySpin = tySpin = tk.Spinbox(m, width=7, textvariable=self.to_year, command=self._updateTo)
+    tySpin.bind('<KeyRelease>', self._updateTo)
     tySpin.grid(row=2, column=1, sticky=tk.NW)
     months = [i+1 for i in range(12)]
-    mfSpin = tk.Spinbox(m, width=4, textvariable=self.from_month, command=self._update, values=months)
-    mfSpin.bind('<KeyRelease>', self._update)
-    mfSpin.grid(row=1, column=2, sticky=tk.NW)
-    mtSpin = tk.Spinbox(m, width=4, textvariable=self.to_month, command=self._update, values=months)
-    mtSpin.bind('<KeyRelease>', self._update)
-    mtSpin.grid(row=2, column=2, sticky=tk.NW)
+    fmSpin = tk.Spinbox(m, width=4, textvariable=self.from_month, command=self._updateFrom, values=months)
+    fmSpin.bind('<KeyRelease>', self._updateFrom)
+    fmSpin.grid(row=1, column=2, sticky=tk.NW)
+    tmSpin = tk.Spinbox(m, width=4, textvariable=self.to_month, command=self._updateTo, values=months)
+    tmSpin.bind('<KeyRelease>', self._updateTo)
+    tmSpin.grid(row=2, column=2, sticky=tk.NW)
     days = [i+1 for i in range(31)]
-    dfSpin = tk.Spinbox(m, width=4, textvariable=self.from_day, command=self._update, values=days)
-    dfSpin.bind('<KeyRelease>', self._update)
-    dfSpin.grid(row=1, column=3, sticky=tk.NW)
-    dtSpin = tk.Spinbox(m, width=4, textvariable=self.to_day, command=self._update, values=days)
-    dtSpin.bind('<KeyRelease>', self._update)
-    dtSpin.grid(row=2, column=3, sticky=tk.NW)
+    fdSpin = tk.Spinbox(m, width=4, textvariable=self.from_day, command=self._updateFrom, values=days)
+    fdSpin.bind('<KeyRelease>', self._updateFrom)
+    fdSpin.grid(row=1, column=3, sticky=tk.NW)
+    tdSpin = tk.Spinbox(m, width=4, textvariable=self.to_day, command=self._updateTo, values=days)
+    tdSpin.bind('<KeyRelease>', self._updateTo)
+    tdSpin.grid(row=2, column=3, sticky=tk.NW)
     ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=3, column=0, columnspan=4, sticky=tk.NE)
   def populateChoices(self, items:list):
     all_years = set()
@@ -397,7 +421,11 @@ class DateFilter(Filter):
     except ValueError:
       val = default
     return val
-  def _update(self, event=None):
+  def _updateTo(self, event=None):
+    self._update(to=True, event=event)
+  def _updateFrom(self, event=None):
+    self._update(to=False, event=event)
+  def _update(self, to, event=None):
     dateFrom = datetime.date(
       year=self.getIntValue(self.from_year),
       month=self.getIntValue(self.from_month),
