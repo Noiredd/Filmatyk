@@ -1,7 +1,9 @@
+from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
 
 import containers
+import posterman
 
 class Fonts(object):
   default  = 'TkDefaultFont'
@@ -111,14 +113,15 @@ class DetailWindow(object):
     self.root = tk.Toplevel()
     self.detailViews = {} # for displaying the right DetailView
     self.activeView = None
+    self.posterManager = posterman.PosterManager()
     self.__construct()
     self.root.resizable(0,0)
     self.root.title('Podgląd')
     self.root.withdraw()
   def __construct(self):
     # poster
-    self.poster = tk.Label(self.root, text='POSTER', width=15, height=10, anchor=tk.NW)
-    self.poster.grid(row=0, column=0, rowspan=3, sticky=tk.NW)
+    self.poster = tk.Label(self.root, text='POSTER', anchor=tk.NW)
+    self.poster.grid(row=0, column=0, rowspan=4, sticky=tk.NW)
     # general info frame
     general = tk.Frame(self.root)
     general.grid(row=0, column=1, sticky=tk.NW)
@@ -147,12 +150,18 @@ class DetailWindow(object):
     # control panel
     control = tk.Frame(self.root)
     control.grid(row=3, column=1, sticky=tk.NE)
-    tk.Button(control, text='Zamknij', command=self.root.withdraw).pack(side=tk.LEFT, padx=5, pady=5)
+    ttk.Button(control, text='Zamknij', command=self.root.withdraw).pack(side=tk.LEFT, padx=5, pady=5)
   # INTERFACE
   def launchPreview(self, item:object):
     self.titleLabel['text']  = item['title']
     self.otitleLabel['text'] = item['otitle']
     self.itypeLabel['text']  = item.TYPE_STRING
+    # get the poster
+    posterURL = item.getRawProperty('imglink')
+    posterPath = self.posterManager.getPosterByURL(posterURL)
+    image = Image.open(posterPath)
+    self.image = ImageTk.PhotoImage(image)
+    self.poster.configure(image=self.image)
     # fill in details using a dedicated objects
     # select the right View for the item type
     if item.TYPE_STRING != self.activeView:
