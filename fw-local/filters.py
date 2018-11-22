@@ -341,10 +341,10 @@ class RatingFilter(Filter):
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=1, column=2, sticky=tk.NW)
     values = ['-'] + [str(i) for i in range(1,11)]
-    rFrom = tk.Spinbox(m, width=4, textvariable=self.rate_from, command=self._updateFrom, values=values)
+    rFrom = tk.Spinbox(m, width=5, textvariable=self.rate_from, command=self._updateFrom, values=values)
     rFrom.bind('<KeyRelease>', self._updateFrom)
     rFrom.grid(row=1, column=1, sticky=tk.NW)
-    rTo = tk.Spinbox(m, width=4, textvariable=self.rate_to, command=self._updateTo, values=values)
+    rTo = tk.Spinbox(m, width=5, textvariable=self.rate_to, command=self._updateTo, values=values)
     rTo.bind('<KeyRelease>', self._updateTo)
     rTo.grid(row=1, column=3, sticky=tk.NW)
     ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NE)
@@ -421,7 +421,7 @@ class DateFilter(Filter):
     tdSpin = tk.Spinbox(m, width=3, textvariable=self.to_day, command=self._updateTo, values=days)
     tdSpin.bind('<KeyRelease>', self._updateTo)
     tdSpin.grid(row=2, column=3, sticky=tk.NW)
-    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, rowspan=2)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, rowspan=2, sticky=tk.E)
     # shortcut buttons
     sc = tk.Frame(m)
     tk.Frame(sc, height=10).grid(row=0, column=0) # separator
