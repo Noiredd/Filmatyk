@@ -20,7 +20,7 @@ These objects can also store some user-dependent information, such as rating wit
 TODO
 The very basic `Item` class, blueprints, meta-inheritance, rating info
 
-### Filmweb API
+### [Filmweb API](fw-local/filmweb.py)
 
 The API allows retrieving user ratings from their Filmweb account, offering a set of functions encapsulated in a special object.
 These methods handle everything from logging in to the account, through obtaining the number of movies the user has rated, to retrieving a list of them and returning them as processed objects, ready to store and display.
@@ -31,7 +31,8 @@ Every public method is guarded - if the user is logged in, the operation proceed
 
 Filmweb data divided into two parts - movie information is stored in one place, while rating information is elsewhere.
 The API parses the items' generic information first, as it is more complex.
-Each particular item info is held in a div with a specific class name (see `Constants` in [`filmweb.py`](fw-local/filmweb.py)) - the first step is finding and extracting those divs.
+Each particular item info is held in a div with a specific class name (see `Constants`) -
+the first step is finding and extracting those divs.
 Each of them contains more nested elements (`div`s, `h3`'s, links etc.), each holding different kind of information.
 
 The goal of parsing is to have a `dict` or similar object, with standardized values to make integration with the GUI easier.
@@ -67,7 +68,34 @@ The rating information is then appended to the previously parsed generic data, s
 
 #### Session management
 
-### Presenter
+Retrieving some information from the website requires an active session with the website.
+API functions that access that information are guarded by an `enforceSession` decorator.
+Its job is to check whether there is an active session before executing any guarded call, and if there isn't - request a new session or disallow the operation.
+This decorator is perhaps a little weird, as it is defined as a method, but actually it shall not be called on any live `FilmwebAPI` object (see the comment at its definition).
+
+Requesting a new session is done by the `requestSession` method.
+Since in order to acquire a session the user has to authenticate, there is a GUI interaction necessary.
+However, the API is independent from the GUI.
+Instead, the API object shall be provided a callback to a function that *actually* establishes a session:
+that is, queries the user for their credentials, attempts to log in, and returns a session.
+This is where the `Login` class comes into play - the master object (`Main`) instantiates a *login manager*, whose job is exactly that: ask the user for credentials, log in, return session.
+Of course, the actual login is an API operation (`FilmwebAPI::login`), so the `Login` class relies back on the API to perform it.
+
+In the end, the mechanism is as follows:
+* Database makes an API request,
+* the API method's decoration (`enforceSession`) launches and checks for the session,
+* failing to find an active session, it calls `requestSession`,
+* a GUI callback is called, blocking the execution,
+* the user fills in their credentials - GUI calls the API for login,
+* login either succeeds and a new session is returned, or fails and `None` is returned,
+* the GUI either lets the user try again (on failure) or hides the window, returning the session to the original caller.
+
+The motivation for this mechanism was to give the user immediate feedback on a failed login, while still separating API from the GUI:
+had the API only asked the GUI for credentials, then performed the login attempt on its own, it would have to execute a callback to the GUI to inform it of a failure or success.
+This may feel convoluted, but it's still simpler than having the API control the GUI -
+button callbacks would have to be routed back to the API while the API should call GUI methods to notify of login error or hide on success etc.
+
+### [Presenter](fw-local/presenter.py)
 
 `Presenter` is a class responsible for displaying items from the database.
 This process consists of 4 steps: retrieving the items from the DB (`totalUpdate`), (optionally) filtering them through some user-given criteria (`filtersUpdate`), (optionally) sorting them by some user-given key (`sortingUpdate`) and eventually putting them into a TreeView for interactive display (`displayUpdate`).
@@ -76,7 +104,7 @@ Those actions are arranged into a call chain; that is, triggering one of them au
 The first step is rather trivial, as the Presenter essentially acquires a copy of the data held by the database.
 Rest of the steps will be briefly explained below.
 
-#### Filtering
+#### [Filtering](fw-local/filters.py)
 
 In this step, the list of items is filtered through a set of criteria chosen by the user.
 The mechanism consists of two parts: a `FilterMachine` that performs the actual (well, almost actual) filtering, and a set of `Filters`.  
@@ -111,3 +139,5 @@ Finally, whenever any filter is changed and calls back to the machine, the machi
 #### Sorting
 
 #### Display
+
+#### Configuring the Presenter
