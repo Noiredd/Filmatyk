@@ -1,0 +1,5 @@
+cache/
+fw-local/__pycache__/
+*.html
+*.fws
+*.txt

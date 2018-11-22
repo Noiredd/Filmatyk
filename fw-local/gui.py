@@ -9,7 +9,7 @@ from database import Database
 from filmweb import FilmwebAPI
 from presenter import Presenter
 
-VERSION = '1.0-alpha.7'
+VERSION = '1.0-alpha.8'
 
 class Login(object):
   # By default a dormant window that offers a request function to be called by
