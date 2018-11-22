@@ -147,10 +147,10 @@ class Config(object):
     # if changes were made - update the parent and change its window properties
     # so that it can resize along with the treeview
     if self.isDirty:
-      self.parent.root.resizable(True, True)
+      self.parent.root.root.resizable(True, True)
       self.parent.configureColumns()
-      self.parent.root.update()
-      self.parent.root.resizable(False, False)
+      self.parent.root.root.update()
+      self.parent.root.root.resizable(False, False)
     # refresh items
     self.parent.displayUpdate()
   def centerWindow(self):
