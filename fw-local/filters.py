@@ -122,10 +122,11 @@ class Filter(object):
     self.main.grid(**kw)
 
 class YearFilter(Filter):
+  default_years = [1, 9999]
   def __init__(self, root):
     self.year_from = tk.StringVar()
     self.year_to   = tk.StringVar()
-    self.all_years = [0, 9999]
+    self.all_years = self.default_years
     super(YearFilter, self).__init__(root)
   def reset(self):
     self.year_from.set(str(self.all_years[0]))
@@ -152,7 +153,7 @@ class YearFilter(Filter):
       all_years.add(year)
     self.all_years = sorted(list(all_years))
     if len(self.all_years) == 0:
-      self.all_years = [0, 9999]
+      self.all_years = self.default_years
     self.yFrom.configure(values=self.all_years)
     self.yTo.configure(values=self.all_years)
     self.reset()
@@ -379,6 +380,7 @@ class RatingFilter(Filter):
     self.notifyMachine()
 
 class DateFilter(Filter):
+  default_years = [1, 9999]
   def __init__(self, root):
     self.from_year = tk.StringVar()
     self.from_month = tk.StringVar()
@@ -386,7 +388,7 @@ class DateFilter(Filter):
     self.to_year = tk.StringVar()
     self.to_month = tk.StringVar()
     self.to_day = tk.StringVar()
-    self.all_years = [0, 9999]
+    self.all_years = self.default_years
     super(DateFilter, self).__init__(root)
   def reset(self):
     dayzero = datetime.date(
@@ -443,11 +445,12 @@ class DateFilter(Filter):
       all_years.add(item_date.year)
     self.all_years = sorted(list(all_years))
     if len(self.all_years) == 0:
-      self.all_years = [0, 9999]
+      self.all_years = self.default_years
     self.fySpin.configure(values=self.all_years)
     self.tySpin.configure(values=self.all_years)
     self.reset()
-  def getIntValue(self, var, default:int=1):
+  @staticmethod
+  def getIntValue(var, default:int=1):
     val = var.get()
     try:
       val = int(val)
