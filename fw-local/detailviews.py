@@ -79,16 +79,19 @@ class DetailViewRating(DetailView):
   def __init__(self, root):
     super(DetailViewRating, self).__init__(root)
   def buildUI(self):
-    tk.Label(self.main, text='Twoja ocena:', anchor=tk.NE, font=Fonts.details).grid(row=0, column=1, columnspan=2, sticky=tk.NE)
+    tk.Label(self.main, text='Twoja ocena:', anchor=tk.NE, font=Fonts.details).grid(row=0, column=2, columnspan=2, sticky=tk.NE)
     self.rating = tk.Label(self.main, text='', width=2, anchor=tk.NE, font=Fonts.rating)
-    self.rating.grid(row=1, column=1, sticky=tk.NE)
+    self.rating.grid(row=1, column=2, sticky=tk.NE)
     self.faved = tk.Label(self.main, text=' ', width=1, anchor=tk.NE, font=Fonts.faved)
-    self.faved.grid(row=1, column=2, sticky=tk.E)
+    self.faved.grid(row=1, column=3, sticky=tk.E)
+    self.date = tk.Label(self.main, text='', anchor=tk.NW, font=Fonts.plot)
+    self.date.grid(row=0, column=0, sticky=tk.NW)
     self.comment = tk.Label(self.main, text='', width=50, wraplength=500, anchor=tk.CENTER, font=Fonts.comment)
-    self.comment.grid(row=0, column=0, rowspan=2, padx=7, sticky=tk.W)
+    self.comment.grid(row=0, column=0, rowspan=3, columnspan=2, padx=7, pady=20, sticky=tk.NW)
   def fillInDetails(self, item:object):
     self.rating['text'] = item['rating'].split()[0] # only show the number
     self.faved['text'] = item['faved']
+    self.date['text'] = item['dateOf']
     self.comment['text'] = item['comment']
 
 TYPE_TO_VIEW_BINDINGS = {
