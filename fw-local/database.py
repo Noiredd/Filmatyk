@@ -35,7 +35,12 @@ class Database(object):
   def softUpdate(self):
     self.callback(0) #display the progress bar
     # ask the API how many items should there be and how many are there per page
-    first_request = self.api.getNumOf(self.itemtype)
+    try:
+      # in case there are network problems
+      first_request = self.api.getNumOf(self.itemtype)
+    except self.api.ConnectionError:
+      self.callback(-1)
+      return None
     if first_request is None:
       #this will happen if the user fails to log in
       return None

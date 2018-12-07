@@ -18,19 +18,23 @@ class FilmwebAPI(object):
     def getUserMoviePage(username, page=1):
       userpage = FilmwebAPI.Constants.getUserPage(username)
       return userpage + '/films?page=' + str(page)
+  ConnectionError = requests_html.requests.ConnectionError
 
   @staticmethod
   def login(username, password):
     session = requests_html.HTMLSession()
-    log = session.post(
-      FilmwebAPI.Constants.login_path,
-      data={'j_username': username, 'j_password': password}
-    )
+    try:
+      log = session.post(
+        FilmwebAPI.Constants.login_path,
+        data={'j_username': username, 'j_password': password}
+      )
+    except FilmwebAPI.ConnectionError:
+      return (False, True) # login error, connection error
     if FilmwebAPI.Constants.auth_error in log.text:
       print('BŁĄD LOGOWANIA')
-      return None
+      return (False, False)
     else:
-      return session
+      return (True, session)
 
   #@staticmethod -- but not actually a static method, see:
   # https://stackoverflow.com/q/21382801/6919631
@@ -152,10 +156,14 @@ class FilmwebAPI(object):
 
   def __fetchPage(self, url):
     #fetch the page and return its parsed representation
-    page = self.session.get(url)
+    try:
+      page = self.session.get(url)
+    except:
+      raise ConnectionError
     if not page.ok:
       status = page.status_code
-      #we should probably do something about this
+      print("FETCH ERROR {}".format(status))
+      raise ConnectionError
     else:
       return BS(page.html.html, 'lxml')
 

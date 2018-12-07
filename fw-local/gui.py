@@ -16,6 +16,8 @@ class Login(object):
   # the API. That function blocks until user enters data and clicks to log in.
   # It then calls API again to do the actual backend login stuff.
   default_message = 'Zaloguj się do filmweb.pl'
+  logerr_message = 'Niepowodzenie logowania!'
+  conerr_message = 'Sprawdź połączenie z internetem!'
 
   def __init__(self, root):
     self.__construct()
@@ -83,8 +85,9 @@ class Login(object):
     self.window.geometry('+{:.0f}+{:.0f}'.format(x, y))
 
   #CALLBACKS
-  def _setStateBad(self, event=None):
-    self.infoLabel['text'] = 'Niepowodzenie logowania!'
+  def _setStateBad(self, event=None, connection=False):
+    message = self.conerr_message if connection else self.logerr_message
+    self.infoLabel['text'] = message
     self.stateGood = False
   def _setStateGood(self, event=None):
     if not self.stateGood:
@@ -99,9 +102,10 @@ class Login(object):
     password = self.passwordEntry.get()
     self.passwordEntry.delete(0, tk.END)  #always clear the password field
     #attempt to log in
-    session = FilmwebAPI.login(username, password)
-    if session is None:
-      self._setStateBad()
+    success, session = FilmwebAPI.login(username, password)
+    if not success:
+      # in this case, "session" is actually a connection error flag
+      self._setStateBad(connection=session)
     else:
       #clear&hide, store session/username and pass control back to the caller
       self.usernameEntry.delete(0, tk.END)

@@ -24,7 +24,10 @@ class PosterManager():
     return os.path.join(self.CACHE_DIR, '{}.png'.format(pid))
   def downloadPoster(self, url:str, path:str):
     # downloads from url, stores under path
-    response = self.session.get(url)
+    try:
+      response = self.session.get(url)
+    except:
+      return False
     if not response.ok:
       return False
     with open(path, 'wb') as ifile:
