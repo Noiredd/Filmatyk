@@ -126,6 +126,7 @@ class FilmwebAPI(object):
     page = self.__fetchPage(url)
     # TODO: in principle, this page could be cached for some small time
     #the number of user's movies is inside a span of a specific class
+    movies = 0
     for span in page.body.find_all('span'):
       if not span.has_attr('class'):
         continue
