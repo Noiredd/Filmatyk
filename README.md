@@ -7,28 +7,33 @@ fw-local pozwala na *zaimportowanie własnych ocen* z portalu i zapisanie ich lo
 Razem z Twoimi ocenami, fw-local pobiera także podstawowe informacje o obejrzanych przez Ciebie filmach -
 dzięki temu masz możliwość *przeglądania ich i filtrowania* na różne sposoby - zupełnie tak, jak w starym, dobrym filmwebie!
 
-**WAŻNE**: fw-local jest na razie w fazie *alfa* - to znaczy, że nie jest jeszcze gotowy i może (oraz będzie) ulegać różnym zmianom!
-
 <a href="https://raw.githubusercontent.com/Noiredd/fw-local/master/screenshot.png">
 <img src="https://github.com/Noiredd/fw-local/blob/master/screenshot.png" width="900" height="485" border="10" alt="Kliknij by zobaczyć w większym rozmiarze" /></a>
 
+**WAŻNE**: fw-local jest na razie w fazie *alfa* - to znaczy, że nie jest jeszcze gotowy i może (oraz będzie) ulegać różnym zmianom!
+
+**WAŻNE**: fw-local na razie działa poprawnie tylko w systemie **Windows**.
+Na pewno obsługiwane są wersje 7 (z SP 1) oraz 10, prawdopodobnie powinien zadziałać też w Viście.
+Jeśli chcesz używać go na Linuksie bądź Maku, prawdopodobnie czeka Cię odrobina więcej pracy - czytaj dalej.
+
 ### Jak uruchomić fw-local?
 Na ten moment program nie ma instalatora, więc pierwsze uruchomienie może być mało wygodne.
+Poniżej znajduje się instrukcja instalacji dla systemu Windows.
+Jeśli pracujesz na Linuksie - zobacz [instrukcję instalacji dla Linuksa](LINUX.md).
 
-0. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0-alpha.9.zip) i wypakuj, gdzie Ci wygodnie.
-
-1. Pierwszym krokiem będzie prawdopodobnie **instalacja Pythona 3** ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
+0. Pierwszym krokiem będzie prawdopodobnie **instalacja Pythona 3** ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
 na chwilę obecną najnowszym wydaniem jest Python 3.7.1.
-fw-local nie uruchomi się w środowisku starszym niż Python 3.6\*!  
+fw-local nie uruchomi się w środowisku starszym niż Python 3.6!  
 **Ważne:** na początku instalacji zaznacz `Add Python3 to PATH`!  
-Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.  
-\* - jest to spowodowane zależnością względem modułu `requests_html`
+Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.
+
+1. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0-alpha.10.zip) i wypakuj, gdzie Ci wygodnie.
 
 2. **Instalacja modułów**. Po prostu odpal `setup.bat`, skrypt powinien wszystko zrobić za Ciebie.  
-Jeśli to nie Twoje pierwsze starcie z Pythonem, to możesz woleć manualnie zainstalować `pillow`, `requests_html` i `matplotlib`.  
-Jeśli używasz linuksa, jeden z dodatkowych modułów (`BeautifulSoup`) wymaga także doinstalowania odpowiedniego pakietu - [tutaj](https://stackoverflow.com/a/26281671/6919631) więcej informacji.
+Jeśli interesują Cię szczegóły tego, co się wydarzy: przejrzyj treść skryptu lub/i instrukcję dla Linuksa.
 
-3. Samo **uruchomienie** programu, jest już proste - zwyczajnie odpalasz `fw-local.bat`. Powinno ukazać Ci się okno jak w screenie wyżej (tylko puste, z prośbą o pierwsze zalogowanie).
+3. Samo **uruchomienie** programu jest już banalne - zwyczajnie odpalasz `fw-local.bat`.
+Powinno ukazać Ci się okno jak w screenie wyżej (tylko puste, z prośbą o pierwsze zalogowanie).
 
 ### Co potrafi fw-local?
 Po pierwsze musisz zaimportować swoje oceny z filmwebu. fw-local poprosi Cię o to przy pierwszym uruchomieniu.
