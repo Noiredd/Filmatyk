@@ -7,7 +7,8 @@ class StatView(object):
   STRINGS = {
     'Movie': {
       'summary': 'Wyświetlono {} z {} filmów.',
-      'average': 'Średnia ocena wyświetlonych: {:.2f}'
+      'average': 'Średnia ocena wyświetlonych: {:.2f}',
+      'missing': 'Wygląda na to, że nic tu nie ma.\nMożliwe, że nie masz ocenionych żadnych filmów?'
     }
   }
 
@@ -18,14 +19,17 @@ class StatView(object):
     self.summary.grid(row=0, column=0, sticky=tk.NW)
     self.average = tk.Label(self.main, text='')
     self.average.grid(row=1, column=0, sticky=tk.NW)
-    self.plot = tk.Label(self.main, text='')
+    self.plot = tk.Label(self.main, text='', anchor=tk.CENTER)
     self.plot.grid(row=2, column=0, sticky=tk.N)
     self.figure = None
     self.image = None
     self.strings = self.STRINGS[itemtype]
   def update(self, items:list):
-    # calculate statistics
     item_count = len(items)
+    if not item_count:
+      self.noItemsNotify()
+      return
+    # calculate statistics
     if item_count > self.total_length:
       self.total_length = item_count # effectively: set total DB size *once*
     item_histo = [0 for i in range(11)]
@@ -62,6 +66,8 @@ class StatView(object):
     self.image.paste(idata)
     # assign to label
     self.plot.configure(image=self.image)
+  def noItemsNotify(self):
+    self.plot['text'] = self.strings['missing']
 
   # TK interface
   def grid(self, **grid_args):

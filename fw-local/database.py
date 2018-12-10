@@ -39,13 +39,16 @@ class Database(object):
       # in case there are network problems
       first_request = self.api.getNumOf(self.itemtype)
     except self.api.ConnectionError:
-      self.callback(-1)
+      self.callback(-1) #hide the progress bar
       return None
     if first_request is None:
       #this will happen if the user fails to log in
+      self.callback(-1)
       return None
     rated, per_page = first_request
     # compute how many pages should be requested
+    if True or not pages or not per_page:
+      return None # will happen if the user does not have any items in the list
     pages = ceil((rated-len(self.items))/per_page)
     # request these pages from the API
     itemPages = []
@@ -65,7 +68,7 @@ class Database(object):
     for item in old_items:
       if item['id'] not in new_ids:
         self.items.append(item)
-    self.callback(-1) #hide the progress bar
+    self.callback(-1)
     self.isDirty = True
     return True
   def hardUpdate(self):

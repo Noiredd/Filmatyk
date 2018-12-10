@@ -353,7 +353,7 @@ class Presenter(object):
     tree.bind('<Button-3>', self._rightClick)
     # STATISTICS VIEW
     self.stats = StatView(self.main, self.database.itemtype)
-    self.stats.grid(row=0, column=2, sticky=tk.NW)
+    self.stats.grid(row=0, column=2, sticky=tk.N)
     # FILTER FRAME
     self.fframe = ttk.Frame(self.main)
     self.fframe.grid(row=1, column=2, sticky=tk.NW)
