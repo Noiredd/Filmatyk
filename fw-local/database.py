@@ -47,8 +47,10 @@ class Database(object):
       return None
     rated, per_page = first_request
     # compute how many pages should be requested
-    if True or not pages or not per_page:
-      return None # will happen if the user does not have any items in the list
+    if not rated or not per_page:
+      # will happen if the user does not have any items in the list
+      self.callback(-1)
+      return None
     pages = ceil((rated-len(self.items))/per_page)
     # request these pages from the API
     itemPages = []
