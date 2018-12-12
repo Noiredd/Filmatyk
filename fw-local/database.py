@@ -39,11 +39,11 @@ class Database(object):
       # in case there are network problems
       first_request = self.api.getNumOf(self.itemtype)
     except self.api.ConnectionError:
-      self.callback(-1) #hide the progress bar
+      self.callback(-1, abort=True) #hide the progress bar
       return None
     if first_request is None:
       #this will happen if the user fails to log in
-      self.callback(-1)
+      self.callback(-1, abort=True)
       return None
     rated, per_page = first_request
     # compute how many pages should be requested
@@ -81,4 +81,3 @@ class Database(object):
     self.items = []
     if not self.softUpdate():
       self.items = old_items
-    self.callback(-1) # hide the progress bar even if the soft update failed

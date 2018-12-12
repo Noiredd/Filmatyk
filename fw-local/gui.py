@@ -33,6 +33,8 @@ class Login(object):
 
   #PUBLIC
   def requestLogin(self, username:str=''):
+    #clean up if a previous failed attempt was cancelled
+    self.infoLabel['text'] = ''
     #bring up the window and block until user completes
     self.window.deiconify()
     self.window.grab_set()
@@ -141,6 +143,7 @@ class Main(object):
     ttk.Button(root, text='Wyjście', command=self._quit).grid(row=1, column=0, padx=5, pady=5, sticky=tk.SE)
     # construct the login window manager and prepare to load data
     self.loginHandler = Login(self.root)
+    self.abortUpdate = False # database can set this via callback when something goes wrong
     self.databases = []
     self.presenters = []
     # load the savefile
@@ -259,9 +262,11 @@ class Main(object):
       ps.isDirty = False
 
   #CALLBACKS
-  def _setProgress(self, value:int):
+  def _setProgress(self, value:int, abort:bool=False):
     # allows the caller to set the percentage value of the progress bar
+    # slightly hacky, but allows cancelling an entire update if the user failed to log in
     # non-negative values cause the bar to show up, negative hides it
+    self.abortUpdate = abort
     if value < 0:
       self.progressbar.grid_remove()
       self.progressVar.set(0)
@@ -270,19 +275,21 @@ class Main(object):
       self.progressVar.set(value)
     self.root.update()
   def _updateData(self):
-    # call softUpdate on all the databases
-    for db in self.databases:
+    # call softUpdate on all the databases and update all the presenters
+    for db, ps in zip(self.databases, self.presenters):
       db.softUpdate()
-    # update all the presenters
-    for ps in self.presenters:
       ps.totalUpdate()
+      # if the user failed to log in or there was a connection error - abort
+      if self.abortUpdate:
+        break
     # save data
     self.saveUserData()
   def _reloadData(self):
-    for db in self.databases:
+    for db, ps in zip(self.databases, self.presenters):
       db.hardUpdate()
-    for ps in self.presenters:
       ps.totalUpdate()
+      if self.abortUpdate:
+        break
     self.saveUserData()
   def _quit(self):
     self.saveUserData()
