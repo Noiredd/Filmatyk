@@ -14,6 +14,7 @@ class FilmwebAPI(object):
     item_class = 'userVotesPage__result'
     f_cnt_span = 'blockHeader__titleInfoCount'
     s_cnt_span = 'blockHeader__titleInfoCount'
+    g_cnt_span = 'blockHeader__titleInfoCount'
     @classmethod
     def getUserPage(self, username):
       return self.base_path + '/user/' + username
@@ -25,6 +26,10 @@ class FilmwebAPI(object):
     def getUserSeriesPage(self, username, page=1):
       userpage = self.getUserPage(username)
       return userpage + '/serials?page={}'.format(page)
+    @classmethod
+    def getUserGamePage(self, username, page=1):
+      userpage = self.getUserPage(username)
+      return userpage + '/games?page={}'.format(page)
 
   ConnectionError = requests_html.requests.ConnectionError
 
@@ -130,6 +135,8 @@ class FilmwebAPI(object):
       return self.getNumOfMovies()
     elif itemtype == 'Series':
       return self.getNumOfSeries()
+    elif itemtype == 'Game':
+      return self.getNumOfGames()
     else:
       raise KeyError
 
@@ -178,12 +185,35 @@ class FilmwebAPI(object):
       per_page += 1
     return series, per_page
 
+  @enforceSession
+  def getNumOfGames(self):
+    url = self.Constants.getUserGamePage(self.username)
+    page = self.__fetchPage(url)
+    series = 0
+    for span in page.body.find_all('span'):
+      if not span.has_attr('class'):
+        continue
+      if self.Constants.g_cnt_span not in span.attrs['class']:
+        continue
+      series = int(span.text)
+    #find all voting divs, like during parsing
+    per_page = 0
+    for div in page.body.find_all('div'):
+      if not div.has_attr('data-id') or not div.has_attr('class'):
+        continue
+      if not self.Constants.item_class in div.attrs['class']:
+        continue
+      per_page += 1
+    return series, per_page
+
   def getItemsPage(self, itemtype:str, page:int=1):
     # TODO: refactor this as well as getNumOf
     if itemtype == 'Movie':
       return self.getMoviesPage(page=page)
     elif itemtype == 'Series':
       return self.getSeriesPage(page=page)
+    elif itemtype == 'Game':
+      return self.getGamesPage(page=page)
     else:
       raise KeyError #should never happen though
 
@@ -198,6 +228,12 @@ class FilmwebAPI(object):
     url = self.Constants.getUserSeriesPage(self.username, page)
     page = self.__fetchPage(url)
     return self.__parsePage(page, 'Series')
+
+  @enforceSession
+  def getGamesPage(self, page=1):
+    url = self.Constants.getUserGamePage(self.username, page)
+    page = self.__fetchPage(url)
+    return self.__parsePage(page, 'Game')
 
   def __fetchPage(self, url):
     #fetch the page and return its parsed representation

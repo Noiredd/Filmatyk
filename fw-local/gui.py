@@ -150,6 +150,8 @@ class Main(object):
     data_m = userdata['movies_db'] if userdata else ''
     conf_s = userdata['series_cfg'] if userdata else ''
     data_s = userdata['series_db'] if userdata else ''
+    conf_g = userdata['games_cfg'] if userdata else ''
+    data_g = userdata['games_db'] if userdata else ''
     # instantiate Presenters and Databases
     self.api = FilmwebAPI(self.loginHandler.requestLogin, u_name)
     movieDatabase = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
@@ -176,6 +178,16 @@ class Main(object):
     seriesPresenter.placeInTab('Seriale')
     seriesPresenter.totalUpdate()
     self.presenters.append(seriesPresenter)
+    gameDatabase = Database.restoreFromString('Game', data_g, self.api, self._setProgress)
+    self.databases.append(gameDatabase)
+    gamePresenter = Presenter(self, self.api, gameDatabase, conf_g)
+    gamePresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
+    gamePresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
+    gamePresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
+    gamePresenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=3, sticky=tk.NW)
+    gamePresenter.placeInTab('Gry')
+    gamePresenter.totalUpdate()
+    self.presenters.append(gamePresenter)
     #center window AFTER creating everything (including plot)
     self.centerWindow()
     #ensure a controlled exit no matter what user does (X-button, alt+f4)
@@ -207,7 +219,7 @@ class Main(object):
     if userdata[0] != VERSION:
       return None
     # labels for each line
-    keys = ['version', 'username', 'movies_cfg', 'movies_db', 'series_cfg', 'series_db']
+    keys = ['version', 'username', 'movies_cfg', 'movies_db', 'series_cfg', 'series_db', 'games_cfg', 'games_db']
     data = {key: value for key, value in zip(keys, userdata)}
     return data
   def saveUserData(self):
@@ -233,6 +245,9 @@ class Main(object):
       userfile.write('#SERIES\n')
       userfile.write(self.presenters[1].storeToString() + '\n')
       userfile.write(self.databases[1].storeToString() + '\n')
+      userfile.write('#GAMES\n')
+      userfile.write(self.presenters[2].storeToString() + '\n')
+      userfile.write(self.databases[2].storeToString() + '\n')
       # games can be added sequentially right after
     # if there were no errors at point, new data has been successfully written
     if os.path.exists(self.filename + '.bak'):

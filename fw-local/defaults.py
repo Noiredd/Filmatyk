@@ -14,9 +14,17 @@ DEFAULT_CONFIGS = {
     genres  = None,
     dateOf  = None,
     rating  = None
+  ),
+  'Game': OrderedDict(
+    title   = None,
+    year    = None,
+    genres  = None,
+    dateOf  = None,
+    rating  = None
   )
 }
 DEFAULT_SORTING = {
   'Movie':  ('dateOf', False), # column name, ascending
-  'Series': ('dateOf', False)
+  'Series': ('dateOf', False),
+  'Game':   ('dateOf', False)
 }

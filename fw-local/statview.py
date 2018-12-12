@@ -14,6 +14,11 @@ class StatView(object):
       'summary': 'Wyświetlono {} z {} seriali.',
       'average': 'Średnia ocena wyświetlonych: {:.2f}',
       'missing': 'Wygląda na to, że nic tu nie ma.\nMożliwe, że nie masz ocenionych żadnych seriali?'
+    },
+    'Game': {
+      'summary': 'Wyświetlono {} z {} gier.',
+      'average': 'Średnia ocena wyświetlonych: {:.2f}',
+      'missing': 'Wygląda na to, że nic tu nie ma.\nMożliwe, że nie masz ocenionych żadnych gier?'
     }
   }
 

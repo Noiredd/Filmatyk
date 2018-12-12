@@ -79,6 +79,45 @@ class DetailViewSeries(DetailViewMovies):
   def __init__(self, root):
     super(DetailViewSeries, self).__init__(root)
 
+class DetailViewGames(DetailView):
+  def __init__(self, root):
+    super(DetailViewGames, self).__init__(root)
+  def buildUI(self):
+    # heading panel: year|country|genre|duration
+    heading = tk.Frame(self.main)
+    heading.grid(row=0, column=0, sticky=tk.NW)
+    self.yearLabel = tk.Label(heading, text='', width=5, anchor=tk.NW, font=Fonts.headings)
+    self.yearLabel.grid(row=0, column=0, sticky=tk.NW, padx=3)
+    self.genreLabel = tk.Label(heading, text='', width=27, anchor=tk.N, font=Fonts.headings)
+    self.genreLabel.grid(row=0, column=1, sticky=tk.NW)
+    self.platformLabel = tk.Label(heading, text='', width=40, anchor=tk.NE, font=Fonts.headings)
+    self.platformLabel.grid(row=0, column=2, sticky=tk.NW, padx=2)
+    # details panel: developer|publisher\plot
+    details = tk.Frame(self.main)
+    details.grid(row=1, column=0, sticky=tk.NW)
+    tk.Label(details, text='Deweloper:', anchor=tk.NW, font=Fonts.details).grid(row=0, column=0, sticky=tk.NW)
+    self.developerLabel = tk.Label(details, text='', width=25, anchor=tk.NW, font=Fonts.details)
+    self.developerLabel.grid(row=0, column=1, sticky=tk.NW)
+    tk.Label(details, text='Wydawca:', anchor=tk.NW, font=Fonts.details).grid(row=0, column=2, sticky=tk.NW)
+    self.publisherLabel = tk.Label(details, text='', width=25, anchor=tk.NW, font=Fonts.details)
+    self.publisherLabel.grid(row=0, column=3, sticky=tk.NW)
+    self.plotLabel = tk.Label(details, text='', width=65, wraplength=550, anchor=tk.CENTER, font=Fonts.plot)
+    self.plotLabel.grid(row=1, column=0, columnspan=4)
+    # filmweb rating
+    rating = tk.Frame(self.main)
+    rating.grid(row=0, column=1, rowspan=2, padx=10, pady=10, sticky=tk.W)
+    tk.Label(rating, text='Ocena\nFilmwebu:', anchor=tk.NW, font=Fonts.details).grid(row=0, column=0)
+    self.ratingLabel = tk.Label(rating, text='', anchor=tk.NW, font=Fonts.fwRating)
+    self.ratingLabel.grid(row=1, column=0)
+  def fillInDetails(self, item:object):
+    self.yearLabel['text'] = item['year']
+    self.genreLabel['text'] = item['genres']
+    self.platformLabel['text'] = item['platforms']
+    self.developerLabel['text'] = item['developers']
+    self.publisherLabel['text'] = item['publishers']
+    self.plotLabel['text'] = item['plot']
+    self.ratingLabel['text'] = item['fwRating']
+
 class DetailViewRating(DetailView):
   def __init__(self, root):
     super(DetailViewRating, self).__init__(root)
@@ -99,8 +138,9 @@ class DetailViewRating(DetailView):
     self.comment['text'] = item['comment']
 
 TYPE_TO_VIEW_BINDINGS = {
-  containers.Movie.TYPE_STRING: DetailViewMovies,
-  containers.Series.TYPE_STRING: DetailViewSeries
+  containers.Movie.TYPE_STRING:  DetailViewMovies,
+  containers.Series.TYPE_STRING: DetailViewSeries,
+  containers.Game.TYPE_STRING:   DetailViewGames
 }
 
 class DetailWindow(object):

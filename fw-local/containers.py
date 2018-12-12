@@ -263,3 +263,28 @@ class Series(Movie):
 
   def __init__(self, userdata:dict={}, **properties):
     super(Series, self).__init__(userdata, **properties)
+
+class Game(Item):
+  TYPE_STRING = 'GRA'
+  # Games also have a countries div but it has never been observed to contain any data
+  developers = Blueprint(
+    name='Deweloper',
+    colwidth=150,
+    parsing={'tag':'div', 'class':'filmPreview__info--developers', 'text':True, 'list':True},
+    display=Blueprint._list
+  )
+  publishers = Blueprint(
+    name='Wydawca',
+    colwidth=150,
+    parsing={'tag':'div', 'class':'filmPreview__info--publishers', 'text':True, 'list':True},
+    display=Blueprint._list
+  )
+  platforms = Blueprint(
+    name='Platformy',
+    colwidth=100,
+    parsing={'tag':'div', 'class':'filmPreview__info--platforms', 'text':True, 'list':True},
+    display=Blueprint._list
+  )
+
+  def __init__(self, userdata:dict={}, **properties):
+    super(Game, self).__init__(userdata, **properties)
