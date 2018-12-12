@@ -13,11 +13,19 @@ class FilmwebAPI(object):
     auth_error = 'błędny e-mail lub hasło' #TODO: be a bit more intelligent here
     item_class = 'userVotesPage__result'
     f_cnt_span = 'blockHeader__titleInfoCount'
-    def getUserPage(username):
-      return FilmwebAPI.Constants.base_path + '/user/' + username
-    def getUserMoviePage(username, page=1):
-      userpage = FilmwebAPI.Constants.getUserPage(username)
-      return userpage + '/films?page=' + str(page)
+    s_cnt_span = 'blockHeader__titleInfoCount'
+    @classmethod
+    def getUserPage(self, username):
+      return self.base_path + '/user/' + username
+    @classmethod
+    def getUserMoviePage(self, username, page=1):
+      userpage = self.getUserPage(username)
+      return userpage + '/films?page={}'.format(page)
+    @classmethod
+    def getUserSeriesPage(self, username, page=1):
+      userpage = self.getUserPage(username)
+      return userpage + '/serials?page={}'.format(page)
+
   ConnectionError = requests_html.requests.ConnectionError
 
   @staticmethod
@@ -57,7 +65,11 @@ class FilmwebAPI(object):
     self.requestLogin = callback
     self.session = None
     self.parsingRules = {}
-    self.__cacheParsingRules('Movie')
+    self.__cacheAllParsingRules()
+
+  def __cacheAllParsingRules(self):
+    for container in containers.classByString.keys():
+      self.__cacheParsingRules(container)
 
   def __cacheParsingRules(self, itemtype:str):
     #get all the blueprints of a given class
@@ -116,6 +128,8 @@ class FilmwebAPI(object):
   def getNumOf(self, itemtype:str):
     if itemtype == 'Movie':
       return self.getNumOfMovies()
+    elif itemtype == 'Series':
+      return self.getNumOfSeries()
     else:
       raise KeyError
 
@@ -143,9 +157,33 @@ class FilmwebAPI(object):
       per_page += 1
     return movies, per_page
 
+  @enforceSession
+  def getNumOfSeries(self):
+    url = self.Constants.getUserSeriesPage(self.username)
+    page = self.__fetchPage(url)
+    series = 0
+    for span in page.body.find_all('span'):
+      if not span.has_attr('class'):
+        continue
+      if self.Constants.s_cnt_span not in span.attrs['class']:
+        continue
+      series = int(span.text)
+    #find all voting divs, like during parsing
+    per_page = 0
+    for div in page.body.find_all('div'):
+      if not div.has_attr('data-id') or not div.has_attr('class'):
+        continue
+      if not self.Constants.item_class in div.attrs['class']:
+        continue
+      per_page += 1
+    return series, per_page
+
   def getItemsPage(self, itemtype:str, page:int=1):
+    # TODO: refactor this as well as getNumOf
     if itemtype == 'Movie':
       return self.getMoviesPage(page=page)
+    elif itemtype == 'Series':
+      return self.getSeriesPage(page=page)
     else:
       raise KeyError #should never happen though
 
@@ -154,6 +192,12 @@ class FilmwebAPI(object):
     url = self.Constants.getUserMoviePage(self.username, page)
     page = self.__fetchPage(url)
     return self.__parsePage(page, 'Movie')
+
+  @enforceSession
+  def getSeriesPage(self, page=1):
+    url = self.Constants.getUserSeriesPage(self.username, page)
+    page = self.__fetchPage(url)
+    return self.__parsePage(page, 'Series')
 
   def __fetchPage(self, url):
     #fetch the page and return its parsed representation

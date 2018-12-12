@@ -9,6 +9,11 @@ class StatView(object):
       'summary': 'Wyświetlono {} z {} filmów.',
       'average': 'Średnia ocena wyświetlonych: {:.2f}',
       'missing': 'Wygląda na to, że nic tu nie ma.\nMożliwe, że nie masz ocenionych żadnych filmów?'
+    },
+    'Series': {
+      'summary': 'Wyświetlono {} z {} seriali.',
+      'average': 'Średnia ocena wyświetlonych: {:.2f}',
+      'missing': 'Wygląda na to, że nic tu nie ma.\nMożliwe, że nie masz ocenionych żadnych seriali?'
     }
   }
 

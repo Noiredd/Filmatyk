@@ -9,7 +9,7 @@ from database import Database
 from filmweb import FilmwebAPI
 from presenter import Presenter
 
-VERSION = '1.0-alpha.10'
+VERSION = '1.0-alpha.12'
 
 class Login(object):
   # By default a dormant window that offers a request function to be called by
@@ -126,10 +126,10 @@ class Main(object):
   def __init__(self):
     self.root = root = tk.Tk()
     root.title('FW local')
-    #construct the window: first the notebook for tabbed view
+    # construct the window: first the notebook for tabbed view
     self.notebook = ttk.Notebook(root)
     self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
-    #control panel
+    # then the control panel
     frame = tk.Frame(root)
     frame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.SW)
     ttk.Button(frame, text='Aktualizuj', command=self._updateData).grid(row=0, column=0, sticky=tk.SW)
@@ -139,16 +139,21 @@ class Main(object):
     self.progressbar.grid(row=1, column=0, padx=5, pady=5)
     self._setProgress(-1) # start with the progress bar hidden
     ttk.Button(root, text='Wyjście', command=self._quit).grid(row=1, column=0, padx=5, pady=5, sticky=tk.SE)
-    #load the savefile and instantiate Presenter(s) and Database(s)
+    # construct the login window manager and prepare to load data
+    self.loginHandler = Login(self.root)
     self.databases = []
     self.presenters = []
+    # load the savefile
     userdata = self.loadUserData()
     u_name = userdata['username'] if userdata else ''
-    conf_m = userdata['movie_cfg'] if userdata else ''
-    data_m = userdata['movie_db'] if userdata else ''
-    self.loginHandler = Login(self.root)
+    conf_m = userdata['movies_cfg'] if userdata else ''
+    data_m = userdata['movies_db'] if userdata else ''
+    conf_s = userdata['series_cfg'] if userdata else ''
+    data_s = userdata['series_db'] if userdata else ''
+    # instantiate Presenters and Databases
     self.api = FilmwebAPI(self.loginHandler.requestLogin, u_name)
     movieDatabase = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
+    self.databases.append(movieDatabase)
     moviePresenter = Presenter(self, self.api, movieDatabase, conf_m)
     moviePresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     moviePresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
@@ -158,8 +163,19 @@ class Main(object):
     moviePresenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=3, sticky=tk.NW)
     moviePresenter.placeInTab('Filmy')
     moviePresenter.totalUpdate()
-    self.databases.append(movieDatabase)
     self.presenters.append(moviePresenter)
+    seriesDatabase = Database.restoreFromString('Series', data_s, self.api, self._setProgress)
+    self.databases.append(seriesDatabase)
+    seriesPresenter = Presenter(self, self.api, seriesDatabase, conf_s)
+    seriesPresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
+    seriesPresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
+    seriesPresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
+    seriesPresenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=3, sticky=tk.NW)
+    seriesPresenter.addFilter(filters.CountryFilter, row=0, column=2, rowspan=3, sticky=tk.NW)
+    seriesPresenter.addFilter(filters.DirectorFilter, row=0, column=3, rowspan=3, sticky=tk.NW)
+    seriesPresenter.placeInTab('Seriale')
+    seriesPresenter.totalUpdate()
+    self.presenters.append(seriesPresenter)
     #center window AFTER creating everything (including plot)
     self.centerWindow()
     #ensure a controlled exit no matter what user does (X-button, alt+f4)
@@ -187,9 +203,13 @@ class Main(object):
       return None
     with open(self.filename, 'r') as userfile:
       userdata = [line.strip('\n') for line in userfile.readlines() if not line.startswith('#')]
+    # TODO: backwards compatibility; for now just reject legacy savefiles and reqcuire all data
+    if userdata[0] != VERSION:
+      return None
     # labels for each line
-    keys = ['version', 'username', 'movie_cfg', 'movie_db']
-    return {key: value for key, value in zip(keys, userdata)}
+    keys = ['version', 'username', 'movies_cfg', 'movies_db', 'series_cfg', 'series_db']
+    data = {key: value for key, value in zip(keys, userdata)}
+    return data
   def saveUserData(self):
     # if for any reason the first update hasn't commenced - don't save anything
     if self.api.username is None:
@@ -210,7 +230,10 @@ class Main(object):
       userfile.write('#MOVIES\n')
       userfile.write(self.presenters[0].storeToString() + '\n')
       userfile.write(self.databases[0].storeToString() + '\n')
-      # series and games can be added sequentially right after
+      userfile.write('#SERIES\n')
+      userfile.write(self.presenters[1].storeToString() + '\n')
+      userfile.write(self.databases[1].storeToString() + '\n')
+      # games can be added sequentially right after
     # if there were no errors at point, new data has been successfully written
     if os.path.exists(self.filename + '.bak'):
       os.remove(self.filename + '.bak')

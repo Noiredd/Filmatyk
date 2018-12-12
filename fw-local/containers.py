@@ -250,3 +250,16 @@ class Movie(Item):
 
   def __init__(self, userdata:dict={}, **properties):
     super(Movie, self).__init__(userdata, **properties)
+
+class Series(Movie):
+  TYPE_STRING = 'SERIAL'
+  # Everything is the same as with movies, except the duration field can be name named clearer.
+  duration = Blueprint(
+    name='Dł. odc.',
+    colwidth=50,
+    parsing={'tag':'div', 'class':'filPreview__filmTime', 'text':False, 'attr':'data-duration', 'type':int},
+    display=Blueprint._duration
+  )
+
+  def __init__(self, userdata:dict={}, **properties):
+    super(Series, self).__init__(userdata, **properties)

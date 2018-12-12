@@ -75,6 +75,10 @@ class DetailViewMovies(DetailView):
     self.plotLabel['text'] = item['plot']
     self.ratingLabel['text'] = item['fwRating']
 
+class DetailViewSeries(DetailViewMovies):
+  def __init__(self, root):
+    super(DetailViewSeries, self).__init__(root)
+
 class DetailViewRating(DetailView):
   def __init__(self, root):
     super(DetailViewRating, self).__init__(root)
@@ -95,7 +99,8 @@ class DetailViewRating(DetailView):
     self.comment['text'] = item['comment']
 
 TYPE_TO_VIEW_BINDINGS = {
-  containers.Movie.TYPE_STRING: DetailViewMovies
+  containers.Movie.TYPE_STRING: DetailViewMovies,
+  containers.Series.TYPE_STRING: DetailViewSeries
 }
 
 class DetailWindow(object):
@@ -169,7 +174,7 @@ class DetailWindow(object):
     # select the right View for the item type
     if item.TYPE_STRING != self.activeView:
       # ungrid the previously used View, if there was any
-      self.detailViews[self.activeView].grid_forget()
+      self.detailViews[self.activeView].grid_remove()
       # grid the new one instead
       self.detailViews[item.TYPE_STRING].grid()
       self.activeView = item.TYPE_STRING
