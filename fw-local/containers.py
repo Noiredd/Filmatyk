@@ -257,7 +257,7 @@ class Series(Movie):
   duration = Blueprint(
     name='Dł. odc.',
     colwidth=50,
-    parsing={'tag':'div', 'class':'filPreview__filmTime', 'text':False, 'attr':'data-duration', 'type':int},
+    parsing={'tag':'div', 'class':'filmPreview__filmTime', 'text':False, 'attr':'data-duration', 'type':int},
     display=Blueprint._duration
   )
 

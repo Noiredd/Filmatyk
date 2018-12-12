@@ -12,7 +12,7 @@ class FilmwebAPI(object):
     base_path  = 'https://www.filmweb.pl'
     auth_error = 'błędny e-mail lub hasło' #TODO: be a bit more intelligent here
     item_class = 'userVotesPage__result'
-    f_cnt_span = 'blockHeader__titleInfoCount'
+    m_cnt_span = 'blockHeader__titleInfoCount'
     s_cnt_span = 'blockHeader__titleInfoCount'
     g_cnt_span = 'blockHeader__titleInfoCount'
     @classmethod
@@ -71,6 +71,17 @@ class FilmwebAPI(object):
     self.session = None
     self.parsingRules = {}
     self.__cacheAllParsingRules()
+    # bind specific methods and constants to their item types
+    self.urlGenerationMethods = {
+      'Movie':  self.Constants.getUserMoviePage,
+      'Series': self.Constants.getUserSeriesPage,
+      'Game':   self.Constants.getUserGamePage
+    }
+    self.countSpanClasses = {
+      'Movie':  self.Constants.m_cnt_span,
+      'Series': self.Constants.s_cnt_span,
+      'Game':   self.Constants.g_cnt_span
+    }
 
   def __cacheAllParsingRules(self):
     for container in containers.classByString.keys():
@@ -130,30 +141,25 @@ class FilmwebAPI(object):
           return None
     self.session = session
 
-  def getNumOf(self, itemtype:str):
-    if itemtype == 'Movie':
-      return self.getNumOfMovies()
-    elif itemtype == 'Series':
-      return self.getNumOfSeries()
-    elif itemtype == 'Game':
-      return self.getNumOfGames()
-    else:
-      raise KeyError
-
   @enforceSession
-  def getNumOfMovies(self):
+  def getNumOf(self, itemtype:str):
     #return a tuple: (number of rated movies, number of movies per page)
-    url = self.Constants.getUserMoviePage(self.username)
+    try:
+      getURL = self.urlGenerationMethods[itemtype]
+      spanClass = self.countSpanClasses[itemtype]
+    except KeyError:
+      return 0, 0 # should never happen though
+    url  = getURL(self.username)
     page = self.__fetchPage(url)
     # TODO: in principle, this page could be cached for some small time
     #the number of user's movies is inside a span of a specific class
-    movies = 0
+    items = 0
     for span in page.body.find_all('span'):
       if not span.has_attr('class'):
         continue
-      if self.Constants.f_cnt_span not in span.attrs['class']:
+      if spanClass not in span.attrs['class']:
         continue
-      movies = int(span.text)
+      items = int(span.text)
     #find all voting divs, like during parsing
     per_page = 0
     for div in page.body.find_all('div'):
@@ -162,78 +168,21 @@ class FilmwebAPI(object):
       if not self.Constants.item_class in div.attrs['class']:
         continue
       per_page += 1
-    return movies, per_page
+    return items, per_page
 
   @enforceSession
-  def getNumOfSeries(self):
-    url = self.Constants.getUserSeriesPage(self.username)
-    page = self.__fetchPage(url)
-    series = 0
-    for span in page.body.find_all('span'):
-      if not span.has_attr('class'):
-        continue
-      if self.Constants.s_cnt_span not in span.attrs['class']:
-        continue
-      series = int(span.text)
-    #find all voting divs, like during parsing
-    per_page = 0
-    for div in page.body.find_all('div'):
-      if not div.has_attr('data-id') or not div.has_attr('class'):
-        continue
-      if not self.Constants.item_class in div.attrs['class']:
-        continue
-      per_page += 1
-    return series, per_page
-
-  @enforceSession
-  def getNumOfGames(self):
-    url = self.Constants.getUserGamePage(self.username)
-    page = self.__fetchPage(url)
-    series = 0
-    for span in page.body.find_all('span'):
-      if not span.has_attr('class'):
-        continue
-      if self.Constants.g_cnt_span not in span.attrs['class']:
-        continue
-      series = int(span.text)
-    #find all voting divs, like during parsing
-    per_page = 0
-    for div in page.body.find_all('div'):
-      if not div.has_attr('data-id') or not div.has_attr('class'):
-        continue
-      if not self.Constants.item_class in div.attrs['class']:
-        continue
-      per_page += 1
-    return series, per_page
-
   def getItemsPage(self, itemtype:str, page:int=1):
-    # TODO: refactor this as well as getNumOf
-    if itemtype == 'Movie':
-      return self.getMoviesPage(page=page)
-    elif itemtype == 'Series':
-      return self.getSeriesPage(page=page)
-    elif itemtype == 'Game':
-      return self.getGamesPage(page=page)
-    else:
-      raise KeyError #should never happen though
-
-  @enforceSession
-  def getMoviesPage(self, page=1):
-    url = self.Constants.getUserMoviePage(self.username, page)
+    # Get the URL of a page containing items of requested type, fetch and parse
+    # it and return data (as list of objects). Instead of several ifs, retrieve
+    # the proper methods from a dict prepared during init.
+    try:
+      getURL  = self.urlGenerationMethods[itemtype]
+    except KeyError:
+      return [] # should never happen though
+    url  = getURL(self.username, page)
     page = self.__fetchPage(url)
-    return self.__parsePage(page, 'Movie')
-
-  @enforceSession
-  def getSeriesPage(self, page=1):
-    url = self.Constants.getUserSeriesPage(self.username, page)
-    page = self.__fetchPage(url)
-    return self.__parsePage(page, 'Series')
-
-  @enforceSession
-  def getGamesPage(self, page=1):
-    url = self.Constants.getUserGamePage(self.username, page)
-    page = self.__fetchPage(url)
-    return self.__parsePage(page, 'Game')
+    data = self.__parsePage(page, itemtype)
+    return data
 
   def __fetchPage(self, url):
     #fetch the page and return its parsed representation
@@ -294,7 +243,7 @@ class FilmwebAPI(object):
               #data is stored withing a 'text' field
               if rule['list']:
                 #data is actually a list of things
-                value = [x.text.strip() for x in item.find_all('a')]
+                value = [x.text.strip() for x in item.find_all('li')]
               else:
                 value = item.text.strip()
             else:
@@ -312,7 +261,11 @@ class FilmwebAPI(object):
     #FW stores the ratings as simple dict serialized to JSON
     origDict = json.loads(text)
     #ensure all date keys are present
-    date_ = origDict['d']
+    try:
+      date_ = origDict['d']
+    except KeyError:
+      # once I've seen a bugged span in which this key was not present
+      date_ = {'y':2000, 'm':1, 'd':1}
     if 'm' not in date_.keys():
       date_['m'] = 1
     if 'd' not in date_.keys():
