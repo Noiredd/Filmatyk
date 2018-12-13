@@ -188,6 +188,8 @@ class Main(object):
     gamePresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
     gamePresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
     gamePresenter.addFilter(filters.GenreFilter, row=0, column=1, rowspan=3, sticky=tk.NW)
+    gamePresenter.addFilter(filters.PlatformFilter, row=0, column=2, rowspan=3, sticky=tk.NW)
+    gamePresenter.addFilter(filters.GamemakerFilter, row=0, column=3, rowspan=3, sticky=tk.NW)
     gamePresenter.placeInTab('Gry')
     gamePresenter.totalUpdate()
     self.presenters.append(gamePresenter)

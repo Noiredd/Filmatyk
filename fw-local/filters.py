@@ -210,8 +210,13 @@ class ListboxFilter(Filter):
   def populateChoices(self, items:list):
     all_options = set()
     for item in items:
-      for value in item.getRawProperty(self.PROPERTY):
-        all_options.add(value)
+      if isinstance(self.PROPERTY, list):
+        for prop in self.PROPERTY:
+          for value in item.getRawProperty(prop):
+            all_options.add(value)
+      else:
+        for value in item.getRawProperty(self.PROPERTY):
+          all_options.add(value)
     self.all_options = sorted(list(all_options))
     self.box.delete(0, tk.END)
     for option in self.all_options:
@@ -262,16 +267,16 @@ class GenreFilter(ListboxFilter):
     self.notifyMachine()
   def filterAtLeast(self, item):
     for genre in self.selected:
-      if genre in item.getRawProperty('genres'):
+      if genre in item.getRawProperty(self.PROPERTY):
         return True
     return False
   def filterAll(self, item):
     for genre in self.selected:
-      if genre not in item.getRawProperty('genres'):
+      if genre not in item.getRawProperty(self.PROPERTY):
         return False
     return True
   def filterExactly(self, item):
-    if len(self.selected) == len(item.getRawProperty('genres')):
+    if len(self.selected) == len(item.getRawProperty(self.PROPERTY)):
       return self.filterAll(item)
     return False
 
@@ -296,7 +301,7 @@ class CountryFilter(ListboxFilter):
       self.function = self.filterBelongs
     self.notifyMachine()
   def filterBelongs(self, item):
-    for country in item.getRawProperty('countries'):
+    for country in item.getRawProperty(self.PROPERTY):
       if country in self.selected:
         return True
     return False
@@ -322,8 +327,63 @@ class DirectorFilter(ListboxFilter):
       self.function = self.filterBelongs
     self.notifyMachine()
   def filterBelongs(self, item):
-    for director in item.getRawProperty('directors'):
+    for director in item.getRawProperty(self.PROPERTY):
       if director in self.selected:
+        return True
+    return False
+
+class PlatformFilter(ListboxFilter):
+  PROPERTY = 'platforms'
+  def __init__(self, root):
+    self.selected = []
+    super(PlatformFilter, self).__init__(root)
+  def reset(self):
+    self.selected = []
+    self._reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Platforma:').grid(row=0, column=0, sticky=tk.NW)
+    self.makeListbox(m, tk.SINGLE, row=1, column=0)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+  def _update(self, event=None):
+    self.selected = self.getSelection()
+    if len(self.selected) == 0:
+      self.function = Filter.DEFAULT
+    else:
+      self.function = self.filterBelongs
+    self.notifyMachine()
+  def filterBelongs(self, item):
+    for maker in item.getRawProperty(self.PROPERTY):
+      if maker in self.selected:
+        return True
+
+class GamemakerFilter(ListboxFilter):
+  PROPERTY = ['developers', 'producers']
+  def __init__(self, root):
+    self.selected = []
+    super(GamemakerFilter, self).__init__(root)
+  def reset(self):
+    self.selected = []
+    self._reset()
+  def buildUI(self):
+    m = self.main
+    tk.Label(m, text='Twórca:').grid(row=0, column=0, sticky=tk.NW)
+    self.makeListbox(m, tk.SINGLE, row=1, column=0)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+  def _update(self, event=None):
+    self.selected = self.getSelection()
+    if len(self.selected) == 0:
+      self.function = Filter.DEFAULT
+    else:
+      self.function = self.filterBelongs
+    self.notifyMachine()
+  def filterBelongs(self, item):
+    makers = []
+    for prop in self.PROPERTY:
+      for maker in item.getRawProperty(prop):
+        makers.append(maker)
+    for maker in makers:
+      if maker in self.selected:
         return True
     return False
 
