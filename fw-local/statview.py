@@ -34,9 +34,12 @@ class StatView(object):
     self.figure = None
     self.image = None
     self.strings = self.STRINGS[itemtype]
+    self.everHadItems = False
   def update(self, items:list):
     item_count = len(items)
-    if not item_count:
+    if item_count:
+      self.everHadItems = True
+    if not self.everHadItems:
       self.noItemsNotify()
       return
     # calculate statistics
@@ -63,9 +66,10 @@ class StatView(object):
     # draw
     if self.figure is None:
       self.figure = plt.figure(figsize=(6,3))
-    plt.clf()
-    plt.bar(range(11), values, width=0.5, zorder=1.0)
-    plt.grid(True, which='major', axis='y')
+    self.figure.clf()
+    ax = self.figure.add_subplot(111)
+    ax.bar(range(11), values, width=0.5, zorder=1.0)
+    ax.grid(True, which='major', axis='y')
     self.figure.axes[0].set_xticks(range(11))
     self.figure.axes[0].set_xticklabels(['brak'] + [str(i) for i in range(1,11,1)])
     # prepare for display
