@@ -126,7 +126,7 @@ class Login(object):
     self.window.withdraw()
 
 class Main(object):
-  filename = 'userdata.fws' # TODO: maybe use user's local folder?
+  filename = 'filmatyk.dat' # will be created in user documents/home directory
 
   def __init__(self, debugMode=False):
     self.debugMode = debugMode
@@ -151,6 +151,7 @@ class Main(object):
     self.databases = []
     self.presenters = []
     # load the savefile
+    self.setUserDataPath()
     userdata = self.loadUserData()
     u_name = userdata['username'] if userdata else ''
     conf_m = userdata['movies_cfg'] if userdata else ''
@@ -221,15 +222,19 @@ class Main(object):
     self.root.geometry('+{:.0f}+{:.0f}'.format(x, y))
 
   #USER DATA MANAGEMENT
+  def setUserDataPath(self):
+    subpath = self.filename
+    userdir = str(Path.home())
+    self.filename = os.path.join(userdir, subpath)
   def loadUserData(self):
     # loads data and returns it as an externally-understandable dict
     if not os.path.exists(self.filename):
       return None
     with open(self.filename, 'r') as userfile:
       userdata = [line.strip('\n') for line in userfile.readlines() if not line.startswith('#')]
-    # TODO: backwards compatibility; for now just reject legacy savefiles and reqcuire all data
-    if userdata[0] != VERSION:
-      return None
+    # TODO: backwards compatibility layer for future versions
+    # (interface to load legacy files but return data in the proper format)
+    # The first beta release won't try to load old alpha user files anyway.
     # labels for each line
     keys = ['version', 'username', 'movies_cfg', 'movies_db', 'series_cfg', 'series_db', 'games_cfg', 'games_db']
     data = {key: value for key, value in zip(keys, userdata)}
