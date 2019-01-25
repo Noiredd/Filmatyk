@@ -1,5 +1,7 @@
 import datetime
 import os
+import sys
+from pathlib import Path
 
 import tkinter as tk
 from tkinter import ttk
@@ -8,8 +10,9 @@ import filters
 from database import Database
 from filmweb import FilmwebAPI
 from presenter import Presenter
+from updater import Updater
 
-VERSION = '1.0-alpha.12'
+VERSION = '1.0.0-beta.1'
 
 class Login(object):
   # By default a dormant window that offers a request function to be called by
@@ -125,7 +128,8 @@ class Login(object):
 class Main(object):
   filename = 'userdata.fws' # TODO: maybe use user's local folder?
 
-  def __init__(self):
+  def __init__(self, debugMode=False):
+    self.debugMode = debugMode
     self.root = root = tk.Tk()
     root.title('FW local')
     # construct the window: first the notebook for tabbed view
@@ -199,6 +203,9 @@ class Main(object):
     root.protocol('WM_DELETE_WINDOW', self._quit)
     if not userdata:
       self._reloadData() # first run
+    #instantiate updater and check for updates
+    self.updater = Updater(self.root, VERSION, progress=self._setProgress, quitter=self._quit, debugMode=self.debugMode)
+    self.updater.checkUpdates()
     #prevent resizing and run the app
     root.resizable(False, False)
     tk.mainloop()
@@ -293,8 +300,21 @@ class Main(object):
       if self.abortUpdate:
         break
     self.saveUserData()
-  def _quit(self):
+  def _quit(self, restart=False):
     self.saveUserData()
     self.root.quit()
+    # Updater might request the whole app to restart. In this case, a request
+    # is passed higher to the system shell to launch the app again.
+    if restart:
+      command = "cd .. && fw-local.bat"
+      # maintain debug status
+      if self.debugMode:
+        command += " debug"
+      os.system(command)
 
-Main()
+if __name__ == "__main__":
+  try:
+    isDebug = sys.argv[1] == "debug"
+  except:
+    isDebug = False
+  Main(debugMode=isDebug)
