@@ -131,7 +131,7 @@ class Main(object):
   def __init__(self, debugMode=False):
     self.debugMode = debugMode
     self.root = root = tk.Tk()
-    root.title('FW local')
+    root.title('FW local' + (' DEBUG' if self.debugMode else ''))
     # construct the window: first the notebook for tabbed view
     self.notebook = ttk.Notebook(root)
     self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)

@@ -62,6 +62,7 @@ class Database(object):
     new_items = [item for page in itemPages for item in page]
     # no need to do anything if no new items were acquired
     if len(new_items) == 0:
+      self.callback(-1)
       return False # just in case this was an error during a hardUpdate
     # add items to the database, replacing duplicates by new ones
     old_items = self.items

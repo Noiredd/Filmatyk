@@ -29,6 +29,7 @@ class Updater(object):
     self.version = Version(version_string)
     self.progress = progress
     self.quitter = quitter
+    self.debugMode = debugMode
     self.checked_flag = False
     self.update_available = False
     # get correct path constants for release/debug mode
@@ -69,8 +70,7 @@ class Updater(object):
       if self.update_available:
         doUpdate = messagebox.askyesno(self.update_ready_string, self.update_question_string)
         if doUpdate:
-          #self.performUpdate()
-          self.quitter(restart=True)
+          self.performUpdate()
     else:
       # not done yet - try again in a while
       self.tkroot.after(200, self.__checkThread)
@@ -122,6 +122,11 @@ class Updater(object):
       else:
         update_successful = False
         break
+    # in debug mode, show the list of things to update
+    if self.debugMode:
+      print("About to download:")
+      for item in download_list:
+        print('  {}'.format(item))
     # apply a successful update
     if update_successful:
       # move all files from the temp area to their destinations
