@@ -10,8 +10,8 @@ Jeśli jednak tak nie jest, musisz sobie własnoręcznie zainstalować środowis
 W razie wątpliwości użyj swojej ulubionej wyszukiwarki i wpisz frazę: "`(nazwa mojej dystrybucji) install python3`".
 1. Pobierz pliki programu (link na [poprzedniej stronie](README.md)).
 2. Instalacja modułów. fw-local wymaga do działania kilku dodatkowych modułów do pythona.
-Są to: `pillow`, `requests_html` oraz `matplotlib`.
-Standardowo moduły instaluje się z poziomu terminala poleceniem: `python3 -m pip install nazwa_modułu`.  
+Ich listę znajdziesz w pliku `DEPENDENCIES.txt`.
+Możesz zainstalować je wszystkie naraz z poziomu terminala poleceniem: `python3 -m pip install -r DEPENDENCIES.txt`.  
 W przypadku popularnej dystrybucji Ubuntu (oraz podobnych, bazujących na Debianie wydaniach) konieczne może okazać się doinstalowanie jeszcze pewnego pakietu systemowego.
 Zrobisz to poleceniem `sudo apt-get install python-beautifulsoup` ([źródło](https://stackoverflow.com/a/26281671/6919631)).
 
@@ -33,6 +33,13 @@ Przez to, na linuksie program nie będzie zdolny do zrestartowania.
 Dlatego po aktualizacji prawdopodobnie zauważysz,
 że fw-local po prostu wyłącza się i nie wstaje.
 
-Na razie nie mam na to lepszego pomysłu niż "po prostu włącz go jeszcze raz samemu",
-ale jeśli będzie zainteresowanie linuksową edycją, to poświęcę chwilę na wymyślenie
-bardziej wygodnego rozwiązania.
+Podobnie, po aktualizacji skrypt odpalający fw-local sprawdza,
+czy zainstalowane są wszystkie potrzebne moduły.
+Skrypt jest napisany pod Windowsa, więc na linuksie nie zadziała.
+Dlatego sugeruję w razie problemów po aktualizacji powtórzyć polecenie
+`python3 -m pip install -r DEPENDENCIES.txt` -
+pip sam doinstaluje tylko brakujące pakiety.
+
+Na razie nie mam na te sprawy lepszego pomysłu niż "po prostu włącz go jeszcze raz
+samemu", ale jeśli będzie zainteresowanie linuksową edycją, to poświęcę chwilę na
+wymyślenie bardziej wygodnego rozwiązania.

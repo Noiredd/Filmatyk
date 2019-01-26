@@ -1,5 +1,7 @@
 # fw-local
-**Nie podoba Ci się nowy interfejs filmweb.pl? Zaimportuj swoje oceny i przeglądaj je na swoim komputerze - tak jak lubisz!**
+**Chcesz pobrać wszystkie swoje oceny z filmwebu na własny komputer?
+Może po prostu nie podoba Ci się nowy interfejs portalu?
+fw-local pozwala Ci przeglądać/sortować/filtrować swoje oceny offline!**
 
 ### Co to jest **fw-local**?
 fw-local jest odpowiedzią na ostatnie zmiany w interfejsie serwisu filmweb.pl, który dla mnie osobiście stał się nieużywalny.  
@@ -10,29 +12,32 @@ dzięki temu masz możliwość *przeglądania ich i filtrowania* na różne spos
 <a href="https://raw.githubusercontent.com/Noiredd/fw-local/master/screenshot.png">
 <img src="https://github.com/Noiredd/fw-local/blob/master/screenshot.png" width="900" height="485" border="10" alt="Kliknij by zobaczyć w większym rozmiarze" /></a>
 
-**WAŻNE**: fw-local jest na razie w fazie *alfa* - to znaczy, że nie jest jeszcze gotowy i może (oraz będzie) ulegać różnym zmianom!
+**WAŻNE**: fw-local jest na razie w fazie *beta*.
+Większość funkcjonalności stabilnie działa, ale mogą pojawiać się błędy i niedoróbki.
+Razem z nimi - aktualizacje naprawiające niedociągnięcia i dodające nowe możliwości.
 
-**WAŻNE**: fw-local na razie działa poprawnie tylko w systemie **Windows**.
+**WAŻNE**: fw-local na razie działa niemal od ręki tylko w systemie **Windows**.
 Na pewno obsługiwane są wersje 7 (z SP 1) oraz 10, prawdopodobnie powinien zadziałać też w Viście.
 Jeśli chcesz używać go na Linuksie bądź Maku, prawdopodobnie czeka Cię odrobina więcej pracy - czytaj dalej.
 
 ### Jak uruchomić fw-local?
-Na ten moment program nie ma instalatora, więc pierwsze uruchomienie może być mało wygodne.
-Poniżej znajduje się instrukcja instalacji dla systemu Windows.
+Program został napisany w języku Python, co znaczy, że aby go używać,
+potrzebujesz mieć zainstalowane środowisko tego języka.
+Nie jest ono dostarczane domyślnie z systemem Windows,
+więc jeśli nie masz pewności, czy je posiadasz - prawdopodobnie nie.
+
+Poniżej znajduje się krótka instrukcja dla systemu Windows.
 Jeśli pracujesz na Linuksie - zobacz [instrukcję instalacji dla Linuksa](LINUX.md).
 
-0. Pierwszym krokiem będzie prawdopodobnie **instalacja Pythona 3** ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
-na chwilę obecną najnowszym wydaniem jest Python 3.7.1.
+1. Pierwszym krokiem będzie prawdopodobnie **instalacja Pythona 3** ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
+na chwilę obecną najnowszym wydaniem jest Python 3.7.2.
 fw-local nie uruchomi się w środowisku starszym niż Python 3.6!  
 **Ważne:** na początku instalacji zaznacz `Add Python3 to PATH`!  
 Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.
 
-1. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0-alpha.10.zip) i wypakuj, gdzie Ci wygodnie.
+2. Pobierz [pliki programu](https://github.com/Noiredd/fw-local/archive/v1.0.0-beta.1.zip) i wypakuj, gdzie Ci wygodnie.
 
-2. **Instalacja modułów**. Po prostu odpal `setup.bat`, skrypt powinien wszystko zrobić za Ciebie.  
-Jeśli interesują Cię szczegóły tego, co się wydarzy: przejrzyj treść skryptu lub/i instrukcję dla Linuksa.
-
-3. Samo **uruchomienie** programu jest już banalne - zwyczajnie odpalasz `fw-local.bat`.
+3. **Uruchom** program przez `fw-local.bat`.
 Powinno ukazać Ci się okno jak w screenie wyżej (tylko puste, z prośbą o pierwsze zalogowanie).
 
 ### Co potrafi fw-local?
