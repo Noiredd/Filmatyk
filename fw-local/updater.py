@@ -5,17 +5,18 @@ import hashlib
 import json
 import os
 import shutil
+from urllib.parse import urljoin
 
 import requests
 from semantic_version import Version
 Timeout = requests.urllib3.connection.ConnectTimeoutError
 
 class Paths(object):
-  local_meta_file   = "..\\VERSION.json"
-  local_temp_dir    = "..\\__update__"
-  remote_repo_path  = "https://raw.githubusercontent.com/Noiredd/fw-local/v{}/"
-  release_meta_path = "https://raw.githubusercontent.com/Noiredd/fw-local/master/VERSION.json"
-  debug_meta_path   = "https://raw.githubusercontent.com/Noiredd/fw-local/prerelease/VERSION.json"
+  meta_file         = "VERSION.json"
+  temp_dir          = "__update__"
+  local_repo_path   = "..\\"
+  release_repo_path = "https://raw.githubusercontent.com/Noiredd/fw-local/stable/"
+  debug_repo_path   = "https://raw.githubusercontent.com/Noiredd/fw-local/prerelease/"
 
 class Updater(object):
   update_ready_string = "Aktualizacja dostępna"
@@ -33,13 +34,13 @@ class Updater(object):
     self.checked_flag = False
     self.update_available = False
     # get correct path constants for release/debug mode
-    self.local_meta_file_path = Paths.local_meta_file
-    self.temporary_directory = Paths.local_temp_dir
-    self.remote_repository_path = Paths.remote_repo_path
-    self.remote_meta_file_path = (
-      Paths.release_meta_path if not debugMode else
-      Paths.debug_meta_path
+    self.local_meta_file_path = os.path.join(Paths.local_repo_path, Paths.meta_file)
+    self.temporary_directory = os.path.join(Paths.local_repo_path, Paths.temp_dir)
+    self.remote_repository_path = (
+      Paths.release_repo_path if not debugMode else
+      Paths.debug_repo_path
     )
+    self.remote_meta_file_path = urljoin(self.remote_repository_path, Paths.meta_file)
 
   # REMOTE INTERFACE
   def pullFile(self, path, relative=True, timeout=5.0, encoding=None):
@@ -47,10 +48,14 @@ class Updater(object):
         The path can be either relative to the remote repo, or absolute.
     """
     if relative:
-      path = self.remote_repository_path + path.replace('\\', '/')
+      path = path.replace('\\', '/') # Windows-style to URL-style
+      path = urljoin(self.remote_repository_path, path)
     try:
       response = requests.get(path, timeout=timeout)
     except Timeout:
+      return None
+    # server should respond with OK (200) code - if not, abort
+    if response.status_code != 200:
       return None
     if encoding is None:
       return response.content # return raw bytes
@@ -95,24 +100,21 @@ class Updater(object):
     with open(self.local_meta_file_path, 'r') as current_ver_file:
       current_ver_data = json.loads(current_ver_file.read())
     current_files = current_ver_data['files']
-    # specify the path to the exact release to download
-    self.remote_repository_path = self.remote_repository_path.format(
-      str(self.new_version)
-    )
-    # prepare the list of files do download
+    # prepare the list of files to download
     download_list = [] # (path, checksum) tuples
-    # compare each new file with the existing
+    # only download new files or ones whose checksums changed
     for new_file, new_sum in self.updated_files.items():
       if not new_file in current_files.keys():
         download_list.append((new_file, new_sum))
       elif new_sum != current_files[new_file]:
         download_list.append((new_file, new_sum))
-    # try to download each file
+    # prepare the temp directory, progress bar etc.
     if not os.path.isdir(self.temporary_directory):
       os.mkdir(self.temporary_directory)
     n_files = len(download_list)
     update_successful = True
-    self.progress(0)  # display the progress bar
+    self.progress(0)
+    # try to download each file
     for i, f_tuple in enumerate(download_list):
       new_file, new_sum = f_tuple
       success = self.downloadFile(new_file, new_sum)
