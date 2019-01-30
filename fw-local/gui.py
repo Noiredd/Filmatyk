@@ -11,6 +11,7 @@ from database import Database
 from filmweb import FilmwebAPI
 from presenter import Presenter
 from updater import Updater
+from userdata import DataManager
 
 VERSION = '1.0.0-beta.1'
 
@@ -151,20 +152,13 @@ class Main(object):
     self.databases = []
     self.presenters = []
     # load the savefile
-    self.setUserDataPath()
-    userdata = self.loadUserData()
-    u_name = userdata['username'] if userdata else ''
-    conf_m = userdata['movies_cfg'] if userdata else ''
-    data_m = userdata['movies_db'] if userdata else ''
-    conf_s = userdata['series_cfg'] if userdata else ''
-    data_s = userdata['series_db'] if userdata else ''
-    conf_g = userdata['games_cfg'] if userdata else ''
-    data_g = userdata['games_db'] if userdata else ''
+    self.dataManager = DataManager(self.getFilename())
+    userdata = self.dataManager.load()
     # instantiate Presenters and Databases
-    self.api = FilmwebAPI(self.loginHandler.requestLogin, u_name)
-    movieDatabase = Database.restoreFromString('Movie', data_m, self.api, self._setProgress)
+    self.api = FilmwebAPI(self.loginHandler.requestLogin, userdata.username)
+    movieDatabase = Database.restoreFromString('Movie', userdata.movies_data, self.api, self._setProgress)
     self.databases.append(movieDatabase)
-    moviePresenter = Presenter(self, self.api, movieDatabase, conf_m)
+    moviePresenter = Presenter(self, self.api, movieDatabase, userdata.movies_conf)
     moviePresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     moviePresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
     moviePresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
@@ -174,9 +168,9 @@ class Main(object):
     moviePresenter.placeInTab('Filmy')
     moviePresenter.totalUpdate()
     self.presenters.append(moviePresenter)
-    seriesDatabase = Database.restoreFromString('Series', data_s, self.api, self._setProgress)
+    seriesDatabase = Database.restoreFromString('Series', userdata.series_data, self.api, self._setProgress)
     self.databases.append(seriesDatabase)
-    seriesPresenter = Presenter(self, self.api, seriesDatabase, conf_s)
+    seriesPresenter = Presenter(self, self.api, seriesDatabase, userdata.series_conf)
     seriesPresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     seriesPresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
     seriesPresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
@@ -186,9 +180,9 @@ class Main(object):
     seriesPresenter.placeInTab('Seriale')
     seriesPresenter.totalUpdate()
     self.presenters.append(seriesPresenter)
-    gameDatabase = Database.restoreFromString('Game', data_g, self.api, self._setProgress)
+    gameDatabase = Database.restoreFromString('Game', userdata.games_data, self.api, self._setProgress)
     self.databases.append(gameDatabase)
-    gamePresenter = Presenter(self, self.api, gameDatabase, conf_g)
+    gamePresenter = Presenter(self, self.api, gameDatabase, userdata.games_conf)
     gamePresenter.addFilter(filters.YearFilter, row=0, column=0, sticky=tk.NW)
     gamePresenter.addFilter(filters.RatingFilter, row=1, column=0, sticky=tk.NW)
     gamePresenter.addFilter(filters.DateFilter, row=2, column=0, sticky=tk.NW)
@@ -222,23 +216,10 @@ class Main(object):
     self.root.geometry('+{:.0f}+{:.0f}'.format(x, y))
 
   #USER DATA MANAGEMENT
-  def setUserDataPath(self):
+  def getFilename(self):
     subpath = self.filename
     userdir = str(Path.home())
-    self.filename = os.path.join(userdir, subpath)
-  def loadUserData(self):
-    # loads data and returns it as an externally-understandable dict
-    if not os.path.exists(self.filename):
-      return None
-    with open(self.filename, 'r') as userfile:
-      userdata = [line.strip('\n') for line in userfile.readlines() if not line.startswith('#')]
-    # TODO: backwards compatibility layer for future versions
-    # (interface to load legacy files but return data in the proper format)
-    # The first beta release won't try to load old alpha user files anyway.
-    # labels for each line
-    keys = ['version', 'username', 'movies_cfg', 'movies_db', 'series_cfg', 'series_db', 'games_cfg', 'games_db']
-    data = {key: value for key, value in zip(keys, userdata)}
-    return data
+    return os.path.join(userdir, subpath)
   def saveUserData(self):
     # if for any reason the first update hasn't commenced - don't save anything
     if self.api.username is None:
