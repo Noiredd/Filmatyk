@@ -11,7 +11,7 @@ from database import Database
 from filmweb import FilmwebAPI
 from presenter import Presenter
 from updater import Updater
-from userdata import DataManager
+from userdata import DataManager, UserData
 
 VERSION = '1.0.0-beta.1'
 
@@ -152,7 +152,7 @@ class Main(object):
     self.databases = []
     self.presenters = []
     # load the savefile
-    self.dataManager = DataManager(self.getFilename())
+    self.dataManager = DataManager(self.getFilename(), VERSION)
     userdata = self.dataManager.load()
     # instantiate Presenters and Databases
     self.api = FilmwebAPI(self.loginHandler.requestLogin, userdata.username)
@@ -196,7 +196,7 @@ class Main(object):
     self.centerWindow()
     #ensure a controlled exit no matter what user does (X-button, alt+f4)
     root.protocol('WM_DELETE_WINDOW', self._quit)
-    if not userdata:
+    if userdata.is_empty:
       self._reloadData() # first run
     #instantiate updater and check for updates
     self.updater = Updater(self.root, VERSION, progress=self._setProgress, quitter=self._quit, debugMode=self.debugMode)
@@ -229,28 +229,19 @@ class Main(object):
         any([db.isDirty for db in self.databases]) or
         any([ps.isDirty for ps in self.presenters])):
       return
-    # safety feature against failing to write new data and removing the old
-    if os.path.exists(self.filename):
-      os.rename(self.filename, self.filename + '.bak')
-    with open(self.filename, 'w') as userfile:
-      userfile.write('#VERSION\n')
-      userfile.write(VERSION + '\n')
-      userfile.write('#USERNAME\n')
-      userfile.write(self.api.username + '\n')
-      userfile.write('#MOVIES\n')
-      userfile.write(self.presenters[0].storeToString() + '\n')
-      userfile.write(self.databases[0].storeToString() + '\n')
-      userfile.write('#SERIES\n')
-      userfile.write(self.presenters[1].storeToString() + '\n')
-      userfile.write(self.databases[1].storeToString() + '\n')
-      userfile.write('#GAMES\n')
-      userfile.write(self.presenters[2].storeToString() + '\n')
-      userfile.write(self.databases[2].storeToString() + '\n')
-      # games can be added sequentially right after
-    # if there were no errors at point, new data has been successfully written
-    if os.path.exists(self.filename + '.bak'):
-      os.remove(self.filename + '.bak')
-    # notify the objects that they were saved - maybe could be a method for this
+    # construct the UserData object
+    serialized_data = UserData(
+      username=self.api.username,
+      movies_conf=self.presenters[0].storeToString(),
+      movies_data=self.databases[0].storeToString(),
+      series_conf=self.presenters[1].storeToString(),
+      series_data=self.databases[1].storeToString(),
+      games_conf=self.presenters[2].storeToString(),
+      games_data=self.databases[2].storeToString()
+    )
+    # request the manager to save it
+    self.dataManager.save(serialized_data)
+    # notify the objects that they were saved
     for db in self.databases:
       db.isDirty = False
     for ps in self.presenters:

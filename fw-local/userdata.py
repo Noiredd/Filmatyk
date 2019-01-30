@@ -12,7 +12,8 @@ class UserData(object):
     series_conf='',
     series_data='',
     games_conf='',
-    games_data=''
+    games_data='',
+    is_empty=True
   ):
     self.username = username
     self.movies_conf = movies_conf
@@ -21,13 +22,38 @@ class UserData(object):
     self.series_data = series_data
     self.games_conf = games_conf
     self.games_data = games_data
+    self.is_empty = is_empty
 
 class DataManager(object):
   """ Backwards-compatibility preserving interface for user data management. """
   loaders = OrderedDict()
 
-  def __init__(self, userDataPath:str):
+  def __init__(self, userDataPath:str, version:str):
     self.path = userDataPath
+    self.version = version
+
+  def save(self, userData):
+    # safety feature against failing to write new data and removing the old
+    if os.path.exists(self.path):
+      os.rename(self.path, self.path + '.bak')
+    # actually write data to disk
+    with open(self.path, 'w') as user_file:
+      user_file.write('#VERSION\n')
+      user_file.write(self.version + '\n')
+      user_file.write('#USERNAME\n')
+      user_file.write(userData.username + '\n')
+      user_file.write('#MOVIES\n')
+      user_file.write(userData.movies_conf + '\n')
+      user_file.write(userData.movies_data + '\n')
+      user_file.write('#SERIES\n')
+      user_file.write(userData.series_conf + '\n')
+      user_file.write(userData.series_data + '\n')
+      user_file.write('#GAMES\n')
+      user_file.write(userData.games_conf + '\n')
+      user_file.write(userData.games_data + '\n')
+    # if there were no errors at point, new data has been successfully written
+    if os.path.exists(self.path + '.bak'):
+      os.remove(self.path + '.bak')
 
   def load(self):
     if not os.path.exists(self.path):
@@ -39,7 +65,8 @@ class DataManager(object):
       parsed_data = loader(user_data)
     except:
       print("User data parsing error.")
-      exit()
+      return UserData()
+    parsed_data.is_empty = False
     return parsed_data
   def __readFile(self):
     with open(self.path, 'r') as user_file:
