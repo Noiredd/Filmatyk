@@ -9,8 +9,8 @@ Filmatyk pozwala na *zaimportowanie własnych ocen* z portalu i zapisanie ich lo
 Razem z Twoimi ocenami, Filmatyk pobiera także podstawowe informacje o obejrzanych przez Ciebie filmach -
 dzięki temu masz możliwość *przeglądania ich i filtrowania* na różne sposoby - zupełnie tak, jak w starym, dobrym filmwebie!
 
-<a href="https://raw.githubusercontent.com/Noiredd/Filmatyk/master/screenshot.png">
-<img src="https://raw.githubusercontent.com/Noiredd/Filmatyk/master/screenshot.png" width="900" height="485" border="10" alt="Kliknij by zobaczyć w większym rozmiarze" /></a>
+<a href="https://raw.githubusercontent.com/Noiredd/Filmatyk/master/readme/screenshot.png">
+<img src="https://raw.githubusercontent.com/Noiredd/Filmatyk/master/readme/screenshot.png" width="900" height="453" border="10" alt="Kliknij by zobaczyć w większym rozmiarze" /></a>
 
 **WAŻNE**: Filmatyk jest na razie w fazie *beta*.
 Większość funkcjonalności stabilnie działa, ale mogą pojawiać się błędy i niedoróbki.
