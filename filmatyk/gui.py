@@ -127,12 +127,13 @@ class Login(object):
     self.window.withdraw()
 
 class Main(object):
-  filename = 'filmatyk.dat' # will be created in user documents/home directory
+  filename = 'filmatyk.dat'  # will be created in user documents/home directory
+  wintitle = '{}Filmatyk'    # format with debug flag
 
   def __init__(self, debugMode=False):
     self.debugMode = debugMode
     self.root = root = tk.Tk()
-    root.title('FW local' + (' DEBUG' if self.debugMode else ''))
+    root.title(self.wintitle.format('[DEBUG] ' if self.debugMode else ''))
     # construct the window: first the notebook for tabbed view
     self.notebook = ttk.Notebook(root)
     self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)

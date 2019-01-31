@@ -11,7 +11,7 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 REM First of all, execute the dependency check tool
-%pyexe% fw-local\dependency_test.py
+%pyexe% filmatyk\dependency_test.py
 REM If it left a list of packages to install - pass it to pip
 IF EXIST install.txt (
   REM Tester can leave a list of missing packages. In this case - install them,
@@ -21,7 +21,7 @@ IF EXIST install.txt (
 )
 
 REM Only now trust the dependencies to be satisfied and launch
-CD fw-local
+CD filmatyk
 SET command=pythonw gui.py
 
 IF [%1]==[] GOTO launch
