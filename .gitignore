@@ -1,5 +1,5 @@
 cache/
-fw-local/__pycache__/
+filmatyk/__pycache__/
 *.html
 *.fws
 *.txt

@@ -137,6 +137,8 @@ class Main(object):
     # construct the window: first the notebook for tabbed view
     self.notebook = ttk.Notebook(root)
     self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
+    # version string
+    tk.Label(root, text='v{}'.format(VERSION)).grid(row=0, column=0, padx=5, pady=3, sticky=tk.NE)
     # then the control panel
     frame = tk.Frame(root)
     frame.grid(row=1, column=0, padx=5, pady=5, sticky=tk.SW)

@@ -15,8 +15,8 @@ class Paths(object):
   meta_file         = "VERSION.json"
   temp_dir          = "__update__"
   local_repo_path   = "..\\"
-  release_repo_path = "https://raw.githubusercontent.com/Noiredd/fw-local/stable/"
-  debug_repo_path   = "https://raw.githubusercontent.com/Noiredd/fw-local/prerelease/"
+  release_repo_path = "https://raw.githubusercontent.com/Noiredd/Filmatyk/stable/"
+  debug_repo_path   = "https://raw.githubusercontent.com/Noiredd/Filmatyk/prerelease/"
 
 class Updater(object):
   update_ready_string = "Aktualizacja dostępna"

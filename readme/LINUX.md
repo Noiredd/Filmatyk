@@ -1,4 +1,4 @@
-## fw-local na Linuksie
+## Filmatyk na Linuksie
 
 ### Instalacja
 
@@ -8,8 +8,8 @@ Będzie to potrzebne w jednym z kroków.
 0. Prawdopodobnie twoja dystrybucja jest już wyposażona w Pythona 3.
 Jeśli jednak tak nie jest, musisz sobie własnoręcznie zainstalować środowisko.
 W razie wątpliwości użyj swojej ulubionej wyszukiwarki i wpisz frazę: "`(nazwa mojej dystrybucji) install python3`".
-1. Pobierz pliki programu (link na [poprzedniej stronie](README.md)).
-2. Instalacja modułów. fw-local wymaga do działania kilku dodatkowych modułów do pythona.
+1. Pobierz pliki programu (link na [poprzedniej stronie](../README.md)).
+2. Instalacja modułów. Filmatyk wymaga do działania kilku dodatkowych modułów do pythona.
 Ich listę znajdziesz w pliku `DEPENDENCIES.txt`.
 Możesz zainstalować je wszystkie naraz z poziomu terminala poleceniem: `python3 -m pip install -r DEPENDENCIES.txt`.  
 W przypadku popularnej dystrybucji Ubuntu (oraz podobnych, bazujących na Debianie wydaniach) konieczne może okazać się doinstalowanie jeszcze pewnego pakietu systemowego.
@@ -19,21 +19,21 @@ Zaznaczam, że ponieważ istnieje cała masa różnych dystrybucji linuksa, powy
 
 ### Uruchamianie
 
-Od wersji 1.0.0-beta.1 fw-local może być nieco niewygodny do uruchomienia,
-ponieważ domyślny skrypt uruchamiający (`fw-local.bat`) jest zaprojektowany z myślą o Windowsie.
-Na chwilę obecną, najwygodniej uruchomisz program z konsoli poleceniem `python3 fw-local/gui.py`
+Od wersji 1.0.0-beta.1 Filmatyk może być nieco niewygodny do uruchomienia,
+ponieważ domyślny skrypt uruchamiający (`Filmatyk.bat`) jest zaprojektowany z myślą o Windowsie.
+Na chwilę obecną, najwygodniej uruchomisz program z konsoli poleceniem `python3 filmatyk/gui.py`
 (z założeniem, że jesteś w folderze głównym programu, a więc tam gdzie widnieje plik `VERSION.json`).
 
 ### Co może nie działać
 
-Przy aktualizacji, fw-local będzie próbował się zrestartować.
+Przy aktualizacji, Filmatyk będzie próbował się zrestartować.
 Zrobi to funkcją `os.system`, która jednak odwoła się, na windowsowską modłę,
-do pliku `fw-local.bat`.
+do pliku `Filmatyk.bat`.
 Przez to, na linuksie program nie będzie zdolny do zrestartowania.
 Dlatego po aktualizacji prawdopodobnie zauważysz,
-że fw-local po prostu wyłącza się i nie wstaje.
+że Filmatyk po prostu wyłącza się i nie wstaje.
 
-Podobnie, po aktualizacji skrypt odpalający fw-local sprawdza,
+Podobnie, po aktualizacji skrypt odpalający Filmatyka sprawdza,
 czy zainstalowane są wszystkie potrzebne moduły.
 Skrypt jest napisany pod Windowsa, więc na linuksie nie zadziała.
 Dlatego sugeruję w razie problemów po aktualizacji powtórzyć polecenie

@@ -2,16 +2,16 @@
 
 ### Note on the language
 
-This document aims to explain the mechanisms behind *fw-local* and the structure of its code.
+This document aims to explain the mechanisms behind *Filmatyk* and the structure of its code.
 Even though this project is aimed at Polish-speaking users, the entire code has been written in English.
 Consequently, this document is also in English, in order to avoid the discomfort of translating concepts named in the code in English.
 
 ### The general idea
 
-*fw-local* allows retrieving user's movie ratings from their filmweb.pl profile, and displaying them in an easy to browse/sort/filter manner.
-The two crucial components that allow this are: the Filmweb API (for scraping of user pages - [`filmweb.py`](fw-local/filmweb.py)) and the GUI (for displaying the results - [`gui.py`](fw-local/gui.py)), which are bound together using a database (storing the ratings as objects - [`database.py`](fw-local/database.py)) and a presenter (responsible for post-processing the results - [`presenter.py`](fw-local/presenter.py)).
+*Filmatyk* allows retrieving user's movie ratings from their filmweb.pl profile, and displaying them in an easy to browse/sort/filter manner.
+The two crucial components that allow this are: the Filmweb API (for scraping of user pages - [`filmweb.py`](../filmatyk/filmweb.py)) and the GUI (for displaying the results - [`gui.py`](../filmatyk/gui.py)), which are bound together using a database (storing the ratings as objects - [`database.py`](../filmatyk/database.py)) and a presenter (responsible for post-processing the results - [`presenter.py`](../filmatyk/presenter.py)).
 Movies (TODO: series and games) are stored as *items*.
-Each item is an object of a special type system ([`containers.py`](fw-local/containers.py))
+Each item is an object of a special type system ([`containers.py`](../filmatyk/containers.py))
 Each of those objects represents a single *item* (movie, series, game), and contains some general information about it.
 These objects can also store some user-dependent information, such as rating with comment, or if it's wanted-to-watch.
 
@@ -20,7 +20,7 @@ These objects can also store some user-dependent information, such as rating wit
 TODO
 The very basic `Item` class, blueprints, meta-inheritance, rating info
 
-### [Filmweb API](fw-local/filmweb.py)
+### [Filmweb API](../filmatyk/filmweb.py)
 
 The API allows retrieving user ratings from their Filmweb account, offering a set of functions encapsulated in a special object.
 These methods handle everything from logging in to the account, through obtaining the number of movies the user has rated, to retrieving a list of them and returning them as processed objects, ready to store and display.
@@ -95,7 +95,7 @@ had the API only asked the GUI for credentials, then performed the login attempt
 This may feel convoluted, but it's still simpler than having the API control the GUI -
 button callbacks would have to be routed back to the API while the API should call GUI methods to notify of login error or hide on success etc.
 
-### [Presenter](fw-local/presenter.py)
+### [Presenter](../filmatyk/presenter.py)
 
 `Presenter` is a class responsible for displaying items from the database.
 This process consists of 4 steps: retrieving the items from the DB (`totalUpdate`), (optionally) filtering them through some user-given criteria (`filtersUpdate`), (optionally) sorting them by some user-given key (`sortingUpdate`) and eventually putting them into a TreeView for interactive display (`displayUpdate`).
@@ -104,7 +104,7 @@ Those actions are arranged into a call chain; that is, triggering one of them au
 The first step is rather trivial, as the Presenter essentially acquires a copy of the data held by the database.
 Rest of the steps will be briefly explained below.
 
-#### [Filtering](fw-local/filters.py)
+#### [Filtering](../filmatyk/filters.py)
 
 In this step, the list of items is filtered through a set of criteria chosen by the user.
 The mechanism consists of two parts: a `FilterMachine` that performs the actual (well, almost actual) filtering, and a set of `Filters`.  
@@ -138,6 +138,16 @@ Finally, whenever any filter is changed and calls back to the machine, the machi
 
 #### Sorting
 
+TODO
+
 #### Display
 
+TODO
+
 #### Configuring the Presenter
+
+TODO
+
+### Updater
+
+TODO
