@@ -220,6 +220,8 @@ class Main(object):
 
   #USER DATA MANAGEMENT
   def getFilename(self):
+    if self.debugMode:
+      return self.filename
     subpath = self.filename
     userdir = str(Path.home())
     return os.path.join(userdir, subpath)
@@ -286,7 +288,7 @@ class Main(object):
     # Updater might request the whole app to restart. In this case, a request
     # is passed higher to the system shell to launch the app again.
     if restart:
-      command = "cd .. && fw-local.bat"
+      command = "cd .. && Filmatyk.bat"
       # maintain debug status
       if self.debugMode:
         command += " debug"
