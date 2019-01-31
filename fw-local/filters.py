@@ -121,6 +121,37 @@ class Filter(object):
   def grid(self, **kw):
     self.main.grid(**kw)
 
+class TitleFilter(Filter):
+  def __init__(self, root):
+    self.title_in = tk.StringVar()
+    self.function = self.filterTitle
+    super(TitleFilter, self).__init__(root)
+  def reset(self):
+    self.title_in.set('')
+    self._reset()
+  def buildUI(self):
+    self.nameEntry = tk.Entry(master=self.main, width=100, textvariable=self.title_in)
+    self.nameEntry.grid(row=0, column=0)
+    self.nameEntry.bind('<Key>', self._enterKey)
+    ttk.Button(master=self.main, text='X', width=3, command=self.reset).grid(row=0, column=1)
+  def _enterKey(self, event=None):
+    # Clear the entry when user hits escape
+    if event:
+      if event.keysym == 'Escape':
+        self.reset()
+    # Wait before updating (see ListboxFilter.waitAndUpdate)
+    self.main.after(50, self._update)
+  def _update(self, event=None):
+    search_string = self.title_in.get().lower()
+    def filterTitle(item):
+      title = item.getRawProperty('title')
+      return search_string in title.lower()
+    self.function = filterTitle
+    self.notifyMachine()
+  def filterTitle(self, item):
+    title = item.getRawProperty('title')
+    return self.title_val in title.lower()
+
 class YearFilter(Filter):
   default_years = [1, 9999]
   def __init__(self, root):

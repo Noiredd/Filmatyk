@@ -6,7 +6,7 @@ from tkinter import ttk
 import containers
 from defaults import DEFAULT_CONFIGS, DEFAULT_SORTING
 from detailviews import DetailWindow
-from filters import FilterMachine
+from filters import FilterMachine, TitleFilter
 from statview import StatView
 
 class Config(object):
@@ -328,40 +328,61 @@ class Presenter(object):
     self.sortMachine = SortingMachine(self.tree, self.config.getColumns(), self.database.itemtype)
     self.filtMachine = FilterMachine(self.filtersUpdate)
     self.detailWindow = DetailWindow.getDetailWindow()
+    self.__placeTitleFilter()
     self.isDirty = False
   def __construct(self):
+    """ LEFT SIDE """
+    self.left = tk.Frame(self.main)
     # TREEVIEW
     self.tree = tree = ttk.Treeview(
-      self.main,
-      height=32,
+      self.left,
+      height=28,
       selectmode='none',
       columns=['id'] + self.config.getAllColumns()
     )
     self.configureColumns()
     tree.column(column='#0', width=0, minwidth=0, stretch=False)
-    tree.grid(row=0, column=0, rowspan=2)
-    yScroll = ttk.Scrollbar(self.main, command=tree.yview)
-    yScroll.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
+    tree.grid(row=1, column=0, sticky=tk.NW)
+    yScroll = ttk.Scrollbar(self.left, command=tree.yview)
+    yScroll.grid(row=1, column=1, sticky=tk.NS)
     tree.configure(yscrollcommand=yScroll.set)
     # POP-UP MENU
-    self.menu = tk.Menu(self.main, tearoff=0)
+    self.menu = tk.Menu(self.left, tearoff=0)
     self.menu.add_command(label='Konfiguracja', command=self.config.popUp)
     # BIND CALLBACKS
     tree.bind('<Button-1>', self._singleClick)
     tree.bind('<Double-Button-1>', self._doubleClick)
     tree.bind('<ButtonRelease-1>', self._leftRelease)
     tree.bind('<Button-3>', self._rightClick)
+    """ RIGHT SIDE """
+    self.right = tk.Frame(self.main)
     # STATISTICS VIEW
-    self.stats = StatView(self.main, self.database.itemtype)
-    self.stats.grid(row=0, column=2, sticky=tk.N)
+    self.stats = StatView(self.right, self.database.itemtype)
+    self.stats.grid(row=0, column=0, sticky=tk.N)
     # FILTER FRAME
-    self.fframe = ttk.Frame(self.main)
-    self.fframe.grid(row=1, column=2, sticky=tk.NW)
+    self.fframe = ttk.Frame(self.right)
+    self.fframe.grid(row=1, column=0, sticky=tk.NW)
     # store the row and col range of inserted filters to know where to place the
     # reset all button
     self.fframe_grid = [0, 0]
-    # delay to the first update, after all of the filters have been added
+    # PLACE THE FRAMES
+    self.left.grid(row=0, column=0, sticky=tk.N)
+    self.right.grid(row=0, column=1, sticky=tk.N)
+    # delay placing the reset button to the first update,
+    # after all of the filters have been added
     self.isResetAllButtonPlaced = False
+  def __placeTitleFilter(self):
+    # TitleFilter is special as it does not reside within the filter frame, but
+    # instead is placed right above the treeview. It would be tempting to place
+    # it in the window during __construct, but this is impossible. Placing this
+    # filter requires a FilterMachine object, which cannot be constructed until
+    # TreeView is in place. So: FM requires TV but TV is spawned in __construct
+    # which in turn cannot be called after FM is in place. For these reasons, a
+    # TitleFilter has to be spawned separately, after those two are ready. Sort
+    # of like any other Filter.
+    titleFilter = TitleFilter(self.left)
+    self.filtMachine.registerFilter(titleFilter)
+    titleFilter.grid(row=0, column=0, pady=2, sticky=tk.NW)
   def configureColumns(self):
     for column in self.config.getColumns():
       self.tree.column(column=column, width=self.config.getWidth(column), stretch=False)
