@@ -382,7 +382,7 @@ class Presenter(object):
     # of like any other Filter.
     titleFilter = TitleFilter(self.left)
     self.filtMachine.registerFilter(titleFilter)
-    titleFilter.grid(row=0, column=0, pady=2, sticky=tk.NW)
+    titleFilter.grid(row=0, column=0, columnspan=2, pady=2, sticky=tk.EW)
   def configureColumns(self):
     for column in self.config.getColumns():
       self.tree.column(column=column, width=self.config.getWidth(column), stretch=False)

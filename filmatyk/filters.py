@@ -1,4 +1,5 @@
 import datetime
+from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import ttk
 
@@ -122,6 +123,7 @@ class Filter(object):
     self.main.grid(**kw)
 
 class TitleFilter(Filter):
+  icon_path = 'search.png'
   def __init__(self, root):
     self.title_in = tk.StringVar()
     self.function = self.filterTitle
@@ -130,10 +132,16 @@ class TitleFilter(Filter):
     self.title_in.set('')
     self._reset()
   def buildUI(self):
-    self.nameEntry = tk.Entry(master=self.main, width=100, textvariable=self.title_in)
-    self.nameEntry.grid(row=0, column=0)
+    self.main.grid_columnconfigure(1, weight=1)
+    # search icon
+    self.icon = ImageTk.PhotoImage(Image.open(self.icon_path))
+    icon_place = tk.Label(self.main)
+    icon_place.configure(image=self.icon)
+    icon_place.grid(row=0, column=0, sticky=tk.W)
+    self.nameEntry = tk.Entry(master=self.main, textvariable=self.title_in)
+    self.nameEntry.grid(row=0, column=1, sticky=tk.EW)
     self.nameEntry.bind('<Key>', self._enterKey)
-    ttk.Button(master=self.main, text='X', width=3, command=self.reset).grid(row=0, column=1)
+    ttk.Button(master=self.main, text='X', width=3, command=self.reset).grid(row=0, column=2)
   def _enterKey(self, event=None):
     # Clear the entry when user hits escape
     if event:
