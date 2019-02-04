@@ -25,11 +25,11 @@ class FilterMachine(object):
     self.filterFuns.append(filter_object.getFunction())
     self.filterFlags.append(False)
     self.filterMap[filter_object.getID()] = len(self.filterObjs) - 1
-  def resetAllFilters(self):
+  def resetAllFilters(self, force=False):
     # disable calling back to the Presenter until all of the work is done
     self.ignoreCallback = True
     for filter, flag in zip(self.filterObjs, self.filterFlags):
-      if flag:
+      if flag or force:
         filter.reset()
     self.filterFlags = [False for flag in self.filterFlags] # clear all
     # and now call back

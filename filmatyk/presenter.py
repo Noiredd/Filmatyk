@@ -402,6 +402,7 @@ class Presenter(object):
     rab_col = self.fframe_grid[1]
     raButton = ttk.Button(self.fframe, text='Resetuj filtry!', command=self.filtMachine.resetAllFilters)
     raButton.grid(row=rab_row, column=rab_col, rowspan=rab_row+1, columnspan=rab_col+1, sticky=tk.SE)
+    self.filtMachine.resetAllFilters(force=True)
 
   def storeToString(self):
     return self.config.storeToString()
