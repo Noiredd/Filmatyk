@@ -182,7 +182,8 @@ class YearFilter(Filter):
     self.yTo = yTo = tk.Spinbox(m, width=5, textvariable=self.year_to, command=self._updateTo)
     yTo.bind('<KeyRelease>', self._updateTo)
     yTo.grid(row=1, column=3, sticky=tk.NW)
-    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NW)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NE)
+    m.grid_columnconfigure(4, weight=1) # for even placement of the reset button
   def populateChoices(self, items:list):
     all_years = set()
     for item in items:
@@ -296,7 +297,7 @@ class GenreFilter(ListboxFilter):
       command=self._update).pack(anchor=tk.W)
     tk.Radiobutton(radios, text='dokładnie', variable=self.mode, value=2,
       command=self._update).pack(anchor=tk.W)
-    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=2, column=0, sticky=tk.SE)
+    ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=2, column=0, sticky=tk.NE)
   def _update(self, event=None):
     self.selected = self.getSelection()
     if len(self.selected) == 0:
@@ -448,6 +449,7 @@ class RatingFilter(Filter):
     rTo.bind('<KeyRelease>', self._updateTo)
     rTo.grid(row=1, column=3, sticky=tk.NW)
     ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, sticky=tk.NE)
+    m.grid_columnconfigure(4, weight=1)
   def _updateTo(self, event=None):
     self._update(to=True, event=event)
   def _updateFrom(self, event=None):
@@ -523,6 +525,7 @@ class DateFilter(Filter):
     tdSpin.bind('<KeyRelease>', self._updateTo)
     tdSpin.grid(row=2, column=3, sticky=tk.NW)
     ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, rowspan=2, sticky=tk.E)
+    m.grid_columnconfigure(4, weight=2)
     # shortcut buttons
     sc = tk.Frame(m)
     tk.Frame(sc, height=10).grid(row=0, column=0) # separator
