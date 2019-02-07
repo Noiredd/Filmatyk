@@ -31,6 +31,7 @@ class Login(object):
     self.window.resizable(False, False)
     self.window.attributes("-topmost", True)
     self.window.title('Zaloguj się')
+    self.window.protocol('WM_DELETE_WINDOW', self._cancelClick)
     self.isDone = tk.BooleanVar()
     self.isDone.set(False)
     self.stateGood = True

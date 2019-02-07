@@ -163,6 +163,7 @@ class DetailWindow(object):
     self.activeView = None
     self.posterManager = posterman.PosterManager()
     self.__construct()
+    self.root.protocol('WM_DELETE_WINDOW', self.root.withdraw)
     self.root.resizable(0,0)
     self.root.title('Podgląd')
     self.root.withdraw()
