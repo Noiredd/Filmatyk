@@ -1,3 +1,4 @@
+from calendar import monthrange
 import datetime
 from PIL import Image, ImageTk
 import tkinter as tk
@@ -481,15 +482,15 @@ class RatingFilter(Filter):
     self.notifyMachine()
 
 class DateFilter(Filter):
-  default_years = [1, 9999]
+  current_year = datetime.date.today().year
   def __init__(self, root):
-    self.from_year = tk.StringVar()
-    self.from_month = tk.StringVar()
-    self.from_day = tk.StringVar()
-    self.to_year = tk.StringVar()
-    self.to_month = tk.StringVar()
-    self.to_day = tk.StringVar()
-    self.all_years = self.default_years
+    self.from_year = tk.IntVar()
+    self.from_month = tk.IntVar()
+    self.from_day = tk.IntVar()
+    self.to_year = tk.IntVar()
+    self.to_month = tk.IntVar()
+    self.to_day = tk.IntVar()
+    self.all_years = [self.current_year]
     super(DateFilter, self).__init__(root)
   def reset(self):
     dayzero = datetime.date(
@@ -497,33 +498,65 @@ class DateFilter(Filter):
       month=1,
       day=1
     )
-    self._setDates(dateFrom=dayzero, dateTo=datetime.date.today())
+    today = datetime.date.today()
+    self._setDates(dateFrom=dayzero, dateTo=today)
     self._reset()
   def buildUI(self):
     m = self.main
     tk.Label(m, text='Data ocenienia:').grid(row=0, column=0, columnspan=4, sticky=tk.NW)
     tk.Label(m, text='Od:').grid(row=1, column=0, sticky=tk.NW)
     tk.Label(m, text='Do:').grid(row=2, column=0, sticky=tk.NW)
-    self.fySpin = fySpin = tk.Spinbox(m, width=5, textvariable=self.from_year, command=self._updateFrom)
-    fySpin.bind('<KeyRelease>', self._updateFrom)
-    fySpin.grid(row=1, column=1, sticky=tk.NW)
-    self.tySpin = tySpin = tk.Spinbox(m, width=5, textvariable=self.to_year, command=self._updateTo)
-    tySpin.bind('<KeyRelease>', self._updateTo)
-    tySpin.grid(row=2, column=1, sticky=tk.NW)
+    self.fyInput = fyInput = ttk.Combobox(
+      master=m,
+      state='readonly',
+      width=4,
+      textvariable=self.from_year
+    )
+    fyInput.bind('<<ComboboxSelected>>', self._updateFrom)
+    fyInput.grid(row=1, column=1, sticky=tk.NW)
+    self.tyInput = tyInput = ttk.Combobox(
+      master=m,
+      state='readonly',
+      width=4,
+      textvariable=self.to_year
+    )
+    tyInput.bind('<<ComboboxSelected>>', self._updateTo)
+    tyInput.grid(row=2, column=1, sticky=tk.NW)
     months = [i+1 for i in range(12)]
-    fmSpin = tk.Spinbox(m, width=3, textvariable=self.from_month, command=self._updateFrom, values=months)
-    fmSpin.bind('<KeyRelease>', self._updateFrom)
-    fmSpin.grid(row=1, column=2, sticky=tk.NW)
-    tmSpin = tk.Spinbox(m, width=3, textvariable=self.to_month, command=self._updateTo, values=months)
-    tmSpin.bind('<KeyRelease>', self._updateTo)
-    tmSpin.grid(row=2, column=2, sticky=tk.NW)
-    days = [i+1 for i in range(31)]
-    fdSpin = tk.Spinbox(m, width=3, textvariable=self.from_day, command=self._updateFrom, values=days)
-    fdSpin.bind('<KeyRelease>', self._updateFrom)
-    fdSpin.grid(row=1, column=3, sticky=tk.NW)
-    tdSpin = tk.Spinbox(m, width=3, textvariable=self.to_day, command=self._updateTo, values=days)
-    tdSpin.bind('<KeyRelease>', self._updateTo)
-    tdSpin.grid(row=2, column=3, sticky=tk.NW)
+    self.fmInput = fmInput = ttk.Combobox(
+      master=m,
+      state='readonly',
+      width=2,
+      textvariable=self.from_month,
+      values=months
+    )
+    fmInput.bind('<<ComboboxSelected>>', self._updateFrom)
+    fmInput.grid(row=1, column=2, sticky=tk.NW)
+    self.tmInput = tmInput = ttk.Combobox(
+      master=m,
+      state='readonly',
+      width=2,
+      textvariable=self.to_month,
+      values=months
+    )
+    tmInput.bind('<<ComboboxSelected>>', self._updateTo)
+    tmInput.grid(row=2, column=2, sticky=tk.NW)
+    self.fdInput = fdInput = ttk.Combobox(
+      master=m,
+      state='readonly',
+      width=2,
+      textvariable=self.from_day
+    )
+    fdInput.bind('<<ComboboxSelected>>', self._updateFrom)
+    fdInput.grid(row=1, column=3, sticky=tk.NW)
+    self.tdInput = tdInput = ttk.Combobox(
+      master=m,
+      state='readonly',
+      width=2,
+      textvariable=self.to_day
+    )
+    tdInput.bind('<<ComboboxSelected>>', self._updateTo)
+    tdInput.grid(row=2, column=3, sticky=tk.NW)
     ttk.Button(m, text='Reset', width=5, command=self.reset).grid(row=1, column=4, rowspan=2, sticky=tk.E)
     m.grid_columnconfigure(4, weight=2)
     # shortcut buttons
@@ -545,20 +578,11 @@ class DateFilter(Filter):
       if not item_date:
         continue
       all_years.add(item_date.year)
-    self.all_years = sorted(list(all_years))
-    if len(self.all_years) == 0:
-      self.all_years = self.default_years
-    self.fySpin.configure(values=self.all_years)
-    self.tySpin.configure(values=self.all_years)
+    all_years.add(self.current_year)
+    self.all_years = list(range(min(all_years), max(all_years) + 1))
+    self.fyInput.configure(values=self.all_years)
+    self.tyInput.configure(values=self.all_years)
     self.reset()
-  @staticmethod
-  def getIntValue(var, default:int=1):
-    val = var.get()
-    try:
-      val = int(val)
-    except ValueError:
-      val = default
-    return val
   def _thisYear(self):
     dateTo = datetime.date.today()
     delta = datetime.timedelta(days=365)
@@ -577,6 +601,10 @@ class DateFilter(Filter):
     dateFrom = dateTo - delta
     self._setDates(dateFrom=dateFrom, dateTo=dateTo)
     self._makeUpdate(dateFrom, dateTo)
+  # Change this into "previous" (unit), so that it's not an absolute change but
+  # a relative one wrt. the currently set filtering (i.e. someone picks a range
+  # of dates two months ago, clicks "previous year" and this gives them a range
+  # one year prior to that).
   def _lastYear(self):
     delta = datetime.timedelta(days=365)
     dateTo = datetime.date.today() - delta
@@ -596,33 +624,64 @@ class DateFilter(Filter):
     self._setDates(dateFrom=dateFrom, dateTo=dateTo)
     self._makeUpdate(dateFrom, dateTo)
   def _updateTo(self, event=None):
-    self._update(to=True, event=event)
+    self._update(to=True)
   def _updateFrom(self, event=None):
-    self._update(to=False, event=event)
+    self._update(to=False)
   def _setDates(self, dateFrom=None, dateTo=None):
     if dateFrom:
-      self.from_year.set(str(dateFrom.year))
-      self.from_month.set(str(dateFrom.month))
-      self.from_day.set(str(dateFrom.day))
+      self.from_year.set(dateFrom.year)
+      self.from_month.set(dateFrom.month)
+      self.from_day.set(dateFrom.day)
+      max_days = monthrange(dateFrom.year, dateFrom.month)[1]
+      self.fdInput.configure(values=[i+1 for i in range(max_days)])
     if dateTo:
-      self.to_year.set(str(dateTo.year))
-      self.to_month.set(str(dateTo.month))
-      self.to_day.set(str(dateTo.day))
+      self.to_year.set(dateTo.year)
+      self.to_month.set(dateTo.month)
+      self.to_day.set(dateTo.day)
+      max_days = monthrange(dateTo.year, dateTo.month)[1]
+      self.tdInput.configure(values=[i+1 for i in range(max_days)])
+  def _tryCorrectDate(self, year, month, day):
+    """ Constructs a date object, limiting days to maximum per month. """
+    max_day = monthrange(year, month)[1]
+    correct_day = min(day, max_day)
+    return datetime.date(year=year, month=month, day=correct_day)
   def _getDates(self):
-    dateFrom = datetime.date(
-      year=self.getIntValue(self.from_year),
-      month=self.getIntValue(self.from_month),
-      day=self.getIntValue(self.from_day)
+    dateFrom = self._tryCorrectDate(
+      year=self.from_year.get(),
+      month=self.from_month.get(),
+      day=self.from_day.get()
     )
-    dateTo = datetime.date(
-      year=self.getIntValue(self.to_year, default=9999),
-      month=self.getIntValue(self.to_month),
-      day=self.getIntValue(self.to_day)
+    dateTo = self._tryCorrectDate(
+      year=self.to_year.get(),
+      month=self.to_month.get(),
+      day=self.to_day.get()
     )
     return dateFrom, dateTo
-  def _update(self, to, event=None):
+  def _update(self, to):
+    """ Constructs correct dates and calls back to the machine.
+
+        Each combobox from a group ("from" date, "to" date) calls this function
+        informing it which group has been acted upon. Date component values are
+        obtained from the widgets and automatically corrected for day per month
+        situation. Possible impossible date range is resolved and the corrected
+        dates are set back on the widget before being passed to _makeUpdate for
+        reporting back to the machine.
+    """
+    # Get dates and correct them for the right number of days per month
     dateFrom, dateTo = self._getDates()
-    self._makeUpdate(dateFrom, dateTo)
+    # Handle the possible "from" after "to" conflict
+    if dateFrom > dateTo:
+      # For now simply set the same date on the other control. It's not trivial
+      # to do it intelligently, that is: to determine by which amount to adjust
+      # the other date.
+      if to:
+        dateFrom = dateTo
+      else:
+        dateTo = dateFrom
+    # Set the corrected dates on the GUI
+    self._setDates(dateFrom=dateFrom, dateTo=dateTo)
+    # Issue the filter update
+    self._makeUpdate(dateFrom=dateFrom, dateTo=dateTo)
   def _makeUpdate(self, dateFrom, dateTo):
     def dateFilter(item):
       date = item.getRawProperty('dateOf')
