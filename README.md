@@ -37,8 +37,11 @@ Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.
 
 2. Pobierz [pliki programu](https://github.com/Noiredd/Filmatyk/archive/v1.0.0-beta.1.zip) i wypakuj, gdzie Ci wygodnie.
 
-3. **Uruchom** program przez `Filmatyk.bat`.
-Powinno ukazać Ci się okno jak w screenie wyżej (tylko puste, z prośbą o pierwsze zalogowanie).
+3. **Uruchom** program przez `Filmatyk.bat`.  
+**Ważne**: za pierwszym razem Filmatyk będzie musiał jednorazowo zainstalować kilka pakietów.
+Zobaczysz okno terminala z przewijającymi się komunikatami technicznymi.
+W zależności od szybkości Twojego łącza i komputera może to potrwać nawet kilka minut.  
+Następnie powinno ukazać Ci się okno jak w screenie wyżej (tylko puste, z prośbą o pierwsze zalogowanie).
 
 ### Co potrafi Filmatyk?
 Po pierwsze musisz zaimportować swoje oceny z filmwebu.
