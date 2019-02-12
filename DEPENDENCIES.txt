@@ -1,0 +1,4 @@
+requests_html
+matplotlib
+pillow
+semantic_version
