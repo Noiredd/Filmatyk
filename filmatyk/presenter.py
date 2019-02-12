@@ -454,14 +454,18 @@ class Presenter(object):
     # clear existing results
     for item in self.tree.get_children():
       self.tree.delete(item)
-    # get the requested properties of items to present
+    # list all properties that the TV needs to describe an item when inserting
+    all_columns = self.config.getAllColumns()
+    # only some of those will actually be displayed - list them separately
+    display_these = self.config.getColumns()
+    # retrieve only the necessary properties of every displayed item
     for item in self.items:
+      # list of values to put into the tree, always starts with the id
       values = [item['id']]
-      showem = self.config.getColumns()
-      # TV requires values for all columns, out of which it will only display
-      # those in displaycolumns - others can be empty but have to be present
-      for col in self.config.getAllColumns():
-        if col not in showem:
+      # go through all the properties required logically by the TV (at insert)
+      for col in all_columns:
+        # but only actually query the item for those that will be displayed
+        if col not in display_these:
           values.append('')
         else:
           values.append(item[col])
