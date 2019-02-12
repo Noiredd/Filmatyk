@@ -107,8 +107,8 @@ Rest of the steps will be briefly explained below.
 #### [Filtering](../filmatyk/filters.py)
 
 In this step, the list of items is filtered through a set of criteria chosen by the user.
-The mechanism consists of two parts: a `FilterMachine` that performs the actual (well, almost actual) filtering, and a set of `Filters`.  
-Each `Filter` defines both its functionality - filters return a callable object that inputs an `Item` and returns a `boolean` - as well as a GUI representation - filters directly draw their user-interactive widgets.  
+The mechanism consists of two parts: a set of `Filters` - objects that encapsulate filtering by a given criterion - and a `FilterMachine` which wraps them as if they were a single object.  
+Each `Filter` defines both its functionality (filters return a callable object that inputs an `Item` and returns a `bool`) as well as a GUI representation (filters directly draw their user-interactive widgets).  
 A `FilterMachine` is a parent to all the instances of a `Filter` - its job is to construct a wrapping callable from all of the callables returned by each individual filter.
 This callable is then evaluated by the `Presenter` on each of the items on the list, resulting in a new list of items which passed all of the criteria.
 
@@ -138,15 +138,101 @@ Finally, whenever any filter is changed and calls back to the machine, the machi
 
 #### Sorting
 
-TODO
+`TreeView` headers can be clicked to set/change the method to sort the entries.
+This behavior is encapsulated in the `SortingMachine` class,
+whose instance is created at the initialization of a `Presenter`.
+The only thing a `Presenter` does is detection whether a header was clicked -
+in this case it identifies *which column* was hit and passes it in a call to the machine.
+
+`SortingMachine` is responsible for constructing and remembering the current
+sorting criterion and for managing the `TreeView` header names.
+Headings are prepended with a '▲' or '▼' character to indicate the current sorting direction.
+Whenever the direction changes (by clicking on the same column again),
+the label has to change as well - either by changing to the opposite sign,
+or by restoring the original heading and changing the newly selected one.  
+The machine constructs a `dict` containing two keys:
+`key`, being the name of the property to sort by, and
+`reverse`, a `bool` indicating whether the sort direction.
+
+After the `SortingMachine` finishes the update, it returns control to the `Presenter`,
+back to the `changeSorting` callback.
+As the last step, it calls `sortingUpdate`, starting the display chain from there.
+Only then is the sorting `dict` retrieved from the machine.
+The keys are specifically named so that it can be directly passed as kwargs to the standard `list.sort`.
 
 #### Display
 
-TODO
+A `TreeView` displays items by taking them as a `list` argument to its `insert` method.
+Said list needs to have as many items as the number of columns in the TV.
+However, the columns that the TV has does *not* always have to be the columns it shows -
+only some columns can be marked as "display columns".
+This does not change anything in the call to `insert` though -
+there still has to be one value for each of the columns.
+
+In the final step of the display chain the `displayUpdate` method,
+items are placed into the `TreeView`.
+First, all of the existing items are removed from the tree.
+Then, for every item in the filtered and sorted list, its properties are retrieved,
+going by the list of all properties the tree needs to have.
+However, only some of those properties are *actually* needed,
+for every property a check is needed whether it indeed has to be fetched.
+This way time isn't wasted on fetching and formatting values
+that will not eventually be displayed.
 
 #### Configuring the Presenter
 
-TODO
+As a fairly abstract entity, `Presenter` in general has no knowledge
+of the items that it will display.
+Still, as a flexible means of data presentation,
+it allows changing the configuration of columns, including:
+selecting which ones are to be displayed, their order and pixel width.
+All of this behavior is encapsulated in a `Config` class.
+
+The `Config` instance is responsible for handling the configuration of a `TreeView`.
+It stores the current config, allows serializing it
+(in order to save it in the user data file)
+and deserializing during the instantiation of the `Presenter`.
+Finally, it features a separate GUI window to allow
+reconfiguration of the `Presenter` by the user at runtime.
+
+A `Config` is not instantiated directly by its owning `Presenter` -
+instead, it is deserialized using a factory function `restoreFromString`.
+Only in the case of an empty configuration string,
+a *default* configuration is pulled from the [`defaults`](../filmatyk/defaults.py) module.
+The caller passes the item type string, so that `Config` knows which class will be displayed.
+It then queries this class for all available properties.
+The final object stores all available columns,
+and keeps track which of these are set to be displayed.
+The `Presenter` makes simple `getX` requests whenever it needs to reconfigure itself.
+
+Another aspect is the `Config`'s GUI form.
+It allows the user to interact with the configuration,
+showing, hiding and reordering columns to their liking.
+The GUI is rather simple and features two `TreeViews` of its own.  
+`Presenter` requests this window indirectly,
+via a right-click menu which then calls `Config.popUp`.
+This GUI steals focus from all other widgets for safety.
+After the user is done reconfiguring the columns and they exit the window,
+`Config` calls back to its `Presenter`,
+first - if any changes have been made - making it reconfigure the `TreeView`,
+and then forcing it to make a `displayUpdate`.
+It is up to `Presenter`'s `configureColumns` to actually change the
+layout of its `TreeView` - it only requests the information from the `Config`.
+
+`Config` also remembers column widths.
+Whenever the user manually resizes a column,
+a callback bound to release of the left mouse button is executed.
+It then calls `Config.manualResize` in order to store the new width.
+
+Last two words about the format in which `Config` holds its actual configuration.
+An instance of `OrderedDict` - in order to preserve the order of columns -
+holds the names of columns as keys and their configured widths as values.
+Names are not headings!
+The exact text to display on the column headers is stored in the property `Blueprint`.
+As to widths, by default they are `None`,
+which only means that the width shall be also pulled from the corresponding `Blueprint`.
+If however the user resizes a column,
+their chosen width is stored as the value, unambiguously preserving the configuration.
 
 ### Updater
 
