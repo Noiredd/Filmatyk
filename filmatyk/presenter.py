@@ -337,7 +337,7 @@ class Presenter(object):
     self.tree = tree = ttk.Treeview(
       self.left,
       height=28,
-      selectmode='none',
+      selectmode=tk.BROWSE,
       columns=['id'] + self.config.getAllColumns()
     )
     self.configureColumns()
@@ -354,6 +354,7 @@ class Presenter(object):
     tree.bind('<Double-Button-1>', self._doubleClick)
     tree.bind('<ButtonRelease-1>', self._leftRelease)
     tree.bind('<Button-3>', self._rightClick)
+    tree.bind('<FocusOut>', self.clearSelection)
     """ RIGHT SIDE """
     self.right = tk.Frame(self.main)
     # STATISTICS VIEW
@@ -525,3 +526,6 @@ class Presenter(object):
     column_id = self.tree.identify_column(event.x)
     column_name = self.tree.column(column=column_id, option='id')
     self.config.manualResize(column_name)
+  def clearSelection(self, event=None):
+    selection = self.tree.focus()
+    self.tree.selection_remove(selection)
