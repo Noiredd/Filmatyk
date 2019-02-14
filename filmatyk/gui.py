@@ -101,7 +101,7 @@ class Login(object):
       self.infoLabel['text'] = ''
       self.stateGood = True
     #also, maybe the user has hit enter key, meaning to log in
-    if event.keycode == 13:
+    if event.keysym == 'Return':
       self._loginClick()
   def _loginClick(self):
     #collect login data
