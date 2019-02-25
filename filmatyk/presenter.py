@@ -151,6 +151,7 @@ class Config(object):
       self.parent.configureColumns()
       self.parent.root.root.update()
       self.parent.root.root.resizable(False, False)
+      self.parent.root.root.wm_attributes('-topmost', 0)
     # refresh items
     self.parent.displayUpdate()
   def centerWindow(self):

@@ -207,6 +207,7 @@ class Main(object):
     self.updater.checkUpdates()
     #prevent resizing and run the app
     root.resizable(False, False)
+    root.wm_attributes('-topmost', 0)
     tk.mainloop()
 
   def centerWindow(self):
