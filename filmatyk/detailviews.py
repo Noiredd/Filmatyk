@@ -225,3 +225,4 @@ class DetailWindow(object):
     # set the window title and bring it up
     self.root.title('{} ({})'.format(item['title'], item['year']))
     self.root.deiconify()
+    self.root.lift()
