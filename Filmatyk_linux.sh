@@ -31,7 +31,7 @@ else
 fi
 
 # Check dependencies
-$pycmd filmatyk/dependency_test.py
+$pycmd tools/deptest.py
 if [ -f install.txt ]; then
   $pycmd -m pip install -r install.txt
   rm install.txt

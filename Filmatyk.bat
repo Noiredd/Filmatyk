@@ -43,11 +43,6 @@ REM Iterate over versions
       SET pyexe=%%p
       GOTO exit_loop
     )
-  ) ELSE (
-    REM Executable not found - might need to set status too
-    IF 3 LSS %python_status% (
-      SET python_status=3
-    )
   )
 ))
 :exit_loop
@@ -57,7 +52,7 @@ IF %python_status% NEQ 0 (
 )
 
 REM Check dependencies
-%pyexe% filmatyk\dependency_test.py
+%pyexe% tools\deptest.py
 REM If it left a list of packages to install - pass it to pip
 IF EXIST install.txt (
   REM Tester can leave a list of missing packages. In this case - install them,
