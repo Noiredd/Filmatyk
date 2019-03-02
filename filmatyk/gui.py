@@ -131,8 +131,9 @@ class Main(object):
   filename = 'filmatyk.dat'  # will be created in user documents/home directory
   wintitle = '{}Filmatyk'    # format with debug flag
 
-  def __init__(self, debugMode=False):
+  def __init__(self, debugMode=False, isOnLinux=False):
     self.debugMode = debugMode
+    self.isOnLinux = isOnLinux
     self.root = root = tk.Tk()
     root.title(self.wintitle.format('[DEBUG] ' if self.debugMode else ''))
     # construct the window: first the notebook for tabbed view
@@ -290,15 +291,18 @@ class Main(object):
     # Updater might request the whole app to restart. In this case, a request
     # is passed higher to the system shell to launch the app again.
     if restart:
-      command = "cd .. && Filmatyk.bat"
+      command = "cd .. &&"
+      # remember which launcher was used
+      if self.isOnLinux:
+        command += " Filmatyk_linux.sh"
+      else:
+        command += " Filmatyk.bat"
       # maintain debug status
       if self.debugMode:
         command += " debug"
       os.system(command)
 
 if __name__ == "__main__":
-  try:
-    isDebug = sys.argv[1] == "debug"
-  except:
-    isDebug = False
-  Main(debugMode=isDebug)
+  debugMode = "debug" in sys.argv
+  isOnLinux = "linux" in sys.argv
+  Main(debugMode=debugMode, isOnLinux=isOnLinux)
