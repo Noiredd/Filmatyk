@@ -2,44 +2,37 @@
 
 ### Instalacja
 
-Tutorial zakłada, że potrafisz otworzyć terminal na swoim systemie.
-Będzie to potrzebne w jednym z kroków.
+Tutorial zakłada, że potrafisz otworzyć terminal na swoim systemie
+i wpisać (wkleić) do niego podstawowe komendy Linuksa.
 
 0. Prawdopodobnie twoja dystrybucja jest już wyposażona w Pythona 3.
 Jeśli jednak tak nie jest, musisz sobie własnoręcznie zainstalować środowisko.
-W razie wątpliwości użyj swojej ulubionej wyszukiwarki i wpisz frazę: "`(nazwa mojej dystrybucji) install python3`".
+W razie wątpliwości użyj swojej ulubionej wyszukiwarki i wpisz frazę:
+"`(nazwa mojej dystrybucji) install python3`".
 1. Pobierz pliki programu (link na [poprzedniej stronie](../README.md)).
-2. Instalacja modułów. Filmatyk wymaga do działania kilku dodatkowych modułów do pythona.
-Ich listę znajdziesz w pliku `DEPENDENCIES.txt`.
-Możesz zainstalować je wszystkie naraz z poziomu terminala poleceniem: `python3 -m pip install -r DEPENDENCIES.txt`.  
-W przypadku popularnej dystrybucji Ubuntu (oraz podobnych, bazujących na Debianie wydaniach) konieczne może okazać się doinstalowanie jeszcze pewnego pakietu systemowego.
-Zrobisz to poleceniem `sudo apt-get install python-beautifulsoup` ([źródło](https://stackoverflow.com/a/26281671/6919631)).
+2. Uruchom program za pomocą `Filmatyk_linux.sh`.
+Niewykluczone, że system zabroni Ci odpalić skrypt -
+w tej sytuacji najprawdopodobniej trzeba będzie ustawić zezwolenie na uruchamianie.
+W dystrybucjach typu Ubuntu można wygodnie zrobić to we właściwościach pliku,
+w zakładce "zezwolenia" (bądź podobnie brzmiącej) szukając opcji "pozwól na uruchamianie".
+  
+### Znane problemy i jak je rozwiązać
 
-Zaznaczam, że ponieważ istnieje cała masa różnych dystrybucji linuksa, powyższe instrukcje wcale nie muszą zadziałać co do joty w podanej formie.
+Być może twoja dystrybucja Linuksa wyposażona jest w Pythona,
+ale bez specjalnego pakietu `pip` służącego do instalacji modułów
+(było tak na moim Xubuntu 18.04).
+W tej sytuacji Filmatyk nie będzie w stanie zainstalować potrzebnych modułów.
+Filmatyk wychwyci ten problem, drukując komunikat `No module named pip`.
+Aby go doinstalować, wpisz w terminalu następującą komendę:  
+`sudo apt-get install python3-pip`  
+uruchom i potwierdź (`y`).
+Po zainstalowaniu, uruchom skrypt `Filmatyk_linux.sh` ponownie.
 
-### Uruchamianie
+W przypadku popularnej dystrybucji Ubuntu
+(oraz podobnych, bazujących na Debianie wydaniach)
+konieczne może okazać się doinstalowanie jeszcze paru pakietów systemowych.
+Zrobisz to poleceniem:  
+`sudo apt-get install python-beautifulsoup python3-tkinter python3-pil.imagetk`  
+([źródło](https://stackoverflow.com/a/26281671/6919631)).
 
-Od wersji 1.0.0-beta.1 Filmatyk może być nieco niewygodny do uruchomienia,
-ponieważ domyślny skrypt uruchamiający (`Filmatyk.bat`) jest zaprojektowany z myślą o Windowsie.
-Na chwilę obecną, najwygodniej uruchomisz program z konsoli poleceniem `python3 filmatyk/gui.py`
-(z założeniem, że jesteś w folderze głównym programu, a więc tam gdzie widnieje plik `VERSION.json`).
-
-### Co może nie działać
-
-Przy aktualizacji, Filmatyk będzie próbował się zrestartować.
-Zrobi to funkcją `os.system`, która jednak odwoła się, na windowsowską modłę,
-do pliku `Filmatyk.bat`.
-Przez to, na linuksie program nie będzie zdolny do zrestartowania.
-Dlatego po aktualizacji prawdopodobnie zauważysz,
-że Filmatyk po prostu wyłącza się i nie wstaje.
-
-Podobnie, po aktualizacji skrypt odpalający Filmatyka sprawdza,
-czy zainstalowane są wszystkie potrzebne moduły.
-Skrypt jest napisany pod Windowsa, więc na linuksie nie zadziała.
-Dlatego sugeruję w razie problemów po aktualizacji powtórzyć polecenie
-`python3 -m pip install -r DEPENDENCIES.txt` -
-pip sam doinstaluje tylko brakujące pakiety.
-
-Na razie nie mam na te sprawy lepszego pomysłu niż "po prostu włącz go jeszcze raz
-samemu", ale jeśli będzie zainteresowanie linuksową edycją, to poświęcę chwilę na
-wymyślenie bardziej wygodnego rozwiązania.
+Zaznaczam, że ponieważ istnieje cała masa różnych dystrybucji Linuksa, powyższe instrukcje wcale nie muszą zadziałać co do joty w podanej formie.
