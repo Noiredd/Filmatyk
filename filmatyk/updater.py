@@ -14,7 +14,7 @@ Timeout = requests.urllib3.connection.ConnectTimeoutError
 class Paths(object):
   meta_file         = "VERSION.json"
   temp_dir          = "__update__"
-  local_repo_path   = "..\\"
+  local_repo_path   = ".."
   release_repo_path = "https://raw.githubusercontent.com/Noiredd/Filmatyk/stable/"
   debug_repo_path   = "https://raw.githubusercontent.com/Noiredd/Filmatyk/prerelease/"
 
@@ -25,12 +25,13 @@ class Updater(object):
   update_failed_string = "Nie udało się pobrać nowych plików. Spróbuj później."
   max_download_attempts = 3
 
-  def __init__(self, root, version_string, progress=None, quitter=None, debugMode=False):
+  def __init__(self, root, version_string, progress=None, quitter=None, debugMode=False, linuxMode=False):
     self.tkroot = root
     self.version = Version(version_string)
     self.progress = progress
     self.quitter = quitter
     self.debugMode = debugMode
+    self.linuxMode = linuxMode
     self.checked_flag = False
     self.update_available = False
     # get correct path constants for release/debug mode
@@ -96,26 +97,26 @@ class Updater(object):
 
   # PERFORMING AN UPDATE
   def performUpdate(self):
-    # read the existing file list
-    with open(self.local_meta_file_path, 'r') as current_ver_file:
-      current_ver_data = json.loads(current_ver_file.read())
-    current_files = current_ver_data['files']
-    # prepare the list of files to download
-    download_list = [] # (path, checksum) tuples
-    # only download new files or ones whose checksums changed
-    for new_file, new_sum in self.updated_files.items():
-      if not new_file in current_files.keys():
-        download_list.append((new_file, new_sum))
-      elif new_sum != current_files[new_file]:
-        download_list.append((new_file, new_sum))
+    existing_files = self.getExistingFiles()
+    download_files = self.getDownloadFiles(existing_files)
+    deletion_files = self.getDeletionFiles(existing_files)
+    # in debug mode, show the lists of changes first
+    if self.debugMode:
+      print("About to download:")
+      for item in download_files:
+        print('  {} ({:.8})'.format(item[0], item[1]))
+      if deletion_files:
+        print("About to remove:")
+        for item in deletion_files:
+          print('  {}'.format(item))
     # prepare the temp directory, progress bar etc.
     if not os.path.isdir(self.temporary_directory):
       os.mkdir(self.temporary_directory)
-    n_files = len(download_list)
+    n_files = len(download_files)
     update_successful = True
     self.progress(0)
     # try to download each file
-    for i, f_tuple in enumerate(download_list):
+    for i, f_tuple in enumerate(download_files):
       new_file, new_sum = f_tuple
       success = self.downloadFile(new_file, new_sum)
       if success:
@@ -124,16 +125,16 @@ class Updater(object):
       else:
         update_successful = False
         break
-    # in debug mode, show the list of things to update
-    if self.debugMode:
-      print("About to download:")
-      for item in download_list:
-        print('  {}'.format(item))
     # apply a successful update
     if update_successful:
-      # move all files from the temp area to their destinations
-      for new_file, _ in download_list:
+      self.removeOldBackups() # clean up after any previous updates
+      # overwrite files with downloaded versions
+      for new_file, _ in download_files:
         self.applyFile(new_file)
+      # "delete" (actually backup) files marked for removal by the new verion
+      for del_file in deletion_files:
+        del_file = os.path.join(Paths.local_repo_path, del_file)
+        shutil.move(del_file, del_file + '.bak')
       # update the version file ONLY when succeeded
       self.updateVersionFile()
     # clean up and restart the app or display an error message
@@ -143,6 +144,26 @@ class Updater(object):
       self.quitter(restart=True)
     else:
       messagebox.showerror(self.update_failed_header, self.update_failed_string)
+  def getExistingFiles(self):
+    """ Reads the current version file and returns the dict of files. """
+    with open(self.local_meta_file_path, 'r') as current_ver_file:
+      current_ver_data = json.loads(current_ver_file.read())
+    return current_ver_data['files']
+  def getDownloadFiles(self, existing):
+    """ Returns dict of files to be downloaded (new or changed ones). """
+    download_list = []
+    for new_file, new_sum in self.updated_files.items():
+      if not new_file in existing.keys():
+        download_list.append((new_file, new_sum)) # new
+      elif new_sum != existing[new_file]:
+        download_list.append((new_file, new_sum)) # changed
+    return download_list
+  def getDeletionFiles(self, existing):
+    """ Returns list of files that are removed in the new version. """
+    return [
+      ex_file for ex_file in existing.keys()
+      if ex_file not in self.updated_files.keys()
+    ]
   def downloadFile(self, path, checksum, attempt=1):
     """ Downloads a file from a repo-relative path to a temporary location.
         Retries if the checksum doesn't match (up to 3 attempts)."""
@@ -156,10 +177,16 @@ class Updater(object):
     with open(target_path, 'wb') as target:
       target.write(data)
     # validate checksum (after saving - be sure the file was properly written)
-    with open(target_path, 'r', encoding='utf-8') as d_file:
-      stored_data = d_file.read()
+    try:
+      with open(target_path, 'r', encoding='utf-8') as d_file:
+        stored_data = d_file.read()
+      stored_bytes = bytes(stored_data, encoding='utf-8')
+    except UnicodeDecodeError:
+      # binary file won't decode to UTF - read bytes directly
+      with open(target_path, 'rb') as d_file:
+        stored_bytes = d_file.read()
     hasher = hashlib.sha256()
-    hasher.update(bytes(stored_data, encoding='utf-8'))
+    hasher.update(stored_bytes)
     check = hasher.hexdigest()
     # success/retry/failure logic
     if check == checksum:
@@ -169,18 +196,39 @@ class Updater(object):
         self.downloadFile(path, checksum, attempt=attempt+1) # try again
       else:
         return False  # repetitive failure
+  def removeOldBackups(self, path=Paths.local_repo_path):
+    """ Recursively traverses the app directory and removes any .bak files. """
+    folders = []
+    for item in os.listdir(path):
+      ipath = os.path.join(path, item)
+      if os.path.isdir(ipath):
+        folders.append(ipath)
+      elif ipath.endswith('.bak'):
+        os.remove(ipath)
+    for folder in folders:
+      self.removeOldBackups(path=folder)
   def applyFile(self, path):
     """ Moves a file from a temp location overwriting the target file.
         Accepts repo-relative paths. Backs up the original file first."""
+    # Path to the file in a temporary directory
     source_path = os.path.join(
       self.temporary_directory,
       path.replace("\\", "--")
     )
-    target_path = os.path.join("..", path)
-    backup_path = target_path + ".bak"
-    # back up the original file
-    shutil.move(target_path, backup_path)
-    # move the updated file over
+    # Path to its destination in the app directory tree
+    target_path = os.path.join(
+      "..", path if not self.linuxMode else path.replace("\\", "/")
+    )
+    # If the file already exists in the app - back it up first
+    if os.path.exists(target_path):
+      backup_path = target_path + ".bak"
+      shutil.move(target_path, backup_path)
+    else:
+      # If it doesn't, perhaps the owning folder doesn't either
+      parent = os.path.split(target_path)[0]
+      if not os.path.exists(parent):
+        os.makedirs(parent)
+    # Finally, move the updated file over
     shutil.move(source_path, target_path)
   def updateVersionFile(self):
     updated_data = {
