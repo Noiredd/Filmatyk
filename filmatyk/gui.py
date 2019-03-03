@@ -204,7 +204,7 @@ class Main(object):
     if userdata.is_empty:
       self._reloadData() # first run
     #instantiate updater and check for updates
-    self.updater = Updater(self.root, VERSION, progress=self._setProgress, quitter=self._quit, debugMode=self.debugMode)
+    self.updater = Updater(self.root, VERSION, progress=self._setProgress, quitter=self._quit, debugMode=self.debugMode, linuxMode=self.isOnLinux)
     self.updater.checkUpdates()
     #prevent resizing and run the app
     root.resizable(False, False)
@@ -294,7 +294,7 @@ class Main(object):
       command = "cd .. &&"
       # remember which launcher was used
       if self.isOnLinux:
-        command += " Filmatyk_linux.sh"
+        command += " ./Filmatyk_linux.sh"
       else:
         command += " Filmatyk.bat"
       # maintain debug status
