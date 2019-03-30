@@ -139,6 +139,8 @@ class Main(object):
     # construct the window: first the notebook for tabbed view
     self.notebook = ttk.Notebook(root)
     self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
+    # set padding for notebook tabs
+    self.setStyle()
     # version string
     tk.Label(root, text='v{}'.format(VERSION)).grid(row=0, column=0, padx=5, pady=3, sticky=tk.NE)
     # then the control panel
@@ -211,6 +213,14 @@ class Main(object):
     root.wm_attributes('-topmost', 0)
     tk.mainloop()
 
+  def setStyle(self):
+    self.style = ttk.Style()
+    current = self.style.theme_use()
+    self.style.theme_settings(current, {
+      'TNotebook.Tab': {
+        'configure': {'width': 20, 'anchor': 'center'}
+      }
+    })
   def centerWindow(self):
     self.root.update()
     ws = self.root.winfo_screenwidth()
