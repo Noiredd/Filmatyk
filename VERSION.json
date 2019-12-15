@@ -1,20 +1,22 @@
 {
   "files": {
-    "DEPENDENCIES.txt": "d46d706d040aa05baa7138162717113050e6d954c949556ff3dc91b3e2698bf5",
-    "Filmatyk.bat": "9c5e1ffb2c5c5d1a888dfda08e9535ebd967d4bffbbb3d14775b051227894f7b",
+    "Filmatyk.bat": "1e435c42716e49a1c1e984c80f05962b11794c1eb74782bc0080270856102fda",
+    "Filmatyk_linux.sh": "972c049e434967e0cc6b24e912132a3f2a7861dbbb5744b7f133c1bad18825a9",
     "filmatyk\\containers.py": "d0930acce62ace6f377424ce5338288650fb9ad5a9eefb0354688259f478306b",
     "filmatyk\\database.py": "bc336427ad35fb27cdd142fd079075dd0d113c43ae1feeae0e912e8101a5bb54",
     "filmatyk\\defaults.py": "497e855907d5f05ffd7ab798b65c81b3c532292b5bd831812f59195b070133a5",
-    "filmatyk\\dependency_test.py": "9262a811eff381aa48d2e5a5732d95fb81c3d1ffdb722e145fd7a73c06528086",
-    "filmatyk\\detailviews.py": "6bf877d38825af7011a6c2d0bc6cf91bce15a8feb1b79bb45a9d89fe83d908a8",
+    "filmatyk\\detailviews.py": "07676d4af62528c2fc046bd62fa5e0b738f7b44f0cdbe366b360681516f5afc3",
     "filmatyk\\filmweb.py": "2190e9ee85455806927d78b262ae1632a1858236156f5871042ad9db28dfcad1",
-    "filmatyk\\filters.py": "072dcaf3cdf5557fca83537ae0446c8e0bb1f9a95ba4756582a6f27cdae25568",
-    "filmatyk\\gui.py": "b0246a2607f5abcc5a7fb9144b37270b391d2fae07a76a3cdcab06a9fc7cd377",
+    "filmatyk\\filters.py": "d9e63747ed9327d99c7bc8440ef2aa2c113d63a9ecb4e77e16356925f5ad951d",
+    "filmatyk\\gui.py": "4d608f6926f6e7e730334d0a13c4bb692d009181e3f82d9db1234964aa106284",
     "filmatyk\\posterman.py": "7bae6074f3273322dcf0637b9a04030ebd7d4f0094f2b487d7210f7836709827",
-    "filmatyk\\presenter.py": "7af3f68d21db8a20bd4bdb37cbe96948c5955aca636f1992d842ee3793ce305d",
+    "filmatyk\\presenter.py": "7980f89159d76eaecbd9ca9ef207068f1558b30bb93388d237f20ca6d3989fbd",
+    "filmatyk\\search.png": "561d80617b8f134fce8189fb7e1f4312777cd5e3775ec1e34a1240271d2855e3",
     "filmatyk\\statview.py": "ca74525c21219ebe92d2b61a09ee04817ede95d7cf7b01600f8ddc73c75313ae",
-    "filmatyk\\updater.py": "39ad4f6b37488e0ec16fa1b15f539394e508aa0c9ac277999c7c2e633e8c59b5",
-    "filmatyk\\userdata.py": "a2d67eb3bae9a6eb0300edf9edf3e7d953591f10fb46e002465dba87e2470103"
+    "filmatyk\\updater.py": "6d104aeada7659664522195f37b4ecb4e2b459cc8fe50b1de5fdeb2b2410e670",
+    "filmatyk\\userdata.py": "a2d67eb3bae9a6eb0300edf9edf3e7d953591f10fb46e002465dba87e2470103",
+    "tools\\deptest.py": "9262a811eff381aa48d2e5a5732d95fb81c3d1ffdb722e145fd7a73c06528086",
+    "tools\\pytest.py": "17a12cb5bef38b238ad9d63ee0cafd33d8f817027cb2a2c4a5528b3f62d425ba"
   },
-  "version": "1.0.0-beta.1"
+  "version": "1.0.0-beta.2"
 }
