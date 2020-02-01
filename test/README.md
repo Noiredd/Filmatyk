@@ -25,3 +25,13 @@ However, it is **required** to execute this test at least once -
 otherwise other tests will error out.
 To do this:  
 `cd test && python test_api.py all`
+
+#### Detailed offline test: `TestAPIParsing`
+
+Test class `TestAPIParsing` performs step-by-step tests of the parsing mechanism.
+Items extracted from the raw HTML data are in fact separate -
+details of rated items (movies etc.) are stored in one place,
+while their ratings are elsewhere.
+Tests are done sequentially, from locating the sources for data,
+through parsing a single entity, to parsing a complete page.
+

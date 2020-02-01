@@ -2,6 +2,7 @@ from datetime import date
 import json
 
 from bs4 import BeautifulSoup as BS
+import html
 import requests_html
 
 import containers
@@ -11,10 +12,13 @@ class FilmwebAPI(object):
     login_path = 'https://ssl.filmweb.pl/j_login'
     base_path  = 'https://www.filmweb.pl'
     auth_error = 'błędny e-mail lub hasło' #TODO: be a bit more intelligent here
+    main_class = 'userVotesPage__results'
     item_class = 'userVotesPage__result'
-    m_cnt_span = 'blockHeader__titleInfoCount'
-    s_cnt_span = 'blockHeader__titleInfoCount'
-    g_cnt_span = 'blockHeader__titleInfoCount'
+    rating_source = 'userVotes'
+    rating_stype = 'application/json'
+    m_count_span = 'blockHeader__titleInfoCount'
+    s_count_span = 'blockHeader__titleInfoCount'
+    g_count_span = 'blockHeader__titleInfoCount'
     @classmethod
     def getUserPage(self, username):
       return self.base_path + '/user/' + username
@@ -78,9 +82,9 @@ class FilmwebAPI(object):
       'Game':   self.Constants.getUserGamePage
     }
     self.countSpanClasses = {
-      'Movie':  self.Constants.m_cnt_span,
-      'Series': self.Constants.s_cnt_span,
-      'Game':   self.Constants.g_cnt_span
+      'Movie':  self.Constants.m_count_span,
+      'Series': self.Constants.s_count_span,
+      'Game':   self.Constants.g_count_span
     }
 
   def __cacheAllParsingRules(self):
@@ -150,7 +154,7 @@ class FilmwebAPI(object):
     except KeyError:
       return 0, 0 # should never happen though
     url  = getURL(self.username)
-    page = self.__fetchPage(url)
+    page = self.fetchPage(url)
     # TODO: in principle, this page could be cached for some small time
     #the number of user's movies is inside a span of a specific class
     items = 0
@@ -180,12 +184,12 @@ class FilmwebAPI(object):
     except KeyError:
       return [] # should never happen though
     url  = getURL(self.username, page)
-    page = self.__fetchPage(url)
-    data = self.__parsePage(page, itemtype)
+    page = self.fetchPage(url)
+    data = self.parsePage(page, itemtype)
     return data
 
-  def __fetchPage(self, url):
-    #fetch the page and return its parsed representation
+  def fetchPage(self, url):
+    """Fetch the page and return its BeautifulSoup representation."""
     try:
       page = self.session.get(url)
     except:
@@ -197,32 +201,40 @@ class FilmwebAPI(object):
     else:
       return BS(page.html.html, 'lxml')
 
-  def __parsePage(self, page, itemtype:str):
-    parsed = []
-    #find all voting divs with the item details (that will be parsed)
-    for div in page.body.find_all('div'):
-      if not div.has_attr('data-id') or not div.has_attr('class'):
-        continue
-      if not self.Constants.item_class in div.attrs['class']:
-        continue
-      #parse each single item (constructs an item object)
-      parsed.append(self.__parseOne(div, itemtype))
-    #ratings are stored elsewhere, but fortunately they are just JSONs
-    for span in page.body.find_all('span'):
-      if not span.has_attr('id'):
-        continue
-      span_id = span.attrs['id']
-      for p in span.parents:
-        if p.has_attr('data-source') and 'userVotes' in p.attrs['data-source']:
-          #get a formatted dict from the JSON and ID of the item it belongs to
-          rating, id = self.__parseRating(span.text)
-          #among the parsed items, find one with matching ID and attach
-          for item in parsed:
-            if item.properties['id'] == id:
-              item.addRating(rating)
-    return parsed
+  def parsePage(self, page, itemtype:str):
+    """Parse items and ratings, returning constructed Item objects."""
+    data_div = self.extractDataSource(page)
+    sub_divs = self.extractItems(data_div)
+    parsed_items = [self.parseOne(div, itemtype) for div in sub_divs]
+    ratings = [self.parseRating(txt) for txt in self.extractRatings(data_div)]
+    for rating, iid in ratings:
+      for item in parsed_items:
+        if item.getRawProperty('id') == iid:
+          item.addRating(rating)
+    return parsed_items
 
-  def __parseOne(self, div, itemtype:str):
+  def extractDataSource(self, page):
+    """Extract the div that holds all the data."""
+    return page.find('div', attrs={'class': self.Constants.main_class})
+
+  def extractItems(self, div):
+    """From the main div, extract all divs holding item details."""
+    sub_divs = div.find_all('div', attrs={'class': self.Constants.item_class})
+    sub_divs = [div for div in sub_divs if div.has_attr('data-id')]
+    return sub_divs
+
+  def extractRatings(self, div):
+    """From the main div, extract all item ratings.
+
+    They're held in a specific span as <script> contents.
+    """
+    span = div.find('span', attrs={'data-source': self.Constants.rating_source})
+    scripts = span.find_all('script', attrs={'type': self.Constants.rating_stype})
+    ratings = [script.getText() for script in scripts]
+    return ratings
+
+  def parseOne(self, div, itemtype:str):
+    """Parse a single item, constructing its container representation."""
     #first, gather all results in a dict
     parsed = {'id': int(div.attrs['data-id'])}
     #then, select the right set of parsing rules
@@ -257,8 +269,13 @@ class FilmwebAPI(object):
     constructObject = containers.classByString[itemtype]
     return constructObject(**parsed)
 
-  def __parseRating(self, text):
-    #FW stores the ratings as simple dict serialized to JSON
+  def parseRating(self, text):
+    """Parse the rating information into compatible dict.
+
+    FW stores the ratings as simple dict serialized to JSON, this only ensures
+    all the entries are present and translates them to a standard expected by
+    Item's addRating method.
+    """
     origDict = json.loads(text)
     #ensure all date keys are present
     try:
@@ -270,13 +287,15 @@ class FilmwebAPI(object):
       date_['m'] = 1
     if 'd' not in date_.keys():
       date_['d'] = 1
-    #translate that dict to more readable standard
-    id = origDict['eId']
+    # unescape HTML-coded characters from the comment
+    comment = html.unescape(origDict['c'] if 'c' in origDict.keys() else '')
+    # translate that dict to more readable standard
+    iid = origDict['eId']
     isFaved = origDict['f'] if 'f' in origDict.keys() else 0
     ratingDict = {
       'rating':  int(origDict['r']),
-      'comment': origDict['c'] if 'c' in origDict.keys() else '',
+      'comment': comment,
       'dateOf':  date_,
       'faved':   isFaved
     }
-    return ratingDict, id
+    return ratingDict, iid

@@ -68,7 +68,7 @@ class TestAPIBasics(unittest.TestCase):
       self.api.username,
       page=1,
     )
-    page = self.api._FilmwebAPI__fetchPage(url)
+    page = self.api.fetchPage(url)
     text = page.prettify()
     self.assertIsInstance(text, str)
     self.assertGreater(len(text), 100 * 2 ** 10)
@@ -81,7 +81,7 @@ class TestAPIBasics(unittest.TestCase):
     N_PAGES = 3
     for i in range(N_PAGES):
       url = self.api.Constants.getUserMoviePage(self.api.username, page=i+1)
-      page = self.api._FilmwebAPI__fetchPage(url)
+      page = self.api.fetchPage(url)
       path = os.path.join('assets', 'movies_{}.html'.format(i+1))
       with open(path, 'w', encoding='utf-8') as html:
         text = page.prettify()
@@ -89,6 +89,57 @@ class TestAPIBasics(unittest.TestCase):
         html.write(text)
     for i in range(N_PAGES):
       self.assertIn('movies_{}.html'.format(i+1), os.listdir('assets'))
+
+
+class TestAPIParsing(unittest.TestCase):
+  """Test API parsing functionalities.
+
+  Starts with extraction of main data region - a div that holds details of all
+  items and ratings. Then tests parsing of individual items, finally of a whole
+  page.
+  """
+
+  @classmethod
+  def setUpClass(self):
+    self.api = filmweb.FilmwebAPI(None)
+    self.page = None
+    with open(os.path.join('assets', 'movies_1.html'), 'r', encoding='utf-8') as html:
+      self.page = BS(html.read(), 'lxml')
+
+  def test_01_data_source_extract(self):
+    """Find the main div containing details of rated objects."""
+    div = self.api.extractDataSource(self.page)
+    self.assertIsNotNone(div)
+    self.assertGreater(len(div.getText()), 10**4)
+
+  def test_02_item_divs_extract(self):
+    """Retrieve all the item detail divs."""
+    div = self.api.extractDataSource(self.page)
+    items = self.api.extractItems(div)
+    self.assertGreater(len(items), 0)
+
+  def test_03_item_ratings_extract(self):
+    """Retrieve all the item rating strings."""
+    div = self.api.extractDataSource(self.page)
+    items = self.api.extractItems(div)
+    ratings = self.api.extractRatings(div)
+    self.assertEqual(len(items), len(ratings))
+
+  def test_04_single_parsing(self):
+    """Parse a single item and rating."""
+    div = self.api.extractDataSource(self.page)
+    items = self.api.extractItems(div)
+    item = self.api.parseOne(items[0], 'Movie')
+    self.assertGreater(len(item['title']), 2)
+    ratings = self.api.extractRatings(div)
+    rating, rid = self.api.parseRating(ratings[0])
+    self.assertIn('rating', rating.keys())
+    self.assertEqual(rid, item.getRawProperty('id'))
+
+  def test_10_parse_page(self):
+    """Parse an entire page of movies."""
+    items = self.api.parsePage(self.page, 'Movie')
+    self.assertGreater(len(items), 0)
 
 
 if __name__ == "__main__":
