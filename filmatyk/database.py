@@ -9,18 +9,25 @@ class Database(object):
     self.itemtype = itemtype
     self.callback = callback
     self.items = []
+    self.ids = set() # TODO: optimize using cached IDs
     self.api = api
     self.isDirty = False # are there any changes that need to be saved?
+
   # INTERFACE
   def getItems(self):
     return self.items.copy()
+
   def getItemByID(self, id:int):
     for item in self.items:
       if item.getRawProperty('id') == id:
         return item
+
+  def __iter__(self):
+    return self.items.__iter__()
+
   # Serialization-deserialization
   @staticmethod
-  def restoreFromString(itemtype:object, string:str, api:object, callback):
+  def restoreFromString(itemtype:str, string:str, api:object, callback):
     newDatabase = Database(itemtype, api, callback)
     if not string:
       # simply return a raw, empty DB
@@ -29,8 +36,10 @@ class Database(object):
     itemclass = containers.classByString[itemtype]
     newDatabase.items = [itemclass(**dct) for dct in listOfDicts]
     return newDatabase
+
   def storeToString(self):
     return json.dumps([item.asDict() for item in self.items])
+
   # Data acquisition
   def softUpdate(self):
     self.callback(0) #display the progress bar
@@ -74,6 +83,7 @@ class Database(object):
     self.callback(-1)
     self.isDirty = True
     return True
+
   def hardUpdate(self):
     # in theory, this removes all existing items and recollects the whole data
     # but in practice this reacquisition may fail - in which case we shouldn't
