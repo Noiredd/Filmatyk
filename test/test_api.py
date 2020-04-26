@@ -60,7 +60,7 @@ class TestAPIBasics(unittest.TestCase):
     self.assertIsNotNone(api.session)
     self.storeAPI(api)
 
-  def test_02_fetch_one(self):
+  def test_02_fetch_one_movie(self):
     """Attempt to download a single page of movie ratings from Filmweb."""
     self.assertIsNotNone(self.api)
     self.assertIsNotNone(self.api.session)
@@ -73,14 +73,15 @@ class TestAPIBasics(unittest.TestCase):
     self.assertIsInstance(text, str)
     self.assertGreater(len(text), 100 * 2 ** 10)
 
-  def test_03_fetch_save(self):
+  def test_10_fetch_save_movies(self):
     """Attempt to download 3 pages of movie ratings from Filmweb.
 
     This also stores them as "assets" for other tests.
     """
     N_PAGES = 3
     for i in range(N_PAGES):
-      url = self.api.Constants.getUserMoviePage(self.api.username, page=i+1)
+      getURL = self.api.urlGenerationMethods['Movie']
+      url = getURL(self.api.username, page=i+1)
       page = self.api.fetchPage(url)
       path = os.path.join('assets', 'movies_{}.html'.format(i+1))
       with open(path, 'w', encoding='utf-8') as html:
@@ -90,55 +91,125 @@ class TestAPIBasics(unittest.TestCase):
     for i in range(N_PAGES):
       self.assertIn('movies_{}.html'.format(i+1), os.listdir('assets'))
 
+  def test_20_fetch_save_series(self):
+    """Attempt to download and save a page of series ratings."""
+    getURL = self.api.urlGenerationMethods['Series']
+    page_num = 1
+    url = getURL(self.api.username, page=page_num)
+    page = self.api.fetchPage(url)
+    path = os.path.join('assets', 'series_{}.html'.format(page_num))
+    with open(path, 'w', encoding='utf-8') as html:
+      text = page.prettify()
+      self.assertGreater(len(text), 100 * 2 ** 10)
+      html.write(text)
+    self.assertIn('series_{}.html'.format(page_num), os.listdir('assets'))
+
+  def test_30_fetch_save_games(self):
+    """Attempt to download and save a page of game ratings."""
+    getURL = self.api.urlGenerationMethods['Game']
+    page_num = 1
+    url = getURL(self.api.username, page=page_num)
+    page = self.api.fetchPage(url)
+    path = os.path.join('assets', 'games_{}.html'.format(page_num))
+    with open(path, 'w', encoding='utf-8') as html:
+      text = page.prettify()
+      self.assertGreater(len(text), 100 * 2 ** 10)
+      html.write(text)
+    self.assertIn('games_{}.html'.format(page_num), os.listdir('assets'))
+
 
 class TestAPIParsing(unittest.TestCase):
   """Test API parsing functionalities.
 
-  Starts with extraction of main data region - a div that holds details of all
-  items and ratings. Then tests parsing of individual items, finally of a whole
-  page.
+  Basic tests are done on Movies, later the suite extends to other types too.
+
+  Basics start with extraction of main data region - a div that holds details
+  of all items and ratings. Then tests parsing of individual items, finally of
+  a whole page.
   """
 
   @classmethod
   def setUpClass(self):
     self.api = filmweb.FilmwebAPI(None)
-    self.page = None
-    with open(os.path.join('assets', 'movies_1.html'), 'r', encoding='utf-8') as html:
-      self.page = BS(html.read(), 'lxml')
+    self.moviePagePath = os.path.join('assets', 'movies_1.html')
+    self.seriesPagePath = os.path.join('assets', 'series_1.html')
+    self.gamePagePath = os.path.join('assets', 'games_1.html')
+
+  @staticmethod
+  def getPage(path:str):
+    """Load a cached page into a BeautifulSoup format."""
+    with open(path, 'r', encoding='utf-8') as html:
+      return BS(html.read(), features='lxml')
 
   def test_01_data_source_extract(self):
     """Find the main div containing details of rated objects."""
-    div = self.api.extractDataSource(self.page)
+    page = self.getPage(self.moviePagePath)
+    div = self.api.extractDataSource(page)
     self.assertIsNotNone(div)
     self.assertGreater(len(div.getText()), 10**4)
 
   def test_02_item_divs_extract(self):
     """Retrieve all the item detail divs."""
-    div = self.api.extractDataSource(self.page)
+    page = self.getPage(self.moviePagePath)
+    div = self.api.extractDataSource(page)
     items = self.api.extractItems(div)
     self.assertGreater(len(items), 0)
 
   def test_03_item_ratings_extract(self):
     """Retrieve all the item rating strings."""
-    div = self.api.extractDataSource(self.page)
+    page = self.getPage(self.moviePagePath)
+    div = self.api.extractDataSource(page)
     items = self.api.extractItems(div)
     ratings = self.api.extractRatings(div)
     self.assertEqual(len(items), len(ratings))
 
-  def test_04_single_parsing(self):
-    """Parse a single item and rating."""
-    div = self.api.extractDataSource(self.page)
+  def __test_single_body(self, page:BS, itemtype:str):
+    """Performs the entire test of single item parsing."""
+    div = self.api.extractDataSource(page)
     items = self.api.extractItems(div)
-    item = self.api.parseOne(items[0], 'Movie')
+    item = self.api.parseOne(items[0], itemtype)
+    # We don't know much about the parsed items, but they will have titles...
     self.assertGreater(len(item['title']), 2)
     ratings = self.api.extractRatings(div)
     rating, rid = self.api.parseRating(ratings[0])
+    # ...and ratings, and IDs
     self.assertIn('rating', rating.keys())
     self.assertEqual(rid, item.getRawProperty('id'))
 
-  def test_10_parse_page(self):
+  def test_10_single_movie_parsing(self):
+    """Parse a single movie and rating."""
+    page = self.getPage(self.moviePagePath)
+    self.__test_single_body(page, 'Movie')
+
+  def test_11_single_series_parsing(self):
+    """Parse a single series and rating."""
+    page = self.getPage(self.seriesPagePath)
+    self.__test_single_body(page, 'Series')
+
+  def test_12_single_game_parsing(self):
+    """Parse a single game and rating."""
+    page = self.getPage(self.gamePagePath)
+    self.__test_single_body(page, 'Game')
+
+  def test_20_parse_movie_page(self):
     """Parse an entire page of movies."""
-    items = self.api.parsePage(self.page, 'Movie')
+    page = self.getPage(self.moviePagePath)
+    items = self.api.parsePage(page, 'Movie')
+    # Again, it's hard to tell anything about the items we retrieve, except for
+    # the fact that they will exist, and no exception will be thrown during
+    # parsing.
+    self.assertGreater(len(items), 0)
+
+  def test_21_parse_series_page(self):
+    """Parse an entire page of movies."""
+    page = self.getPage(self.seriesPagePath)
+    items = self.api.parsePage(page, 'Series')
+    self.assertGreater(len(items), 0)
+
+  def test_22_parse_game_page(self):
+    """Parse an entire page of movies."""
+    page = self.getPage(self.gamePagePath)
+    items = self.api.parsePage(page, 'Game')
     self.assertGreater(len(items), 0)
 
 

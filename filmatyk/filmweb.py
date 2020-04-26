@@ -188,6 +188,7 @@ class FilmwebAPI(object):
     data = self.parsePage(page, itemtype)
     return data
 
+  @enforceSession
   def fetchPage(self, url):
     """Fetch the page and return its BeautifulSoup representation."""
     try:

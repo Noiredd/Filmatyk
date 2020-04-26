@@ -18,8 +18,8 @@ Test class `TestAPIBasics` encapsulates tests of the most fundamental functional
 * logging in to Filmweb.pl,
 * fetching raw HTML data.
 
-However, the most important one is the `fetch_save` test, which not only grabs online data,
-but also **stores it locally** (in `test/assets`), to simplify performing other tests.
+However, the most important one are the `fetch_save` tests, which not only grab online data,
+but also **store it locally** (in `test/assets`), to simplify performing other tests.
 Since this activity prompts for a Filmweb.pl **log-in**, it is disabled by default.
 However, it is **required** to execute this test at least once -
 otherwise other tests will error out.
