@@ -149,6 +149,30 @@ class UpdateScenario():
     self.additions = additions
 
 
+class TestDatabaseCreation(unittest.TestCase):
+  """Basic test for Database loading data from scratch using the API."""
+  @classmethod
+  def setUpClass(self):
+    self.api = FakeAPI('data')
+
+  def test_creation(self):
+    """Create a new Database and fill it with items using (Fake)API.
+
+    Basically checks whether a new instance has as many items in it as the API
+    says there are available, and whether these items are actually instances of
+    the Item class.
+    """
+    db = database.Database(
+      itemtype='Movie',
+      api=self.api,
+      callback=lambda x: x,
+    )
+    db.hardUpdate()
+    known_count, _ = self.api.getNumOf('Movie')
+    self.assertEqual(len(db.items), known_count)
+    self.assertIsInstance(db.items[0], containers.Item)
+
+
 class TestDatabaseSerialization(unittest.TestCase):
   """Test Database serialization and deserialization.
 
