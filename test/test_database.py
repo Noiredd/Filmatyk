@@ -255,13 +255,15 @@ class TestDatabaseUpdates(unittest.TestCase):
     return new_db
 
   def __test_body(self, scenario):
-    """since they all look the same..."""
+    """Since they all look the same..."""
     alter_db = self.makeModifiedDatabase(scenario)
     # Make sure the databases are actually different!
     self.assertNotEqual(alter_db, self.orig_db)
     # Call update and check difference
     alter_db.softUpdate()
     self.assertEqual(alter_db, self.orig_db)
+
+  # Addition tests
 
   def test_singleAddition(self):
     """Add a single missing item."""
@@ -273,10 +275,87 @@ class TestDatabaseUpdates(unittest.TestCase):
     scenario = UpdateScenario(removals=[0, 1, 2])
     self.__test_body(scenario)
 
+  def test_randomAddition(self):
+    """Add an item missing from somewhere on the first page."""
+    scenario = UpdateScenario(removals=[4])
+    self.__test_body(scenario)
+
   def test_nonContinuousAddition(self):
     """Add a few items non-continuously missing from the first page."""
     scenario = UpdateScenario(removals=[0, 1, 2, 3, 6])
     self.__test_body(scenario)
+
+  def test_multipageAddition(self):
+    """Add a few items non-continuously missing from multiple pages."""
+    scenario = UpdateScenario(removals=[0, 1, 2, 16, 30, 32])
+    self.__test_body(scenario)
+
+  # Removal tests
+
+  def test_singleRemoval(self):
+    """Remove a single item from the first page."""
+    scenario = UpdateScenario(additions=[(0, 666)])
+    self.__test_body(scenario)
+
+  def test_simpleRemoval(self):
+    """Remove a few items from the first page."""
+    scenario = UpdateScenario(additions=[(0, 666), (1, 4270)])
+    self.__test_body(scenario)
+
+  def test_randomRemoval(self):
+    """Remove an item from somewhere on the first page."""
+    scenario = UpdateScenario(additions=[(4, 420)])
+    self.__test_body(scenario)
+
+  def test_nonContinuousRemoval(self):
+    """Remove a few items non-continuously from the first page."""
+    scenario = UpdateScenario(
+      additions=[(0, 666), (1, 4270), (2, 2137), (5, 61504)]
+    )
+    self.__test_body(scenario)
+
+  def test_multipageRemoval(self):
+    """Remove a few items non-continuously from multiple pages."""
+    scenario = UpdateScenario(
+      additions=[(3, 666), (4, 4270), (15, 2137), (35, 61504)]
+    )
+    self.__test_body(scenario)
+
+  # Other tests
+
+  def test_complexAdditionRemoval(self):
+    """Add and remove a few items at once, but only from the first page."""
+    scenario = UpdateScenario(
+      removals=[0, 1, 2, 9, 13],
+      additions=[(3, 1991), (4, 37132)]
+    )
+
+  @unittest.skip('Relevant feature not implemented yet.')
+  def test_difficultAdditionRemoval(self):
+    """Add and remove a few items at once from multiple pages.
+
+    This test is extremely difficult because it is impossible to recognize such
+    scenario in real usage (online), by looking at getNumOf alone. That number
+    only shows the total balance of added/removed items. If that balance evens
+    out on any page further than 1st (like in the case of removing some items
+    and adding the same number of items), it is impossible to spot to any fast
+    and simple algorithm (i.e. one that does not deeply inspect all pages).
+    """
+    scenario = UpdateScenario(
+      removals=[0, 1, 2, 9, 33],
+      additions=[(3, 1991), (34, 37132)]
+    )
+
+  def test_hardUpdate(self):
+    """Make "random" removals and additions, then hard update."""
+    scenario = UpdateScenario(
+      removals=[1, 5, 6, 7, 40],
+      additions=[(0, 666), (13, 667)]
+    )
+    alter_db = self.makeModifiedDatabase(scenario)
+    self.assertNotEqual(alter_db, self.orig_db)
+    alter_db.hardUpdate()
+    self.assertEqual(alter_db, self.orig_db)
 
 
 if __name__ == "__main__":

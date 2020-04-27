@@ -54,9 +54,16 @@ as the `__ne__` operator, so all comparisons during the testing are done this wa
 *Note*: `Database` is only tested for the `Movie` item type,
 as the algorithm is abstract with respect to the item type.
 
+#### Basic tests
+
+The first two tests - `TestDatabaseCreation` and `TestDatabaseSerialization`
+are responsible for the most basic functionality of the `Database`.
+The creation test is of a particular importance here,
+as if that one fails, pretty much everything else after that will also fail.
+
 #### Update tests
 
-Database update tests are performed by loading a reference `Database` first
+Database update tests (`TestDatabaseUpdates`) are performed by loading a reference `Database` first
 (this utilizes assets cached in API tests).
 Each test simulates a situation in which this reference `Database` is the desired outcome,
 and the "current" state is generated dynamically according to some scenario.
@@ -68,4 +75,6 @@ and constructs a new `Database`, simulating a previous state (as if "undoing" an
 During the test, this "undone" object attempts to update itself to the reference state.
 Results are compared using the aforementioned `DatabaseDifference`.
 
+Note that currently all removal tests fail
+due to the removal detection not being implemented in the Database update algorithm.
 
