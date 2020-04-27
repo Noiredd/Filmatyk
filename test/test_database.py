@@ -149,6 +149,37 @@ class UpdateScenario():
     self.additions = additions
 
 
+class TestDatabaseSerialization(unittest.TestCase):
+  """Test Database serialization and deserialization.
+
+  The only test in this case validates the whole serialization-deserialization
+  cycle, so if anything goes wrong, it will be hard to say which functionality
+  is actually broken.
+  """
+  @classmethod
+  def setUpClass(self):
+    self.api = FakeAPI('data')
+
+  def test_serialization(self):
+    """Serialize and deserialize a Database, check if they look the same."""
+    original = database.Database(
+      itemtype='Movie',
+      api=self.api,
+      callback=lambda x: x,
+    )
+    # Load some initial data
+    original.hardUpdate()
+    # Serialize/deserialize cycle
+    string = original.storeToString()
+    restored = database.Database.restoreFromString(
+      itemtype='Movie',
+      string=string,
+      api=self.api,
+      callback=lambda x: x,
+    )
+    self.assertEqual(original, restored)
+
+
 class TestDatabaseUpdates(unittest.TestCase):
   """Test Database updates capability in different initial conditions.
 
