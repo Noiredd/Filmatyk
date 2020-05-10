@@ -6,9 +6,11 @@ import importlib
 
 dependencies = {
   #package name:      import module
-  'requests_html':    'requests_html',
+  'beautifulsoup4':   'bs4',
   'matplotlib':       'matplotlib',
   'pillow':           'PIL',
+  'requests':         'requests',
+  'requests_html':    'requests_html',
   'semantic_version': 'semantic_version'
 }
 
