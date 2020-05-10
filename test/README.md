@@ -16,7 +16,8 @@ instead these cached files are used as data source.
 
 Test class `TestAPIBasics` encapsulates tests of the most fundamental functionalities:
 * logging in to Filmweb.pl,
-* fetching raw HTML data.
+* fetching raw HTML data,
+* obtaining the item count for each particular item type.
 
 However, the most important one are the `fetch_save` tests, which not only grab online data,
 but also **store it locally** (in `test/assets`), to simplify performing other tests.

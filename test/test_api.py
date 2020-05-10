@@ -117,6 +117,24 @@ class TestAPIBasics(unittest.TestCase):
       html.write(text)
     self.assertIn('games_{}.html'.format(page_num), os.listdir('assets'))
 
+  def __test_count_body(self, itemtype:str):
+    """Performs a single test of item count retrieval."""
+    item_count, items_per_page = self.api.getNumOf(itemtype)
+    self.assertGreater(item_count, 0)
+    self.assertGreaterEqual(item_count, items_per_page)
+
+  def test_40_get_num_of_movies(self):
+    """Attempt to retrieve the item count of type 'Movie'."""
+    self.__test_count_body('Movie')
+
+  def test_41_get_num_of_series(self):
+    """Attempt to retrieve the item count of type 'Series'."""
+    self.__test_count_body('Series')
+
+  def test_42_get_num_of_games(self):
+    """Attempt to retrieve the item count of type 'Game'."""
+    self.__test_count_body('Game')
+
 
 class TestAPIParsing(unittest.TestCase):
   """Test API parsing functionalities.
