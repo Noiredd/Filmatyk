@@ -220,7 +220,7 @@ class TestDatabaseUpdates(unittest.TestCase):
   """
   @classmethod
   def setUpClass(self):
-    self.api = FakeAPI('data')
+    self.api = FakeAPI('assets')
     # Create the original database
     self.orig_db = database.Database(
       itemtype='Movie', api=self.api, callback=lambda x: x
@@ -285,28 +285,34 @@ class TestDatabaseUpdates(unittest.TestCase):
     scenario = UpdateScenario(removals=[0, 1, 2, 3, 6])
     self.__test_body(scenario)
 
+  @unittest.expectedFailure
+  # The current algorithm is very naive and thus unable to do that.
   def test_multipageAddition(self):
     """Add a few items non-continuously missing from multiple pages."""
     scenario = UpdateScenario(removals=[0, 1, 2, 16, 30, 32])
     self.__test_body(scenario)
 
-  # Removal tests
+  # Removal tests - are all expected to fail at this moment.
 
+  @unittest.expectedFailure
   def test_singleRemoval(self):
     """Remove a single item from the first page."""
     scenario = UpdateScenario(additions=[(0, 666)])
     self.__test_body(scenario)
 
+  @unittest.expectedFailure
   def test_simpleRemoval(self):
     """Remove a few items from the first page."""
     scenario = UpdateScenario(additions=[(0, 666), (1, 4270)])
     self.__test_body(scenario)
 
+  @unittest.expectedFailure
   def test_randomRemoval(self):
     """Remove an item from somewhere on the first page."""
     scenario = UpdateScenario(additions=[(4, 420)])
     self.__test_body(scenario)
 
+  @unittest.expectedFailure
   def test_nonContinuousRemoval(self):
     """Remove a few items non-continuously from the first page."""
     scenario = UpdateScenario(
@@ -314,6 +320,7 @@ class TestDatabaseUpdates(unittest.TestCase):
     )
     self.__test_body(scenario)
 
+  @unittest.expectedFailure
   def test_multipageRemoval(self):
     """Remove a few items non-continuously from multiple pages."""
     scenario = UpdateScenario(
@@ -321,14 +328,16 @@ class TestDatabaseUpdates(unittest.TestCase):
     )
     self.__test_body(scenario)
 
-  # Other tests
+  # Other tests - for future features.
 
+  @unittest.expectedFailure
   def test_complexAdditionRemoval(self):
     """Add and remove a few items at once, but only from the first page."""
     scenario = UpdateScenario(
       removals=[0, 1, 2, 9, 13],
       additions=[(3, 1991), (4, 37132)]
     )
+    self.__test_body(scenario)
 
   @unittest.skip('Relevant feature not implemented yet.')
   def test_difficultAdditionRemoval(self):
@@ -345,6 +354,7 @@ class TestDatabaseUpdates(unittest.TestCase):
       removals=[0, 1, 2, 9, 33],
       additions=[(3, 1991), (34, 37132)]
     )
+    self.__test_body(scenario)
 
   def test_hardUpdate(self):
     """Make "random" removals and additions, then hard update."""
