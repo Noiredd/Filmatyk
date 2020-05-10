@@ -214,7 +214,7 @@ class Item(metaclass=BlueprintInheritance):
   title = Blueprint(
     name='Tytuł',
     colwidth=200,
-    parsing={'tag':'h3', 'class':'filmPreview__title', 'text':True, 'list':False}
+    parsing={'tag':'h2', 'class':'filmPreview__title', 'text':True, 'list':False}
   )
   otitle = Blueprint(
     name='Tytuł oryginalny',
