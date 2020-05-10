@@ -13,7 +13,7 @@ from presenter import Presenter
 from updater import Updater
 from userdata import DataManager, UserData
 
-VERSION = '1.0.0-beta.2'
+VERSION = '1.0.0-beta.3'
 
 class Login(object):
   # By default a dormant window that offers a request function to be called by

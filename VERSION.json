@@ -2,21 +2,21 @@
   "files": {
     "Filmatyk.bat": "1e435c42716e49a1c1e984c80f05962b11794c1eb74782bc0080270856102fda",
     "Filmatyk_linux.sh": "972c049e434967e0cc6b24e912132a3f2a7861dbbb5744b7f133c1bad18825a9",
-    "filmatyk\\containers.py": "d0930acce62ace6f377424ce5338288650fb9ad5a9eefb0354688259f478306b",
-    "filmatyk\\database.py": "bc336427ad35fb27cdd142fd079075dd0d113c43ae1feeae0e912e8101a5bb54",
+    "filmatyk\\containers.py": "a7bbf5b1a5f03c4a2bd15d3875a72c828cbebeca005bf44b1204c63b142dfb25",
+    "filmatyk\\database.py": "13248978d439ee440cad06501861449b1dd3970da3d6ee37a41e8a5fd9e1dcad",
     "filmatyk\\defaults.py": "497e855907d5f05ffd7ab798b65c81b3c532292b5bd831812f59195b070133a5",
     "filmatyk\\detailviews.py": "07676d4af62528c2fc046bd62fa5e0b738f7b44f0cdbe366b360681516f5afc3",
-    "filmatyk\\filmweb.py": "2190e9ee85455806927d78b262ae1632a1858236156f5871042ad9db28dfcad1",
+    "filmatyk\\filmweb.py": "e16deebb1a2a5844f25ad3b24997a15e6f6f4125bbf6082710a69e408130f22b",
     "filmatyk\\filters.py": "d9e63747ed9327d99c7bc8440ef2aa2c113d63a9ecb4e77e16356925f5ad951d",
-    "filmatyk\\gui.py": "4d608f6926f6e7e730334d0a13c4bb692d009181e3f82d9db1234964aa106284",
+    "filmatyk\\gui.py": "e0909984f68a21359995f40a86ff0e8693db22dfa9eaa25a34fe3d636e43b1c0",
     "filmatyk\\posterman.py": "7bae6074f3273322dcf0637b9a04030ebd7d4f0094f2b487d7210f7836709827",
     "filmatyk\\presenter.py": "7980f89159d76eaecbd9ca9ef207068f1558b30bb93388d237f20ca6d3989fbd",
     "filmatyk\\search.png": "561d80617b8f134fce8189fb7e1f4312777cd5e3775ec1e34a1240271d2855e3",
     "filmatyk\\statview.py": "ca74525c21219ebe92d2b61a09ee04817ede95d7cf7b01600f8ddc73c75313ae",
     "filmatyk\\updater.py": "6d104aeada7659664522195f37b4ecb4e2b459cc8fe50b1de5fdeb2b2410e670",
     "filmatyk\\userdata.py": "a2d67eb3bae9a6eb0300edf9edf3e7d953591f10fb46e002465dba87e2470103",
-    "tools\\deptest.py": "9262a811eff381aa48d2e5a5732d95fb81c3d1ffdb722e145fd7a73c06528086",
+    "tools\\deptest.py": "e272465e895ddec4f9cb04834e5d3ba507b3d4700c64b89e03d68f1175f6777e",
     "tools\\pytest.py": "17a12cb5bef38b238ad9d63ee0cafd33d8f817027cb2a2c4a5528b3f62d425ba"
   },
-  "version": "1.0.0-beta.2"
+  "version": "1.0.0-beta.3"
 }

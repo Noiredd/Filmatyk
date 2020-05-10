@@ -35,7 +35,7 @@ Filmatyk nie uruchomi się w środowisku starszym niż Python 3.6!
 **Ważne:** na początku instalacji zaznacz `Add Python3 to PATH`!  
 Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.
 
-2. Pobierz [pliki programu](https://github.com/Noiredd/Filmatyk/archive/v1.0.0-beta.1.zip) i wypakuj, gdzie Ci wygodnie.
+2. Pobierz [pliki programu](https://github.com/Noiredd/Filmatyk/archive/v1.0.0-beta.3.zip) i wypakuj, gdzie Ci wygodnie.
 
 3. **Uruchom** program przez `Filmatyk.bat`.  
 **Ważne**: za pierwszym razem Filmatyk będzie musiał jednorazowo zainstalować kilka pakietów.
