@@ -3,9 +3,10 @@ import os
 from math import ceil
 
 import containers
+from filmweb import ConnectionError, FilmwebAPI
 
 class Database(object):
-  def __init__(self, itemtype:str, api:object, callback):
+  def __init__(self, itemtype:str, api:FilmwebAPI, callback:callable):
     self.itemtype = itemtype
     self.callback = callback
     self.items = []
@@ -27,7 +28,7 @@ class Database(object):
 
   # Serialization-deserialization
   @staticmethod
-  def restoreFromString(itemtype:str, string:str, api:object, callback):
+  def restoreFromString(itemtype:str, string:str, api:FilmwebAPI, callback:callable):
     newDatabase = Database(itemtype, api, callback)
     if not string:
       # simply return a raw, empty DB
@@ -47,7 +48,7 @@ class Database(object):
     try:
       # in case there are network problems
       first_request = self.api.getNumOf(self.itemtype)
-    except self.api.ConnectionError:
+    except ConnectionError:
       self.callback(-1, abort=True) #hide the progress bar
       return None
     if first_request is None:

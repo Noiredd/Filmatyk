@@ -64,10 +64,7 @@ class TestAPIBasics(unittest.TestCase):
     """Attempt to download a single page of movie ratings from Filmweb."""
     self.assertIsNotNone(self.api)
     self.assertIsNotNone(self.api.session)
-    url = self.api.Constants.getUserMoviePage(
-      self.api.username,
-      page=1,
-    )
+    url = self.api.constants.getUserMoviePage(page=1)
     page = self.api.fetchPage(url)
     text = page.prettify()
     self.assertIsInstance(text, str)
@@ -81,7 +78,7 @@ class TestAPIBasics(unittest.TestCase):
     N_PAGES = 3
     for i in range(N_PAGES):
       getURL = self.api.urlGenerationMethods['Movie']
-      url = getURL(self.api.username, page=i+1)
+      url = getURL(page=i+1)
       page = self.api.fetchPage(url)
       path = os.path.join('assets', 'movies_{}.html'.format(i+1))
       with open(path, 'w', encoding='utf-8') as html:
@@ -95,7 +92,7 @@ class TestAPIBasics(unittest.TestCase):
     """Attempt to download and save a page of series ratings."""
     getURL = self.api.urlGenerationMethods['Series']
     page_num = 1
-    url = getURL(self.api.username, page=page_num)
+    url = getURL(page=page_num)
     page = self.api.fetchPage(url)
     path = os.path.join('assets', 'series_{}.html'.format(page_num))
     with open(path, 'w', encoding='utf-8') as html:
@@ -108,7 +105,7 @@ class TestAPIBasics(unittest.TestCase):
     """Attempt to download and save a page of game ratings."""
     getURL = self.api.urlGenerationMethods['Game']
     page_num = 1
-    url = getURL(self.api.username, page=page_num)
+    url = getURL(page=page_num)
     page = self.api.fetchPage(url)
     path = os.path.join('assets', 'games_{}.html'.format(page_num))
     with open(path, 'w', encoding='utf-8') as html:
