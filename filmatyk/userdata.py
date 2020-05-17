@@ -1,9 +1,45 @@
+"""System for preserving backwards-compatibility for user data.
+
+We store quite a lot of user data, and there's always only one right way to
+write it to file. But when an update is released, we need to ensure that a new
+version can read data stored by any previous version. Hence, this module stores
+all prior loaders, binding them to their respective versions, so that we can
+always read user data saved sometime in the past.
+
+The mechanism relies on 3 classes:
+* UserData defines the current representation of user data,
+* DataManager provides a high-level interface for loading (any past format) and
+  saving (current format) user data,
+* Loaders stores all known loader functions together with version strings that
+  indicate the earliest user data file version they are capable of reading.
+
+The writing logic is simple: Main constructs the UserData object and puts there
+all the user data serialized to strings, then calls DataManager to save that
+object to a file. The save method writes a file in the current format.
+
+Loading logic is a little more complicated, as it happens in two stages. First,
+all the loaders for all previous versions of the program are prepared in an
+OrderedDict. Second, Main requests the DataManager to load a given user data
+file. DataManager reads the file and attempts to find a version string in its
+data (on any failure it defaults to returning a default-constructed UserData
+instance). When a version string is found, it finds the first loader capable of
+reading it, and passes the file contents to that function, which constructs a
+UserData instance and fills it with data. This function is responsible for
+translation of the old data format (as seen in the file) to the current format
+(as required by UserData and thus Main).
+
+If a new version changes the UserData layout, *ALL* previous loaders have to be
+updated to return this new layout. Therefore it is best not to modify the order
+and names of UserData arguments.
+"""
+
 import os
 from collections import OrderedDict
 from semantic_version import Version
 
+
 class UserData(object):
-  """ User data wrapper with simple semantics (simpler than a dict). """
+  """User data wrapper with simple semantics (simpler than a dict)."""
   def __init__(
     self,
     username='',
@@ -24,19 +60,38 @@ class UserData(object):
     self.games_data = games_data
     self.is_empty = is_empty
 
+
 class DataManager(object):
-  """ Backwards-compatibility preserving interface for user data management. """
-  loaders = OrderedDict()
+  """Backwards-compatibility preserving interface for user data management.
+
+  Loaders should put themselves in the "loaders" list as tuples:
+    (callable, version)
+  so that we can construct an OrderedDict from them at init. The class method
+  registerLoaderSince does it automatically and is designed to be used as a
+  decorator around a loader.
+  """
+  all_loaders = []
 
   def __init__(self, userDataPath:str, version:str):
     self.path = userDataPath
     self.version = version
+    self.loaders = self.__orderLoaders()
+
+  def __orderLoaders(self):
+    """Create an OrderedDict of loaders, ordered by version strings."""
+    ordered_loaders = OrderedDict()
+    # Sort by version
+    self.all_loaders.sort(key=lambda x: x[1])
+    for loader, version in self.all_loaders:
+      ordered_loaders[version] = loader
+    return ordered_loaders
 
   def save(self, userData):
-    # safety feature against failing to write new data and removing the old
+    """Save the user data in the most recent format."""
+    # Safety feature against failing to write new data and removing the old
     if os.path.exists(self.path):
       os.rename(self.path, self.path + '.bak')
-    # actually write data to disk
+    # Now actually write data to disk
     with open(self.path, 'w') as user_file:
       user_file.write('#VERSION\n')
       user_file.write(self.version + '\n')
@@ -51,24 +106,47 @@ class DataManager(object):
       user_file.write('#GAMES\n')
       user_file.write(userData.games_conf + '\n')
       user_file.write(userData.games_data + '\n')
-    # if there were no errors at point, new data has been successfully written
+    # If there were no errors at point, new data has been successfully written
     if os.path.exists(self.path + '.bak'):
       os.remove(self.path + '.bak')
 
   def load(self):
+    """Load user data from a file, with backwards-compatibility.
+
+    Always returns a current format UserData, either with the content upgraded
+    from a legacy format, or a default-constructed instance in case of failure.
+    """
+    # Check if the file exists
     if not os.path.exists(self.path):
-      return UserData() # default constructor is empty
-    user_data = self.__readFile()
-    data_version = self.__checkVersion(user_data)
-    loader = self.__selectLoader(data_version)
+      return UserData()
+    # Read data and attempt to locate the version string
+    user_data = self.readFile()
+    data_version = self.checkVersion(user_data)
+    if not data_version:
+      return UserData()
+    # Attempt to match loader to that string
+    loader = self.selectLoader(data_version)
+    if not loader:
+      return UserData()
+    # Attempt to parse the user data using that loader
     try:
       parsed_data = loader(user_data)
     except:
       print("User data parsing error.")
       return UserData()
+    # If we got this far, mark the UserData object as successfully loaded.
+    # This flag is used by Main to determine whether the program is being ran
+    # for the first time.
     parsed_data.is_empty = False
     return parsed_data
-  def __readFile(self):
+
+  def readFile(self):
+    """Simply read lines from the user data file.
+
+    This always has to be done first (independent of the actual content), as
+    the version string must be extracted before doing anything further.
+    Lines starting with '#' are always ignored as comments.
+    """
     with open(self.path, 'r') as user_file:
       user_data = [
         line.strip('\n')
@@ -76,8 +154,9 @@ class DataManager(object):
         if not line.startswith('#')
       ]
     return user_data
-  def __checkVersion(self, data):
-    """ Tries to find a version string in the user data robustly. """
+
+  def checkVersion(self, data):
+    """Try to find a version string in the user data robustly."""
     for datum in data:
       # Don't expect version strings larger than that (most likely data)
       if len(datum) > 20:
@@ -89,44 +168,38 @@ class DataManager(object):
         continue
       else:
         return version
-  def __selectLoader(self, version):
-    """ Iterate over registered loaders for as long as the data version is more
-        recent than the loader. This will stop when a loader version is too new
-        for the data. The previous (matching) lodaer will be returned.
+    # If no version string is present
+    return None
+
+  def selectLoader(self, data_version):
+    """Select the loader that matches the version of the given user data file.
+
+    Iterate over registered loaders for as long as the data version is more
+    recent than the loader. This will stop when a loader version is too new
+    for the data. The previous (matching) loader will be returned.
     """
-    loader = None
-    for v, p in self.loaders.items():
-      if version >= v:
-        loader = p
+    matching_loader = None
+    for loader_version, loader in self.loaders.items():
+      if data_version >= loader_version:
+        matching_loader = loader
       else:
         break
-    return loader
+    return matching_loader
 
-  @classmethod
-  def registerLoader(self, loader, version):
-    """ Add a new loader to the ODict, resorting for easy version matching. """
-    # Get the existing loaders and their corresponding version numbers
-    versions = list(self.loaders.keys())
-    loaders = list(self.loaders.values())
-    # Add the new one
-    versions.append(version)
-    loaders.append(loader)
-    # Reconstruct the ODict with new version&loader in the correct order
-    self.loaders.clear()
-    for v, p in sorted(zip(versions, loaders), key=lambda x: x[0]):
-      self.loaders[v] = p
   def registerLoaderSince(version:str):
+    """Add the given loader to the loaders list."""
     version = Version(version)
     def decorator(loader):
-      DataManager.registerLoader(loader, version)
+      DataManager.all_loaders.append((loader, version))
       return loader
     return decorator
 
+
 class Loaders(object):
-  """ Just a holder for different data loading functions.
-  
-      It's friends with DataManager class, that is: updates its "loaders" ODict
-      with any loader defined here.
+  """Just a holder for different data loading functions.
+
+  It's friends with DataManager class, that is: updates its "loaders" ODict
+  with any loader defined here.
   """
   @DataManager.registerLoaderSince('1.0.0-beta.1')
   def loader100b(user_data):
