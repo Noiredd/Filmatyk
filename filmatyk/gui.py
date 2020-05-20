@@ -146,7 +146,7 @@ class Main(object):
     self.dataManager = DataManager(self.getFilename(), VERSION)
     userdata = self.dataManager.load()
     # create the options manager
-    self.options = Options()
+    self.options = Options(userdata.options_json)
     # construct the window: first the notebook for tabbed view
     self.notebook = ttk.Notebook(root)
     self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
@@ -255,7 +255,9 @@ class Main(object):
     # if there is no need to save anything - stop right there too
     if not (
         any([db.isDirty for db in self.databases]) or
-        any([ps.isDirty for ps in self.presenters])):
+        any([ps.isDirty for ps in self.presenters]) or
+        self.options.isDirty
+      ):
       return
     # construct the UserData object
     serialized_data = UserData(
@@ -265,7 +267,8 @@ class Main(object):
       series_conf=self.presenters[1].storeToString(),
       series_data=self.databases[1].storeToString(),
       games_conf=self.presenters[2].storeToString(),
-      games_data=self.databases[2].storeToString()
+      games_data=self.databases[2].storeToString(),
+      options_json=self.options.storeToString(),
     )
     # request the manager to save it
     self.dataManager.save(serialized_data)

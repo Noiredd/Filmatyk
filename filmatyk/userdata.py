@@ -28,9 +28,12 @@ UserData instance and fills it with data. This function is responsible for
 translation of the old data format (as seen in the file) to the current format
 (as required by UserData and thus Main).
 
-If a new version changes the UserData layout, *ALL* previous loaders have to be
-updated to return this new layout. Therefore it is best not to modify the order
-and names of UserData arguments.
+If a new version changes the UserData layout, the DataManager.save method must
+be updated to reflect that. Additionally, all previously registered loaders
+must be able to return the new object. When adding a new element to UserData,
+it should go without problems (just provide a default argument), but if a new
+layout removes some fields... this will need special handling - probably for
+*all* legacy loaders.
 """
 
 import os
@@ -49,6 +52,7 @@ class UserData(object):
     series_data='',
     games_conf='',
     games_data='',
+    options_json='{}',
     is_empty=True
   ):
     self.username = username
@@ -58,6 +62,7 @@ class UserData(object):
     self.series_data = series_data
     self.games_conf = games_conf
     self.games_data = games_data
+    self.options_json = options_json
     self.is_empty = is_empty
 
 
@@ -97,6 +102,8 @@ class DataManager(object):
       user_file.write(self.version + '\n')
       user_file.write('#USERNAME\n')
       user_file.write(userData.username + '\n')
+      user_file.write('#OPTIONS\n')
+      user_file.write(userData.options_json + '\n')
       user_file.write('#MOVIES\n')
       user_file.write(userData.movies_conf + '\n')
       user_file.write(userData.movies_data + '\n')
@@ -211,4 +218,17 @@ class Loaders(object):
       series_data=user_data[5],
       games_conf=user_data[6],
       games_data=user_data[7]
+    )
+
+  @DataManager.registerLoaderSince('1.0.0-beta.4')
+  def loader100b4(user_data):
+    return UserData(
+      username=user_data[1],
+      options_json=user_data[2],
+      movies_conf=user_data[3],
+      movies_data=user_data[4],
+      series_conf=user_data[5],
+      series_data=user_data[6],
+      games_conf=user_data[7],
+      games_data=user_data[8],
     )
