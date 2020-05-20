@@ -9,6 +9,7 @@ from tkinter import ttk
 import filters
 from database import Database
 from filmweb import FilmwebAPI
+from options import Options
 from presenter import Presenter
 from updater import Updater
 from userdata import DataManager, UserData
@@ -81,6 +82,7 @@ class Login(object):
     tk.Button(master=cw, text='Zaloguj', command=self._loginClick).grid(row=4, column=1, sticky=tk.W)
     tk.Button(master=cw, text='Anuluj', command=self._cancelClick).grid(row=4, column=0, sticky=tk.E)
     self.window.withdraw()
+
   def centerWindow(self):
     self.window.update()
     ws = self.window.winfo_screenwidth()
@@ -96,6 +98,7 @@ class Login(object):
     message = self.conerr_message if connection else self.logerr_message
     self.infoLabel['text'] = message
     self.stateGood = False
+
   def _setStateGood(self, event=None):
     if not self.stateGood:
       self.infoLabel['text'] = ''
@@ -103,6 +106,7 @@ class Login(object):
     #also, maybe the user has hit enter key, meaning to log in
     if event.keysym == 'Return':
       self._loginClick()
+
   def _loginClick(self):
     #collect login data
     username = self.usernameEntry.get()
@@ -120,12 +124,14 @@ class Login(object):
       self.username = username
       self.isDone.set(True)
       self.window.withdraw()
+
   def _cancelClick(self):
     self.passwordEntry.delete(0, tk.END)
     self.usernameEntry.delete(0, tk.END)
     self.session = None
     self.isDone.set(True)
     self.window.withdraw()
+
 
 class Main(object):
   filename = 'filmatyk.dat'  # will be created in user documents/home directory
@@ -136,6 +142,11 @@ class Main(object):
     self.isOnLinux = isOnLinux
     self.root = root = tk.Tk()
     root.title(self.wintitle.format('[DEBUG] ' if self.debugMode else ''))
+    # load the savefile
+    self.dataManager = DataManager(self.getFilename(), VERSION)
+    userdata = self.dataManager.load()
+    # create the options manager
+    self.options = Options()
     # construct the window: first the notebook for tabbed view
     self.notebook = ttk.Notebook(root)
     self.notebook.grid(row=0, column=0, padx=5, pady=5, sticky=tk.NW)
@@ -158,9 +169,6 @@ class Main(object):
     self.abortUpdate = False # database can set this via callback when something goes wrong
     self.databases = []
     self.presenters = []
-    # load the savefile
-    self.dataManager = DataManager(self.getFilename(), VERSION)
-    userdata = self.dataManager.load()
     # instantiate Presenters and Databases
     self.api = FilmwebAPI(self.loginHandler.requestLogin, userdata.username)
     movieDatabase = Database.restoreFromString('Movie', userdata.movies_data, self.api, self._setProgress)
@@ -221,6 +229,7 @@ class Main(object):
         'configure': {'width': 20, 'anchor': 'center'}
       }
     })
+
   def centerWindow(self):
     self.root.update()
     ws = self.root.winfo_screenwidth()
@@ -238,6 +247,7 @@ class Main(object):
     subpath = self.filename
     userdir = str(Path.home())
     return os.path.join(userdir, subpath)
+
   def saveUserData(self):
     # if for any reason the first update hasn't commenced - don't save anything
     if self.api.username is None:
@@ -278,6 +288,7 @@ class Main(object):
       self.progressbar.grid()
       self.progressVar.set(value)
     self.root.update()
+
   def _updateData(self):
     # call softUpdate on all the databases and update all the presenters
     for db, ps in zip(self.databases, self.presenters):
@@ -288,6 +299,7 @@ class Main(object):
         break
     # save data
     self.saveUserData()
+
   def _reloadData(self):
     for db, ps in zip(self.databases, self.presenters):
       db.hardUpdate()
@@ -295,6 +307,7 @@ class Main(object):
       if self.abortUpdate:
         break
     self.saveUserData()
+
   def _quit(self, restart=False):
     self.saveUserData()
     self.root.quit()
@@ -311,6 +324,7 @@ class Main(object):
       if self.debugMode:
         command += " debug"
       os.system(command)
+
 
 if __name__ == "__main__":
   debugMode = "debug" in sys.argv
