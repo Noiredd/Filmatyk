@@ -1,14 +1,17 @@
 from datetime import date
+import binascii
+import html
 import json
+import pickle
 
 from bs4 import BeautifulSoup as BS
-import html
 import requests_html
 
 import containers
 
 
 ConnectionError = requests_html.requests.ConnectionError
+
 
 class Constants():
   """URLs and HTML component names for data acquisition.
@@ -51,6 +54,8 @@ class FilmwebAPI():
     auth_package = {
       'j_username': username,
       'j_password': password,
+      '_login_redirect_url': '',
+      '_prm': True,
     }
     # Catch connection errors
     try:
@@ -77,11 +82,19 @@ class FilmwebAPI():
       https://stackoverflow.com/q/21382801/6919631
       https://stackoverflow.com/q/11058686/6919631
     The bottom line is that it should NEVER be called directly.
+
+    Also checks if the session cookies were changed in the process of making
+    a request.
     """
     def wrapper(*args, **kwargs):
       self = args[0]
       if self.checkSession():
-        return fun(*args, **kwargs)
+        old_cookies = set(self.session.cookies.values())
+        result = fun(*args, **kwargs)
+        new_cookies = set(self.session.cookies.values())
+        if old_cookies != new_cookies:
+          self.isDirty = True
+        return result
       else:
         return None
     return wrapper
@@ -91,6 +104,7 @@ class FilmwebAPI():
     self.constants = Constants(username)
     self.login_handler = login_handler
     self.session = None
+    self.isDirty = False
     self.parsingRules = {}
     for container in containers.classByString.keys():
       self.__cacheParsingRules(container)
@@ -147,11 +161,16 @@ class FilmwebAPI():
     (cause we'll nearly always have a session, except it might sometimes get stale
     resulting in an acquisition failure)
     """
+    session_requested = False
     if not self.session:
       self.requestSession()
+      session_requested = True
     # Check again - in case the user cancelled a login
     if not self.session:
       return False
+    # If a new session was requested in the process - set the dirty flag
+    if session_requested:
+      self.isDirty = True
     # At this point everything is definitely safe
     return True
 
@@ -171,6 +190,24 @@ class FilmwebAPI():
         if username != self.username:
           return None
     self.session = session
+
+  def storeSession(self):
+    """Stores the sessions cookies to a base64-encoded pickle string."""
+    if self.session:
+      cookies_bin = pickle.dumps(self.session.cookies)
+      cookies_str = binascii.b2a_base64(cookies_bin).decode('utf-8').strip()
+      return cookies_str
+    else:
+      return 'null'
+
+  def restoreSession(self, pickle_str:str):
+    """Restores the session cookies from a base64-encoded pickle string."""
+    if pickle_str == 'null':
+      return
+    self.session = requests_html.HTMLSession()
+    cookies_bin = binascii.a2b_base64(pickle_str.encode('utf-8'))
+    cookies_obj = pickle.loads(cookies_bin)
+    self.session.cookies = cookies_obj
 
   @enforceSession
   def getNumOf(self, itemtype:str):

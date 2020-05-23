@@ -46,23 +46,25 @@ class UserData(object):
   def __init__(
     self,
     username='',
+    options_json='{}',
+    session_pkl='null',
     movies_conf='',
     movies_data='',
     series_conf='',
     series_data='',
     games_conf='',
     games_data='',
-    options_json='{}',
     is_empty=True
   ):
     self.username = username
+    self.options_json = options_json
+    self.session_pkl = session_pkl
     self.movies_conf = movies_conf
     self.movies_data = movies_data
     self.series_conf = series_conf
     self.series_data = series_data
     self.games_conf = games_conf
     self.games_data = games_data
-    self.options_json = options_json
     self.is_empty = is_empty
 
 
@@ -104,6 +106,8 @@ class DataManager(object):
       user_file.write(userData.username + '\n')
       user_file.write('#OPTIONS\n')
       user_file.write(userData.options_json + '\n')
+      user_file.write('#SESSION\n')
+      user_file.write(userData.session_pkl + '\n')
       user_file.write('#MOVIES\n')
       user_file.write(userData.movies_conf + '\n')
       user_file.write(userData.movies_data + '\n')
@@ -153,12 +157,13 @@ class DataManager(object):
     This always has to be done first (independent of the actual content), as
     the version string must be extracted before doing anything further.
     Lines starting with '#' are always ignored as comments.
+    Empty lines are always ignored.
     """
     with open(self.path, 'r') as user_file:
       user_data = [
         line.strip('\n')
         for line in user_file.readlines()
-        if not line.startswith('#')
+        if not line.startswith('#') and len(line) > 1
       ]
     return user_data
 
@@ -205,8 +210,8 @@ class DataManager(object):
 class Loaders(object):
   """Just a holder for different data loading functions.
 
-  It's friends with DataManager class, that is: updates its "loaders" ODict
-  with any loader defined here.
+  It's friends with DataManager class, that is: updates its list of loaders
+  with all loaders defined here.
   """
   @DataManager.registerLoaderSince('1.0.0-beta.1')
   def loader100b(user_data):
@@ -225,10 +230,11 @@ class Loaders(object):
     return UserData(
       username=user_data[1],
       options_json=user_data[2],
-      movies_conf=user_data[3],
-      movies_data=user_data[4],
-      series_conf=user_data[5],
-      series_data=user_data[6],
-      games_conf=user_data[7],
-      games_data=user_data[8],
+      session_pkl=user_data[3],
+      movies_conf=user_data[4],
+      movies_data=user_data[5],
+      series_conf=user_data[6],
+      series_data=user_data[7],
+      games_conf=user_data[8],
+      games_data=user_data[9],
     )

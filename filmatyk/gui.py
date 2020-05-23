@@ -77,10 +77,12 @@ class Login(object):
     self.passwordEntry = tk.Entry(master=cw, width=20, show='*')
     self.passwordEntry.grid(row=2, column=1, sticky=tk.W)
     self.passwordEntry.bind('<Key>', self._setStateGood)
+    self.rememberBox = tk.Checkbutton(self.window, text='pamiętaj mnie', variable=Options.var('rememberLogin'))
+    self.rememberBox.grid(row=3, column=1, columnspan=2, sticky=tk.W)
     self.infoLabel = tk.Label(master=cw, text='')
-    self.infoLabel.grid(row=3, column=0, columnspan=2)
-    tk.Button(master=cw, text='Zaloguj', command=self._loginClick).grid(row=4, column=1, sticky=tk.W)
-    tk.Button(master=cw, text='Anuluj', command=self._cancelClick).grid(row=4, column=0, sticky=tk.E)
+    self.infoLabel.grid(row=4, column=0, columnspan=2)
+    tk.Button(master=cw, text='Zaloguj', command=self._loginClick).grid(row=5, column=1, sticky=tk.W)
+    tk.Button(master=cw, text='Anuluj', command=self._cancelClick).grid(row=5, column=0, sticky=tk.E)
     self.window.withdraw()
 
   def centerWindow(self):
@@ -171,6 +173,7 @@ class Main(object):
     self.presenters = []
     # instantiate Presenters and Databases
     self.api = FilmwebAPI(self.loginHandler.requestLogin, userdata.username)
+    self.api.restoreSession(userdata.session_pkl)
     movieDatabase = Database.restoreFromString('Movie', userdata.movies_data, self.api, self._setProgress)
     self.databases.append(movieDatabase)
     moviePresenter = Presenter(self, self.api, movieDatabase, userdata.movies_conf)
@@ -240,7 +243,8 @@ class Main(object):
     y = hs/2 - h/2
     self.root.geometry('+{:.0f}+{:.0f}'.format(x, y))
 
-  #USER DATA MANAGEMENT
+  # USER DATA MANAGEMENT
+
   def getFilename(self):
     if self.debugMode:
       return self.filename
@@ -249,14 +253,24 @@ class Main(object):
     return os.path.join(userdir, subpath)
 
   def saveUserData(self):
+    """Save the user data, if any of it has changed during the run time."""
     # if for any reason the first update hasn't commenced - don't save anything
     if self.api.username is None:
       return
+    # if the session is set to be stored - serialize it
+    # if it is also dirty - set the flag for a check later
+    session_pkl = 'null'
+    session_isDirty = False
+    if Options.get('rememberLogin'):
+      session_pkl = self.api.storeSession()
+      if self.api.isDirty:
+        session_isDirty = True
     # if there is no need to save anything - stop right there too
     if not (
         any([db.isDirty for db in self.databases]) or
         any([ps.isDirty for ps in self.presenters]) or
-        Options.isDirty
+        Options.isDirty or
+        session_isDirty
       ):
       return
     # construct the UserData object
@@ -269,6 +283,7 @@ class Main(object):
       games_conf=self.presenters[2].storeToString(),
       games_data=self.databases[2].storeToString(),
       options_json=Options.storeToString(),
+      session_pkl=session_pkl,
     )
     # request the manager to save it
     self.dataManager.save(serialized_data)
@@ -277,6 +292,8 @@ class Main(object):
       db.isDirty = False
     for ps in self.presenters:
       ps.isDirty = False
+    Options.isDirty = False
+    self.api.isDirty = False
 
   #CALLBACKS
   def _setProgress(self, value:int, abort:bool=False):

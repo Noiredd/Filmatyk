@@ -33,6 +33,7 @@ class _Options():
   Defining a new option is done simply by adding it to the prototypes list.
   """
   option_prototypes = [
+    ('rememberLogin', tk.BooleanVar, True),
   ]
 
   def __init__(self):
