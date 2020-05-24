@@ -13,6 +13,10 @@ import containers
 ConnectionError = requests_html.requests.ConnectionError
 
 
+class UnauthenticatedError(ConnectionError):
+  """Raised by API functions if they detect the active session was refused."""
+
+
 class Constants():
   """URLs and HTML component names for data acquisition.
 
@@ -24,6 +28,7 @@ class Constants():
   item_class = 'userVotesPage__result'
   rating_source = 'userVotes'
   rating_stype = 'application/json'
+  no_access_class = 'noResultsPlaceholder'
   movie_count_span = 'blockHeader__titleInfoCount'
   series_count_span = 'blockHeader__titleInfoCount'
   game_count_span = 'blockHeader__titleInfoCount'
@@ -70,9 +75,17 @@ class FilmwebAPI():
       return (True, session)
 
   def enforceSession(fun):
-    """Decorator to mark API functions that require a live session.
+    """Decorator to mark API functions that require an authenticated session.
 
-    It will perform a session check before calling the actual function.
+    This safeguards the calls to ensure they do not fail due to a lack of
+    authentication with Filmweb. To achieve this goal, two checks are made:
+    * before calling the decorated function, a check whether a live HTMLSession
+      exists is made; if not, a login is requested,
+    * the call itself is guarded against UnauthenticatedError, also resulting
+      in a request for login and re-calling of the function.
+    Additionally, session cookies are watched for changes, in order to set the
+    isDirty flag in case that happens.
+
     Because it assumes that the first argument of the wrapped function is
     a bound FilmwebAPI instance ("self"), it shall only be used with FilmwebAPI
     methods.
@@ -82,21 +95,30 @@ class FilmwebAPI():
       https://stackoverflow.com/q/21382801/6919631
       https://stackoverflow.com/q/11058686/6919631
     The bottom line is that it should NEVER be called directly.
-
-    Also checks if the session cookies were changed in the process of making
-    a request.
     """
     def wrapper(*args, **kwargs):
+      # Extract the bound FilmwebAPI instance
       self = args[0]
-      if self.checkSession():
-        old_cookies = set(self.session.cookies.values())
-        result = fun(*args, **kwargs)
-        new_cookies = set(self.session.cookies.values())
-        if old_cookies != new_cookies:
-          self.isDirty = True
-        return result
-      else:
+      # First check: for presence of a live session
+      if not self.checkSession():
         return None
+      old_cookies = set(self.session.cookies.values())
+      # Second check: whether the call failed due to lack of authentication
+      try:
+        result = fun(*args, **kwargs)
+      except UnauthenticatedError:
+        # Request login and call again
+        print('Session was stale! Requesting login...')
+        self.requestSession()
+        if not self.session:
+          return None
+        result = fun(*args, **kwargs)
+      # Session change detection
+      new_cookies = set(self.session.cookies.values())
+      if old_cookies != new_cookies:
+        self.isDirty = True
+      # Finally the produced data is returned
+      return result
     return wrapper
 
   def __init__(self, login_handler, username:str=''):
@@ -156,11 +178,7 @@ class FilmwebAPI():
     self.parsingRules[itemtype] = pTree
 
   def checkSession(self):
-    """Check if there exists a live session and acquire a new one if not.
-    #TODO: now with improved session handling we need something smarter
-    (cause we'll nearly always have a session, except it might sometimes get stale
-    resulting in an acquisition failure)
-    """
+    """Check if there exists a session instance and acquire a new one if not."""
     session_requested = False
     if not self.session:
       self.requestSession()
@@ -254,7 +272,13 @@ class FilmwebAPI():
 
   @enforceSession
   def fetchPage(self, url):
-    """Fetch the page and return its BeautifulSoup representation."""
+    """Fetch the page and return its BeautifulSoup representation.
+
+    ConnectionError is raised in case of any failure to get HTML data or page
+    status being not-ok after get.
+    UnauthenticatedError is raised if the response contains a span indicating
+    that the session used to obtain it is no longer valid.
+    """
     try:
       page = self.session.get(url)
     except:
@@ -264,7 +288,13 @@ class FilmwebAPI():
       print("FETCH ERROR {}".format(status))
       raise ConnectionError
     else:
-      return BS(page.html.html, 'lxml')
+      bspage = BS(page.html.html, 'lxml')
+    # If a request required an active session but the one we had happened to be
+    # stale, this magical span will be found in the page data:
+    span = bspage.find('span', attrs={'class': self.constants.no_access_class})
+    if span:
+      raise UnauthenticatedError
+    return bspage
 
   def parsePage(self, page, itemtype:str):
     """Parse items and ratings, returning constructed Item objects."""
