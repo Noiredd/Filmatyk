@@ -224,7 +224,7 @@ class Item(metaclass=BlueprintInheritance):
   year = Blueprint(
     name='Rok',
     colwidth=35,
-    parsing={'tag':'span', 'class':'filmPreview__year', 'text':True, 'list':False, 'type':int}
+    parsing={'tag':'div', 'class':'filmPreview__year', 'text':True, 'list':False, 'type':int}
   )
   link = Blueprint(
     name='URL',
@@ -234,7 +234,7 @@ class Item(metaclass=BlueprintInheritance):
   imglink = Blueprint(
     name='ImgURL',
     colwidth=200,
-    parsing={'tag':'img', 'class':'filmPoster__image', 'text':False, 'attr':'data-src'}
+    parsing={'tag':'div', 'class':'poster--auto', 'text':False, 'attr':'data-image'}
   )
   fwRating = Blueprint(
     name='Oc. FW',
