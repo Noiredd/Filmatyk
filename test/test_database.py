@@ -8,7 +8,6 @@ import containers
 import database
 import filmweb
 
-from api_prototype import loadDatabase, getApi
 
 class DatabaseDifference():
   """Represents a difference between two DBs.
