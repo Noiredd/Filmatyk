@@ -72,7 +72,8 @@ class Updater(object):
     self.__checkThread()
   def __checkThread(self):
     if self.checked_flag:
-      # thread has finished - do something with the results
+      # thread has finished - clean up and do something with the results
+      self.thread.join()
       if self.update_available:
         doUpdate = messagebox.askyesno(self.update_ready_string, self.update_question_string)
         if doUpdate:
