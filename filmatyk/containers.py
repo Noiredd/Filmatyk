@@ -1,8 +1,10 @@
+from __future__ import annotations
 from datetime import date
 
 # This is a globally used dict that binds Item classes to their names.
 # It should remain empty, as the classes register themselves here.
 classByString = {}
+
 
 class Blueprint(object):
   """Blueprint is an abstraction of a property that an Item might have.
@@ -30,6 +32,9 @@ class Blueprint(object):
   Static methods define some basic, commonly used presentation functions for
   known types of properties.
   """
+
+  # Presentation styling callables
+
   @staticmethod
   def _default(x): return str(x)
 
@@ -57,6 +62,8 @@ class Blueprint(object):
   def _favourite(x):
     return '♥' if x == 1 else ' '
 
+  # Functionality
+
   def __init__(self, name:str, colwidth:int, parsing:dict={}, display=None, store=True):
     self.display_name = name
     self.column_width = colwidth
@@ -75,6 +82,7 @@ class Blueprint(object):
 
   def getColWidth(self):
     return self.column_width
+
 
 class UserData(object):
   """Encapsulates user information associated with each Item instance.
@@ -144,6 +152,7 @@ class UserData(object):
       serial['rating'] = self.wantto
     return serial
 
+
 class BlueprintInheritance(type):
   """Changes the way inheritance works for Blueprints. Crucial for Item class.
 
@@ -175,6 +184,7 @@ class BlueprintInheritance(type):
     classByString[name] = c
     # The new class is now ready
     return c
+
 
 class Item(metaclass=BlueprintInheritance):
   """Base for all types of records used by Filmweb and in the program.
@@ -318,6 +328,21 @@ class Item(metaclass=BlueprintInheritance):
     _dict['userdata'] = self.userdata.serialize()
     return _dict
 
+  def update(self, other:Item):
+    """Update own properties from another Item.
+
+    This is useful if the Item's Blueprinted properties have been altered (e.g.
+    because the remote data was updated) but there is also some custom data
+    attached to the Item that should not be removed.
+
+    Important note: currently there are no properties requiring this behavior.
+    """
+    for prop in self.storables:
+      if prop in other.properties.keys():
+        self.properties[prop] = other.properties[prop]
+    self.userdata.addRating(other.userdata.rating)
+
+
 class Movie(Item):
   """Item subclass specialized to hold Movie instances."""
   TYPE_STRING = 'FILM'
@@ -349,6 +374,7 @@ class Movie(Item):
   def __init__(self, userdata:dict={}, **properties):
     super(Movie, self).__init__(userdata, **properties)
 
+
 class Series(Movie):
   """Item subclass specialized to hold Series instances.
 
@@ -365,6 +391,7 @@ class Series(Movie):
 
   def __init__(self, userdata:dict={}, **properties):
     super(Series, self).__init__(userdata, **properties)
+
 
 class Game(Item):
   """Item subclass specialized to hold Game instances.

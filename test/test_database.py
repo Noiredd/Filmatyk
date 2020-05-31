@@ -152,7 +152,7 @@ class TestDatabaseCreation(unittest.TestCase):
   """Basic test for Database loading data from scratch using the API."""
   @classmethod
   def setUpClass(self):
-    self.api = FakeAPI('data')
+    self.api = FakeAPI('assets')
 
   def test_creation(self):
     """Create a new Database and fill it with items using (Fake)API.
@@ -181,7 +181,7 @@ class TestDatabaseSerialization(unittest.TestCase):
   """
   @classmethod
   def setUpClass(self):
-    self.api = FakeAPI('data')
+    self.api = FakeAPI('assets')
 
   def test_serialization(self):
     """Serialize and deserialize a Database, check if they look the same."""
@@ -274,6 +274,11 @@ class TestDatabaseUpdates(unittest.TestCase):
     scenario = UpdateScenario(removals=[0, 1, 2])
     self.__test_body(scenario)
 
+  def test_massiveAddition(self):
+    """Add over one full page of new items."""
+    scenario = UpdateScenario(removals=list(range(37)))
+    self.__test_body(scenario)
+
   def test_randomAddition(self):
     """Add an item missing from somewhere on the first page."""
     scenario = UpdateScenario(removals=[4])
@@ -284,8 +289,6 @@ class TestDatabaseUpdates(unittest.TestCase):
     scenario = UpdateScenario(removals=[0, 1, 2, 3, 6])
     self.__test_body(scenario)
 
-  @unittest.expectedFailure
-  # The current algorithm is very naive and thus unable to do that.
   def test_multipageAddition(self):
     """Add a few items non-continuously missing from multiple pages."""
     scenario = UpdateScenario(removals=[0, 1, 2, 16, 30, 32])
@@ -293,25 +296,21 @@ class TestDatabaseUpdates(unittest.TestCase):
 
   # Removal tests - are all expected to fail at this moment.
 
-  @unittest.expectedFailure
   def test_singleRemoval(self):
     """Remove a single item from the first page."""
     scenario = UpdateScenario(additions=[(0, 666)])
     self.__test_body(scenario)
 
-  @unittest.expectedFailure
   def test_simpleRemoval(self):
     """Remove a few items from the first page."""
     scenario = UpdateScenario(additions=[(0, 666), (1, 4270)])
     self.__test_body(scenario)
 
-  @unittest.expectedFailure
   def test_randomRemoval(self):
     """Remove an item from somewhere on the first page."""
     scenario = UpdateScenario(additions=[(4, 420)])
     self.__test_body(scenario)
 
-  @unittest.expectedFailure
   def test_nonContinuousRemoval(self):
     """Remove a few items non-continuously from the first page."""
     scenario = UpdateScenario(
@@ -319,7 +318,6 @@ class TestDatabaseUpdates(unittest.TestCase):
     )
     self.__test_body(scenario)
 
-  @unittest.expectedFailure
   def test_multipageRemoval(self):
     """Remove a few items non-continuously from multiple pages."""
     scenario = UpdateScenario(
@@ -329,8 +327,7 @@ class TestDatabaseUpdates(unittest.TestCase):
 
   # Other tests - for future features.
 
-  @unittest.expectedFailure
-  def test_complexAdditionRemoval(self):
+  def test_additionRemoval(self):
     """Add and remove a few items at once, but only from the first page."""
     scenario = UpdateScenario(
       removals=[0, 1, 2, 9, 13],
@@ -338,9 +335,17 @@ class TestDatabaseUpdates(unittest.TestCase):
     )
     self.__test_body(scenario)
 
+  def test_complexAdditionRemoval(self):
+    """Add and remove a few items at once from multiple pages."""
+    scenario = UpdateScenario(
+      removals=[0, 1, 2, 9, 23, 35, 36],
+      additions=[(3, 1991), (4, 37132), (28, 628)]
+    )
+    self.__test_body(scenario)
+
   @unittest.skip('Relevant feature not implemented yet.')
   def test_difficultAdditionRemoval(self):
-    """Add and remove a few items at once from multiple pages.
+    """Add and remove a few items at once from multiple pages WITH BALANCE.
 
     This test is extremely difficult because it is impossible to recognize such
     scenario in real usage (online), by looking at getNumOf alone. That number
