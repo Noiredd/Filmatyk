@@ -22,7 +22,7 @@ class Constants():
 
   Create an instance for a given user to generate their specific URLs.
   """
-  login_path = 'https://ssl.filmweb.pl/j_login'
+  login_path = 'https://www.filmweb.pl/j_login'
   base_path  = 'https://www.filmweb.pl'
   main_class = 'userVotesPage__results'
   item_class = 'userVotesPage__result'
