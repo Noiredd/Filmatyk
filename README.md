@@ -1,13 +1,12 @@
 # Filmatyk
-**Chcesz pobrać wszystkie swoje oceny z filmwebu na własny komputer?
-Może po prostu nie podoba Ci się nowy interfejs portalu?
+**Chcesz pobrać wszystkie swoje oceny z Filmwebu na własny komputer?
 Filmatyk pozwala Ci przeglądać/sortować/filtrować swoje oceny offline!**
 
 ### Co to jest **Filmatyk**?
-Filmatyk jest odpowiedzią na ostatnie zmiany w interfejsie serwisu filmweb.pl, który dla mnie osobiście stał się nieużywalny.  
 Filmatyk pozwala na *zaimportowanie własnych ocen* z portalu i zapisanie ich lokalnie, dzięki czemu zawsze masz do nich dostęp.
 Razem z Twoimi ocenami, Filmatyk pobiera także podstawowe informacje o obejrzanych przez Ciebie filmach -
-dzięki temu masz możliwość *przeglądania ich i filtrowania* na różne sposoby - zupełnie tak, jak w starym, dobrym filmwebie!
+dzięki temu masz możliwość *przeglądania ich i filtrowania* na różne sposoby - zupełnie tak, jak na Filmwebie!
+Ponieważ jednak Filmatyk działa na *Twoim* komputerze, wszystko dzieje się natychmiastowo i niezależnie od połączenia z internetem.
 
 <a href="https://raw.githubusercontent.com/Noiredd/Filmatyk/master/readme/screenshot.png">
 <img src="https://raw.githubusercontent.com/Noiredd/Filmatyk/master/readme/screenshot.png" width="900" height="453" border="10" alt="Kliknij by zobaczyć w większym rozmiarze" /></a>
@@ -30,12 +29,12 @@ Poniżej znajduje się krótka instrukcja dla systemu Windows.
 Jeśli pracujesz na Linuksie - zobacz [instrukcję instalacji dla Linuksa](readme/LINUX.md).
 
 1. Pierwszym krokiem będzie prawdopodobnie **instalacja Pythona 3** ([link do oficjalnego wydania](https://www.python.org/downloads/)) -
-na chwilę obecną najnowszym wydaniem jest Python 3.7.2.
-Filmatyk nie uruchomi się w środowisku starszym niż Python 3.6!  
+na chwilę obecną najnowszym wydaniem jest Python 3.8.3.
+Filmatyk nie uruchomi się w środowisku starszym niż Python 3.7!  
 **Ważne:** na początku instalacji zaznacz `Add Python3 to PATH`!  
 Jeśli już posiadasz Pythona, możesz przejść do następnego kroku.
 
-2. Pobierz [pliki programu](https://github.com/Noiredd/Filmatyk/archive/v1.0.0-beta.3.zip) i wypakuj, gdzie Ci wygodnie.
+2. Pobierz [pliki programu](https://github.com/Noiredd/Filmatyk/archive/v1.0.0-beta.4.zip) i wypakuj, gdzie Ci wygodnie.
 
 3. **Uruchom** program przez `Filmatyk.bat`.  
 **Ważne**: za pierwszym razem Filmatyk będzie musiał jednorazowo zainstalować kilka pakietów.

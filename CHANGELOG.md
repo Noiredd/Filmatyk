@@ -1,9 +1,27 @@
 ## Change log
 
+### v1.0.0-beta.4
+02-06-2020
+
+#### Nowości
+* (#31) opcja "zapamiętaj mnie" - już nie trzeba logować się co chwilę od nowa! ([7e33b17](../../commit/7e33b17), [a575bb0](../../commit/a575bb0))
+* (#28) nowy, napisany zupełnie od zera algorytm aktualizacji bazy - różnice pomiędzy tym, co widzisz w Filmatyku a co na swoim profilu w Filmwebie, będą występować już tylko w szczególnych okolicznościach (a w planach jest rozwiązanie kompletne: #29) ([fd121b9](../../commit/fd121b9))
+
+#### Poprawki
+* aktualizacja mechanizmu logowania w odpowiedzi na drobną zmianę po stronie Filmwebu ([6f38ef2](../../commit/6f38ef2))
+* aktualizacja parsera w odpowiedzi na zmiany w wyświetlaniu posterów i roku produkcji na Filmwebie ([261089d](../../commit/261089d))
+
+#### Techniczne
+* (#33) wprowadzenie systemu do przechowywania opcji programu ([d4d8287](../../commit/d4d8287), [e2ba9f2](../../commit/e2ba9f2), [09e12b5](../../commit/09e12b5))
+* usprawnienia API ([497dadf](../../commit/497dadf)) i systemu odczytu pliku danych ([cdb25a6](../../commit/cdb25a6))
+* wątek Updatera nigdy nie był joinowany - naprawiono ([cf0e62e](../../commit/cf0e62e))
+
+
 ### v1.0.0-beta.3
 10-05-2020
 
 #### Poprawki
+* (#30) naprawiono błąd z parsowaniem ocen ([aac15e9](../../commit/aac15e9))
 * uaktualniono system wczytywania do najnowszego standardu strony Filmweb ([485c762](../../commit/485c762))
 * uzupełniono listę wymaganych pakietów do automatycznej instalacji ([4e52751](../../commit/4e52751))
 
@@ -12,7 +30,7 @@
   * logowania i pobierania danych ([33dbf75](../../commit/33dbf75))
   * parsowania danych ([aac15e9](../../commit/aac15e9), [69e6a8d](../../commit/69e6a8d), [7ede8e0](../../commit/7ede8e0))
   * tworzenia i serializacji bazy danych ([b4343a7](../../commit/b4343a7), [6fe9d55](../../commit/6fe9d55))
-  * aktualizacji bazy danych ([52d2dc8](../../commit/52d2dc8), [e5098a3](../../commit/e5098a3), ([a48a833](../../commit/a48a833)))
+  * aktualizacji bazy danych ([52d2dc8](../../commit/52d2dc8), [e5098a3](../../commit/e5098a3), [a48a833](../../commit/a48a833))
 * uzupełniono dokumentację modułu `containers` ([a4d948e](../../commit/a4d948e))
 
 
